@@ -4,19 +4,28 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Backpocket — save what you find</title>
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="icons/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#a97a35">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Backpocket">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600&display=swap');
 
   :root{
     --ink: #1a2130;
     --ink-soft: #5b6472;
-    --ink-faint: #8b93a1;
+    --ink-faint: #646973; /* darkened from #8b93a1 to clear WCAG AA 4.5:1 on paper/paper-raised/paper-sunk */
     --paper: #f6f2ea;
     --paper-raised: #fffdf8;
     --paper-sunk: #efe9dc;
     --line: #ddd4c0;
     --line-soft: #e8e1d1;
     --mustard: #a97a35;
+    --mustard-text: #87612a; /* darkened mustard for text use (links, hover labels) — AA-safe; --mustard itself stays for decorative fills/borders */
     --mustard-dim: #e4d1ab;
     --sage: #6b7f63;
     --sage-dim: #d9e0d3;
@@ -31,13 +40,14 @@
   :root[data-theme="dark"]{
     --ink: #efe9dd;
     --ink-soft: #b8b0a0;
-    --ink-faint: #837c6d;
+    --ink-faint: #8e877a; /* lightened from #837c6d to clear WCAG AA 4.5:1 on paper/paper-raised/paper-sunk */
     --paper: #1b1914;
     --paper-raised: #242119;
     --paper-sunk: #141310;
     --line: #3a3427;
     --line-soft: #2a2620;
     --mustard: #d9a45c;
+    --mustard-text: #d9a45c; /* already AA-safe as text in dark mode, no separate darken needed */
     --mustard-dim: #4a3a20;
     --sage: #94ab89;
     --sage-dim: #2b3527;
@@ -65,6 +75,14 @@
   ::selection { background: var(--mustard-dim); }
   a { color: inherit; }
   button { font-family: inherit; }
+  /* Blanket keyboard-focus ring so every interactive element gets one even if
+     a more specific rule elsewhere didn't cover it — :focus-visible only
+     fires for keyboard/programmatic focus, so mouse clicks stay ring-free. */
+  a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible,
+  textarea:focus-visible, [tabindex]:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
   @media (prefers-reduced-motion: reduce) {
     * { animation: none !important; transition: none !important; }
   }
@@ -74,18 +92,36 @@
     display: grid;
     grid-template-columns: 292px 1fr;
     min-height: 100vh;
+    min-height: 100dvh; /* dvh accounts for mobile browser chrome; vh above is the fallback */
   }
-  /* ---------- Sidebar ---------- */
+  /* ---------- Sidebar ----------
+     Three-part flex column so "New folder" + storage note stay pinned at the
+     bottom in every browser, regardless of how tall the folder tree grows —
+     only .sidebar-scroll scrolls, header and footer never move. */
   .sidebar {
     background: var(--paper-raised);
     border-right: 1px solid var(--line);
-    padding: 26px 18px 18px;
     display: flex;
     flex-direction: column;
     height: 100vh;
+    height: 100dvh;
     position: sticky;
     top: 0;
+    overflow: hidden;
+  }
+  .sidebar-header {
+    flex-shrink: 0;
+    padding: max(26px, env(safe-area-inset-top)) 18px 0;
+  }
+  .sidebar-scroll {
+    flex: 1 1 auto;
+    min-height: 0; /* required for a flex child to actually scroll instead of overflowing */
     overflow-y: auto;
+    padding: 14px 18px 0;
+  }
+  .sidebar-footer {
+    flex-shrink: 0;
+    padding: 0 18px max(18px, env(safe-area-inset-bottom));
   }
   .brand-row { display: flex; align-items: center; gap: 9px; margin-bottom: 3px; }
   .theme-toggle {
@@ -96,7 +132,7 @@
     color: var(--ink-soft);
     transition: border-color .15s ease, color .15s ease, transform .1s ease;
   }
-  .theme-toggle:hover { border-color: var(--mustard); color: var(--mustard); }
+  .theme-toggle:hover { border-color: var(--mustard); color: var(--mustard-text); }
   .theme-toggle:active { transform: scale(.92); }
   .brand-mark {
     width: 22px; height: 22px;
@@ -120,7 +156,7 @@
     margin: 0 0 8px; padding: 0 4px;
   }
 
-  .tree { list-style: none; margin: 0; padding: 0; flex: 1; }
+  .tree { list-style: none; margin: 0; padding: 0; }
   .tree ul { list-style: none; margin: 1px 0 3px 10px; padding-left: 13px; border-left: 1px solid var(--line-soft); }
   .tree li { margin: 1px 0; }
 
@@ -177,13 +213,20 @@
     cursor: pointer; text-align: left; font-family: 'Inter', sans-serif;
     transition: border-color .15s ease, color .15s ease;
   }
-  .new-folder-btn:hover { border-color: var(--mustard); color: var(--mustard); }
+  .new-folder-btn:hover { border-color: var(--mustard); color: var(--mustard-text); }
 
   .storage-note {
     font-size: 11px; color: var(--ink-faint);
     border-top: 1px solid var(--line-soft);
     padding-top: 12px; margin-top: 14px; line-height: 1.5;
   }
+
+  .privacy-toggle {
+    display: flex; align-items: flex-start; gap: 8px;
+    margin-top: 10px; font-size: 11px; color: var(--ink-faint);
+    line-height: 1.5; cursor: pointer;
+  }
+  .privacy-toggle input { margin-top: 2px; accent-color: var(--mustard); flex-shrink: 0; cursor: pointer; }
 
   /* ---------- Main ---------- */
   .main { padding: 34px 44px 70px; max-width: 860px; width: 100%; }
@@ -222,8 +265,10 @@
     box-shadow: 0 1px 2px rgba(26,22,14,.04), 0 12px 28px rgba(44,95,111,.12);
   }
   .save-box.success { border-color: var(--sage); }
-  .save-row { display: flex; gap: 10px; }
-  .url-field { position: relative; flex: 1; display: flex; align-items: center; }
+  /* flex-wrap lets Save drop to its own line whenever the row is too narrow
+     to fit both — driven by available space, not a viewport breakpoint */
+  .save-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .url-field { position: relative; flex: 1 1 180px; min-width: 0; display: flex; align-items: center; }
   .url-field-icon {
     position: absolute; left: 13px; font-size: 13px; opacity: .5;
     pointer-events: none;
@@ -260,7 +305,7 @@
   .save-hint { font-size: 12px; color: var(--ink-faint); margin: 0; }
   .save-hint strong { color: var(--ink-soft); font-weight: 600; }
   .note-toggle {
-    background: none; border: none; color: var(--mustard); font-size: 12px;
+    background: none; border: none; color: var(--mustard-text); font-size: 12px;
     cursor: pointer; padding: 2px 0; white-space: nowrap; flex-shrink: 0;
   }
   .note-toggle:hover { text-decoration: underline; }
@@ -339,7 +384,7 @@
     display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     font-weight: 600;
   }
-  .link-title:hover { color: var(--mustard); }
+  .link-title:hover { color: var(--mustard-text); }
   .link-title.is-url { font-weight: 500; color: var(--ink-soft); }
   .link-url-sub {
     font-size: 12px; color: var(--ink-faint); font-family: 'Inter', monospace;
@@ -347,11 +392,15 @@
   }
   .link-meta { display: flex; align-items: center; gap: 8px; margin-top: 7px; }
   .platform-pill {
-    display: inline-flex; align-items: center;
+    display: inline-flex; align-items: center; gap: 4px;
     padding: 2px 8px; border-radius: 999px;
     font-size: 10.5px; font-weight: 600; letter-spacing: .01em;
     text-transform: uppercase; flex-shrink: 0;
+    color: var(--ink-soft); /* always the neutral, AA-safe color — the platform's
+      own hue only tints the background and the dot, never carries the text
+      itself, since some brand colors don't reach 4.5:1 as text in both themes */
   }
+  .platform-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
   .link-date { font-size: 11.5px; color: var(--ink-faint); }
 
   .title-edit-input {
@@ -362,16 +411,136 @@
   }
 
   .link-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
-  .link-edit, .link-del {
+
+  .link-kebab {
     background: none; border: none; color: var(--ink-faint); cursor: pointer;
-    font-size: 12.5px; padding: 6px 9px; border-radius: 6px; flex-shrink: 0;
-    opacity: 0; transform: translateX(2px);
-    transition: opacity .15s ease, color .12s ease, background .12s ease, transform .15s ease;
-    margin-top: 1px;
+    font-size: 17px; padding: 6px 10px; border-radius: 6px; flex-shrink: 0;
+    opacity: 0; transition: opacity .15s ease, color .12s ease, background .12s ease;
+    margin-top: 1px; line-height: 1;
   }
-  .link-item:hover .link-edit, .link-item:hover .link-del { opacity: 1; transform: translateX(0); }
-  .link-edit:hover { color: var(--focus); background: rgba(44,95,111,0.08); }
-  .link-del:hover { color: var(--danger); background: rgba(164,69,58,0.08); }
+  .link-item:hover .link-kebab, .link-kebab:focus-visible { opacity: 1; }
+  .link-kebab:hover, .link-kebab:focus-visible { color: var(--ink); background: var(--paper-sunk); outline: none; }
+
+  .select-checkbox {
+    width: 18px; height: 18px; margin-top: 9px; flex-shrink: 0;
+    accent-color: var(--mustard); cursor: pointer;
+  }
+
+  /* Dropdown menu — used for both the bookmark "⋯" menu and the folder kebab menu */
+  .dropdown-menu {
+    position: fixed; z-index: 80; min-width: 180px;
+    background: var(--paper-raised); border: 1px solid var(--line);
+    border-radius: 10px; padding: 6px; box-shadow: var(--shadow-modal);
+  }
+  .menu-item {
+    display: block; width: 100%; text-align: left; background: none; border: none;
+    padding: 9px 11px; border-radius: 6px; font-size: 13.5px; color: var(--ink);
+    cursor: pointer; font-family: inherit;
+  }
+  .menu-item:hover, .menu-item:focus-visible { background: var(--paper-sunk); outline: none; }
+  .menu-item.danger { color: var(--danger); }
+  .menu-item.danger:hover, .menu-item.danger:focus-visible { background: rgba(164,69,58,0.1); }
+  .menu-sep { height: 1px; background: var(--line-soft); margin: 5px 2px; }
+
+  /* Folder row kebab + drag-and-drop nesting/reorder */
+  .folder-kebab {
+    background: none; border: none; color: var(--ink-faint); cursor: pointer;
+    font-size: 14px; padding: 3px 6px; border-radius: 6px; flex-shrink: 0;
+    opacity: 0; transition: opacity .15s ease, color .12s ease, background .12s ease;
+    margin-left: 2px;
+  }
+  .folder-row:hover .folder-kebab, .folder-kebab:focus-visible { opacity: 1; }
+  .folder-kebab:hover, .folder-kebab:focus-visible { background: rgba(0,0,0,0.08); outline: none; }
+  .folder-row.active .folder-kebab { color: var(--paper-raised); }
+  .folder-row.drop-before { box-shadow: inset 0 2px 0 var(--focus); }
+  .folder-row.drop-after { box-shadow: inset 0 -2px 0 var(--focus); }
+  .folder-row.drop-inside { outline: 2px dashed var(--focus); outline-offset: -2px; }
+
+  /* Select mode + bulk actions */
+  .select-toggle-btn {
+    padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px;
+    font-size: 13px; background: var(--paper-raised); color: var(--ink-soft);
+    cursor: pointer; font-family: inherit; flex: 0 0 auto;
+  }
+  .select-toggle-btn[aria-pressed="true"] { background: var(--ink); color: var(--paper-raised); border-color: var(--ink); }
+  .bulk-bar[hidden] { display: none; }
+  .bulk-bar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    background: var(--ink); color: var(--paper-raised);
+    padding: 10px 14px; border-radius: 10px; margin-bottom: 12px;
+    font-size: 13px;
+  }
+  .bulk-bar span { font-weight: 500; margin-right: auto; }
+  .bulk-bar button {
+    background: rgba(255,255,255,.12); color: var(--paper-raised); border: none;
+    padding: 7px 13px; border-radius: 7px; font-size: 12.5px; cursor: pointer;
+    font-family: inherit; transition: background .12s ease;
+  }
+  .bulk-bar button:hover { background: rgba(255,255,255,.22); }
+  .bulk-bar button.danger { background: var(--danger); }
+  .bulk-bar button.danger:hover { background: #b8564a; }
+
+  .toast-undo {
+    background: none; border: none; color: var(--mustard-dim); font-weight: 600;
+    font-size: 13px; cursor: pointer; padding: 0; margin-left: 4px; font-family: inherit;
+  }
+  .toast-undo:hover { text-decoration: underline; }
+
+  .field-error { color: var(--danger); font-size: 12px; margin: 7px 2px 0; }
+  .field-error[hidden] { display: none; }
+
+  .inline-folder-select {
+    border: 1px solid var(--line); border-radius: 6px; padding: 2px 6px;
+    font: inherit; font-weight: 600; font-size: 12px; color: var(--ink-soft);
+    background: var(--paper); cursor: pointer; max-width: 220px; vertical-align: middle;
+  }
+
+  .global-search-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px; border-radius: 9px; flex-shrink: 0;
+    border: 1px solid var(--line); background: var(--paper-raised);
+    cursor: pointer; font-size: 17px; color: var(--ink-soft);
+    box-shadow: var(--shadow-card);
+    transition: background .12s ease, color .12s ease, border-color .12s ease;
+  }
+  .global-search-btn:hover { border-color: var(--mustard); color: var(--mustard-text); }
+  .global-search-btn[aria-pressed="true"] { background: var(--ink); color: var(--paper-raised); border-color: var(--ink); }
+
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
+  .chip {
+    padding: 5px 12px; border-radius: 999px; font-size: 12px;
+    border: 1px solid var(--line); background: var(--paper-raised);
+    color: var(--ink-soft); cursor: pointer; font-family: inherit;
+    transition: border-color .12s ease, background .12s ease, color .12s ease;
+  }
+  .chip:hover { border-color: var(--mustard); }
+  .chip.active { background: var(--ink); color: var(--paper-raised); border-color: var(--ink); }
+
+  .folder-badge {
+    display: inline-flex; align-items: center;
+    background: var(--paper-sunk); color: var(--ink-soft);
+    border: 1px solid var(--line-soft); padding: 2px 8px; border-radius: 6px;
+    font-size: 10.5px; font-weight: 500; cursor: pointer; font-family: inherit;
+    flex-shrink: 0;
+  }
+  .folder-badge:hover { border-color: var(--mustard); color: var(--mustard-text); }
+
+  .tag-chip {
+    font-size: 10.5px; color: var(--ink-faint); background: var(--paper-sunk);
+    padding: 2px 7px; border-radius: 6px; flex-shrink: 0;
+  }
+
+  .clear-filters-btn {
+    background: none; border: none; color: var(--mustard-text); font-size: 12px;
+    cursor: pointer; padding: 0; font-family: inherit; text-decoration: underline;
+  }
+
+  .dup-preview {
+    display: flex; flex-direction: column; gap: 3px;
+    padding: 12px 14px; background: var(--paper-sunk);
+    border-radius: 8px;
+  }
+  .dup-preview .link-title { white-space: normal; }
 
   /* Empty state */
   .empty {
@@ -423,21 +592,25 @@
     transition: border-color .15s ease;
   }
   .modal input:focus, .modal select:focus { outline: none; border-color: var(--focus); }
+  .modal input[type=file] { padding: 9px 10px; cursor: pointer; }
 
   .color-picker { display: flex; gap: 8px; margin-bottom: 18px; }
   .color-swatch {
     width: 26px; height: 26px; border-radius: 50%; cursor: pointer;
+    padding: 0; font: inherit; /* reset native <button> chrome — it's a real button now, for keyboard access */
     border: 2px solid transparent; transition: transform .1s ease, border-color .12s ease;
   }
   .color-swatch.selected { border-color: var(--ink); transform: scale(1.1); }
 
-  .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 2px; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 2px; flex-wrap: wrap; }
   .btn-ghost {
     background: none; border: 1px solid var(--line); padding: 10px 17px;
     border-radius: 8px; cursor: pointer; font-size: 13.5px; color: var(--ink-soft);
     transition: background .12s ease;
   }
   .btn-ghost:hover { background: var(--paper-sunk); }
+  .btn-ghost.danger { color: var(--danger); border-color: var(--danger); margin-right: auto; }
+  .btn-ghost.danger:hover { background: rgba(164,69,58,0.08); }
   .btn-primary {
     background: var(--ink); color: var(--paper-raised); border: none;
     padding: 10px 17px; border-radius: 8px; cursor: pointer;
@@ -464,11 +637,11 @@
     .sidebar {
       position: fixed !important; inset: 0 10% 0 0 !important; z-index: 20;
       height: 100vh !important;
+      height: 100dvh !important;
       transform: translateX(-100%);
       transition: transform .25s cubic-bezier(.32,.72,0,1);
       box-shadow: 4px 0 32px rgba(0,0,0,.18);
       visibility: hidden;
-      padding-top: max(20px, env(safe-area-inset-top));
     }
     .sidebar.open { transform: translateX(0); visibility: visible; }
     .scrim {
@@ -490,6 +663,23 @@
     .link-item { padding: 12px 6px; gap: 11px; }
     .link-icon { width: 32px; height: 32px; }
     .link-icon img { width: 16px; height: 16px; }
+
+    /* 44x44 minimum touch targets (WCAG 2.5.5) for discrete tap actions.
+       Pills/chips/badges keep a lighter, padding-driven bump instead of a
+       literal 44px box — at that size a tag chip row would balloon and break
+       the compact editorial layout, so they get extra padding hit-area
+       without matching every other button 1:1 (documented trade-off). */
+    .menu-btn, .global-search-btn, .theme-toggle { width: 44px; height: 44px; }
+    .link-kebab, .folder-kebab {
+      min-width: 44px; min-height: 44px;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .select-toggle-btn, .clear-date-btn, .new-folder-btn, .btn-ghost, .btn-primary {
+      min-height: 44px;
+    }
+    .note-toggle { padding: 10px 0; }
+    .color-swatch { width: 40px; height: 40px; }
+    .chip, .folder-badge, .tag-chip { padding: 9px 13px; }
   }
 </style>
 </head>
@@ -499,24 +689,35 @@
 
 <div class="app">
   <aside class="sidebar" id="sidebar">
-    <div class="brand-row">
-      <div class="brand-mark"></div>
-      <p class="brand">Backpocket</p>
-      <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">☾</button>
+    <div class="sidebar-header">
+      <div class="brand-row">
+        <div class="brand-mark"></div>
+        <p class="brand">Backpocket</p>
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">☾</button>
+      </div>
+      <p class="brand-sub">Everything you found and meant to come back to.</p>
     </div>
-    <p class="brand-sub">Everything you found and meant to come back to.</p>
 
-    <p class="tree-label">FOLDERS</p>
-    <ul class="tree" id="tree"></ul>
+    <div class="sidebar-scroll">
+      <p class="tree-label">FOLDERS</p>
+      <ul class="tree" id="tree" role="tree" aria-label="Folders"></ul>
+    </div>
 
-    <button class="new-folder-btn" id="newFolderTopBtn">+ New folder</button>
-
-    <p class="storage-note">Saved only on this device's browser, in local storage. No account, no sync yet.</p>
+    <div class="sidebar-footer">
+      <button class="new-folder-btn" id="newFolderTopBtn">+ New folder</button>
+      <button class="new-folder-btn" id="backupBtn" style="margin-top:6px;">⇅ Backup &amp; import</button>
+      <label class="privacy-toggle">
+        <input type="checkbox" id="faviconPrivacyToggle" />
+        <span>Use local icons only (skip Google favicon lookups)</span>
+      </label>
+      <p class="storage-note">Saved only on this device's browser, in local storage. No account, no sync yet.</p>
+    </div>
   </aside>
 
   <main class="main">
     <div class="topbar">
       <button class="menu-btn" id="menuBtn" aria-label="Open folders">☰</button>
+      <button class="global-search-btn" id="globalSearchBtn" aria-label="Search all folders" aria-pressed="false" title="Search all folders">⌕</button>
       <div style="flex:1">
         <p class="crumb" id="crumb"></p>
         <div class="title-row">
@@ -529,13 +730,15 @@
       <div class="save-row">
         <div class="url-field">
           <span class="url-field-icon">🔗</span>
-          <input type="text" id="urlInput" placeholder="Paste a link here…" />
+          <input type="text" id="urlInput" placeholder="Paste a link here…" aria-describedby="urlError" />
         </div>
         <button id="saveBtn">Save</button>
       </div>
+      <p class="field-error" id="urlError" hidden></p>
       <input type="text" id="noteInput" class="note-input" placeholder="Add a note — what's this for? (optional)" style="display:none" />
+      <input type="text" id="tagsInput" class="note-input" placeholder="Tags — comma separated (optional)" style="display:none" />
       <div class="save-hint-row">
-        <p class="save-hint">Saving into <strong id="targetFolderName">All saves</strong>.</p>
+        <p class="save-hint">Saving into <select id="saveTargetSelect" class="inline-folder-select" aria-label="Folder to save into"></select></p>
         <button type="button" class="note-toggle" id="noteToggle">+ Add a note</button>
       </div>
     </div>
@@ -543,7 +746,7 @@
     <div class="list-toolbar" id="listToolbar">
       <div class="search-field">
         <span class="search-icon">⌕</span>
-        <input type="text" id="searchInput" placeholder="Search title or URL…" />
+        <input type="text" id="searchInput" placeholder="Search everything…" />
       </div>
       <select id="sortSelect">
         <option value="newest">Newest first</option>
@@ -556,35 +759,100 @@
         <input type="date" id="dateEnd" aria-label="To date" />
         <button type="button" class="clear-date-btn" id="clearDateBtn" title="Clear date filter">✕</button>
       </div>
+      <button type="button" class="select-toggle-btn" id="selectToggleBtn" aria-pressed="false">Select</button>
     </div>
-    <p class="result-count" id="resultCount" style="display:none"></p>
+    <div class="chip-row" id="platformChips"></div>
+    <p class="result-count" id="resultCount" style="display:none" aria-live="polite"></p>
+    <div class="bulk-bar" id="bulkBar" hidden>
+      <span id="bulkCount"></span>
+      <button type="button" id="bulkMoveBtn">Move to…</button>
+      <button type="button" id="bulkDeleteBtn" class="danger">Delete</button>
+      <button type="button" id="bulkCancelBtn">Cancel</button>
+    </div>
 
     <ul class="links" id="linksList"></ul>
   </main>
 </div>
 
 <div class="modal-backdrop" id="folderModal">
-  <div class="modal">
-    <h2>New folder</h2>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="folderModalTitle">
+    <h2 id="folderModalTitle">New folder</h2>
     <label for="folderName">Name</label>
     <input type="text" id="folderName" placeholder="e.g. Exercise" />
     <label>Color</label>
     <div class="color-picker" id="colorPicker"></div>
-    <label for="folderParent">Nested under</label>
+    <label for="folderParent" id="folderParentLabel">Nested under</label>
     <select id="folderParent"></select>
     <div class="modal-actions">
+      <button class="btn-ghost danger" id="deleteFolderBtn" hidden>Delete</button>
       <button class="btn-ghost" id="cancelFolderBtn">Cancel</button>
       <button class="btn-primary" id="createFolderBtn">Create</button>
     </div>
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="modal-backdrop" id="moveModal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="moveModalTitle">
+    <h2 id="moveModalTitle">Move</h2>
+    <label for="moveTargetSelect">Destination folder</label>
+    <select id="moveTargetSelect"></select>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="cancelMoveBtn">Cancel</button>
+      <button class="btn-primary" id="confirmMoveBtn">Move</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="duplicateModal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="dupModalTitle">
+    <h2 id="dupModalTitle">Already saved</h2>
+    <p class="save-hint" style="margin-bottom:12px;">This link is already in <strong id="dupFolderName"></strong>.</p>
+    <div class="dup-preview" id="dupPreview"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="dupOpenBtn">Open existing</button>
+      <button class="btn-ghost" id="dupMoveBtn">Move here</button>
+      <button class="btn-primary" id="dupSaveAnywayBtn">Save anyway</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="backupModal">
+  <div class="modal" style="max-width:440px;" role="dialog" aria-modal="true" aria-labelledby="backupModalTitle">
+    <h2 id="backupModalTitle">Backup &amp; import</h2>
+
+    <div id="backupExportSection">
+      <p class="save-hint" style="margin-bottom:10px;">Save a copy of everything, or bring one back in.</p>
+      <div class="modal-actions" style="justify-content:flex-start;flex-wrap:wrap;margin-bottom:18px;">
+        <button class="btn-ghost" id="exportJsonBtn">Download backup (.json)</button>
+        <button class="btn-ghost" id="exportHtmlBtn">Export as bookmarks (.html)</button>
+      </div>
+      <label for="importFileInput">Import a file</label>
+      <input type="file" id="importFileInput" accept=".json,.html,.htm" />
+      <p class="save-hint" style="margin-top:8px;">Accepts a Backpocket .json backup or a browser bookmarks .html export.</p>
+      <p class="field-error" id="importError" hidden></p>
+    </div>
+
+    <div id="backupSummarySection" hidden>
+      <p class="save-hint" id="importSummaryText" style="margin:16px 0;"></p>
+      <div class="modal-actions" style="justify-content:flex-start;flex-wrap:wrap;">
+        <button class="btn-ghost" id="importMergeBtn">Merge</button>
+        <button class="btn-ghost danger" id="importReplaceBtn" style="margin-right:0;">Replace everything</button>
+      </div>
+    </div>
+
+    <div class="modal-actions" style="margin-top:20px;">
+      <button class="btn-ghost" id="closeBackupBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <script>
 (function(){
   const STORAGE_KEY = 'backpocket_data_v1';
   const THEME_KEY = 'backpocket_theme';
+  const PRIVACY_KEY = 'backpocket_local_icons_only';
   const COLORS = ['#a97a35', '#6b7f63', '#2c5f6f', '#a4453a', '#7a5c9e', '#4a5568'];
   const PLATFORM_COLORS = {
     Instagram: '#c1387e', YouTube: '#d1372e', Facebook: '#3266a8',
@@ -609,26 +877,96 @@
   };
   initTheme();
 
-  function uid(){ return Math.random().toString(36).slice(2, 10); }
-
-  function load(){
-    try{
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if(raw){
-        const parsed = JSON.parse(raw);
-        parsed.folders.forEach(f => { if(!f.color) f.color = COLORS[0]; });
-        return parsed;
-      }
-    }catch(e){}
-    return {
-      folders: [ { id: 'root', name: 'All saves', parentId: null, color: '#4a5568' } ],
-      links: []
-    };
+  function uid(){
+    if(window.crypto && typeof window.crypto.randomUUID === 'function') return window.crypto.randomUUID();
+    // Fallback for insecure contexts (plain http/file://) or older browsers, where
+    // crypto.randomUUID isn't available.
+    return 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
   }
 
-  function save(data){ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+  const SCHEMA_VERSION = 1;
+  // Backfills defaults for any field added after v1 shipped, and stamps the
+  // current schema version. Each future bump appends its own migration step
+  // here rather than replacing this one, so older exports keep working.
+  function migrateData(parsed){
+    if(!Array.isArray(parsed.folders)) parsed.folders = [];
+    if(!Array.isArray(parsed.links)) parsed.links = [];
+    if(!parsed.folders.some(f => f.id === 'root')){
+      parsed.folders.unshift({ id: 'root', name: 'All saves', parentId: null, color: '#4a5568' });
+    }
+    parsed.folders.forEach(f => { if(!f.color) f.color = COLORS[0]; });
+    parsed.links.forEach(l => {
+      if(!l.savedAt) l.savedAt = Date.now();
+      if(l.tags === undefined) l.tags = null;
+      if(!l.platform || !l.icon){
+        const p = detectPlatform(l.url || '');
+        if(!l.platform) l.platform = p.label;
+        if(!l.icon) l.icon = p.icon;
+      }
+    });
+    parsed.schemaVersion = SCHEMA_VERSION;
+    return parsed;
+  }
+
+  function freshData(){
+    return migrateData({
+      folders: [ { id: 'root', name: 'All saves', parentId: null, color: '#4a5568' } ],
+      links: []
+    });
+  }
+
+  let storageWarning = null;
+
+  function load(){
+    let raw = null;
+    try{
+      raw = localStorage.getItem(STORAGE_KEY);
+    }catch(e){
+      storageWarning = "Browser storage is unavailable (private browsing?) — changes won't be saved this session.";
+      return freshData();
+    }
+    if(!raw) return freshData();
+    try{
+      const parsed = JSON.parse(raw);
+      if(!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.folders) || !Array.isArray(parsed.links)){
+        throw new Error('unexpected shape');
+      }
+      return migrateData(parsed);
+    }catch(e){
+      try{ localStorage.setItem(STORAGE_KEY + '_corrupt_' + Date.now(), raw); }catch(e2){}
+      storageWarning = 'Your saved data looked corrupted, so we started fresh and kept a backup copy in storage. Use Import if you have an exported backup.';
+      return freshData();
+    }
+  }
+
+  function storageErrorMessage(e){
+    if(e && (e.name === 'QuotaExceededError' || e.code === 22 || e.code === 1014)){
+      return "storage is full — try exporting a backup (Backup & import) and removing some old links.";
+    }
+    return 'browser storage is unavailable right now.';
+  }
+
+  function save(data){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      return true;
+    }catch(e){
+      showToast("Couldn't save — " + storageErrorMessage(e), false);
+      return false;
+    }
+  }
+
+  const treeEl = document.getElementById('tree');
+  const linksListEl = document.getElementById('linksList');
+  const folderTitleEl = document.getElementById('folderTitle');
+  const crumbEl = document.getElementById('crumb');
+  const urlInput = document.getElementById('urlInput');
+  const urlErrorEl = document.getElementById('urlError');
+  const toastEl = document.getElementById('toast');
 
   let data = load();
+  save(data); // persist migration/repair immediately so a corrupt or stale
+              // entry doesn't keep re-triggering on every subsequent load
   let currentFolderId = 'root';
   let expanded = new Set(['root']);
   let selectedColor = COLORS[0];
@@ -636,18 +974,42 @@
   let searchQuery = '';
   let dateStartVal = '';
   let dateEndVal = '';
-
-  const treeEl = document.getElementById('tree');
-  const linksListEl = document.getElementById('linksList');
-  const folderTitleEl = document.getElementById('folderTitle');
-  const crumbEl = document.getElementById('crumb');
-  const targetFolderNameEl = document.getElementById('targetFolderName');
-  const urlInput = document.getElementById('urlInput');
-  const toastEl = document.getElementById('toast');
+  let selectMode = false;
+  let selectedIds = new Set();
+  let editingFolderId = null;
+  let draggedFolderId = null;
+  let undoStash = null;
+  let moveContext = null;
+  let toastTimer = null;
+  let searchEverywhere = false;
+  let platformFilter = null;
+  let saveTargetFolderId = currentFolderId;
+  let pendingSave = null;
+  let pendingImport = null;
+  let localIconsOnly = false;
+  try{ localIconsOnly = localStorage.getItem(PRIVACY_KEY) === 'true'; }catch(e){}
 
   function childrenOf(id){ return data.folders.filter(f => f.parentId === id); }
   function folderById(id){ return data.folders.find(f => f.id === id); }
   function linkCount(folderId){ return data.links.filter(l => l.folderId === folderId).length; }
+  function recursiveLinkCount(folderId){
+    let count = linkCount(folderId);
+    childrenOf(folderId).forEach(child => { count += recursiveLinkCount(child.id); });
+    return count;
+  }
+  function allDescendantIds(folderId){
+    const ids = [];
+    childrenOf(folderId).forEach(child => { ids.push(child.id); ids.push(...allDescendantIds(child.id)); });
+    return ids;
+  }
+  function isDescendantOf(candidateId, ancestorId){
+    let f = folderById(candidateId);
+    while(f && f.parentId){
+      if(f.parentId === ancestorId) return true;
+      f = folderById(f.parentId);
+    }
+    return false;
+  }
   function pathOf(id){
     const path = [];
     let f = folderById(id);
@@ -655,10 +1017,137 @@
     return path;
   }
 
-  function showToast(msg, ok){
-    toastEl.innerHTML = (ok ? '<span class="check">✓</span>' : '') + '<span>' + msg + '</span>';
+  function matchesQuery(link, folder, q){
+    if(!q) return true;
+    if(link.note && link.note.toLowerCase().includes(q)) return true;
+    if(link.url.toLowerCase().includes(q)) return true;
+    if(folder && folder.name.toLowerCase().includes(q)) return true;
+    if(link.platform.toLowerCase().includes(q)) return true;
+    if(link.tags && link.tags.some(t => t.includes(q))) return true;
+    return false;
+  }
+
+  // Best-effort URL validation using the platform's own parser — accepts bare
+  // domains (prepends https://) but rejects obvious non-URLs like plain text.
+  function normalizeUrlInput(raw){
+    const v = raw.trim();
+    if(!v) return { error: 'Paste a link first.' };
+    let candidate = v;
+    if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(candidate)) candidate = 'https://' + candidate;
+    try{
+      const u = new URL(candidate);
+      if(!u.hostname || !u.hostname.includes('.')) return { error: "That doesn't look like a valid URL." };
+      return { url: u.href };
+    }catch(e){
+      return { error: "That doesn't look like a valid URL." };
+    }
+  }
+
+  function normalizeForCompare(url){
+    try{
+      const u = new URL(url);
+      return u.hostname.toLowerCase().replace(/^www\./, '') + u.pathname.replace(/\/$/, '') + u.search;
+    }catch(e){
+      return url.trim().toLowerCase();
+    }
+  }
+
+  function parseTags(raw){
+    return raw.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+  }
+
+  function hideToast(){ toastEl.classList.remove('show'); }
+  function showToast(msg, ok, undoFn){
+    toastEl.replaceChildren();
+    if(ok){
+      const check = document.createElement('span');
+      check.className = 'check';
+      check.textContent = '✓';
+      toastEl.appendChild(check);
+    }
+    const text = document.createElement('span');
+    text.textContent = msg;
+    toastEl.appendChild(text);
+    if(undoFn){
+      const undoBtn = document.createElement('button');
+      undoBtn.type = 'button';
+      undoBtn.className = 'toast-undo';
+      undoBtn.textContent = 'Undo';
+      undoBtn.onclick = () => { undoFn(); hideToast(); };
+      toastEl.appendChild(undoBtn);
+    }
     toastEl.classList.add('show');
-    setTimeout(()=> toastEl.classList.remove('show'), 1900);
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(hideToast, undoFn ? 5000 : 1900);
+  }
+
+  // ---- Generic popover menu (bookmark "⋯" menu + folder kebab menu) ----
+  let openMenuEl = null;
+  let openMenuCloser = null;
+  function closeMenu(){
+    if(openMenuEl){ openMenuEl.remove(); openMenuEl = null; }
+    if(openMenuCloser){
+      document.removeEventListener('click', openMenuCloser, true);
+      document.removeEventListener('keydown', openMenuCloser, true);
+      openMenuCloser = null;
+    }
+  }
+  function openMenu(anchor, items){
+    closeMenu();
+    const menu = document.createElement('div');
+    menu.className = 'dropdown-menu';
+    menu.setAttribute('role', 'menu');
+    items.forEach(item => {
+      if(item.separator){
+        const sep = document.createElement('div');
+        sep.className = 'menu-sep';
+        menu.appendChild(sep);
+        return;
+      }
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'menu-item' + (item.danger ? ' danger' : '');
+      btn.setAttribute('role', 'menuitem');
+      btn.textContent = item.label;
+      btn.onclick = (e) => { e.stopPropagation(); closeMenu(); item.onClick(); };
+      menu.appendChild(btn);
+    });
+    document.body.appendChild(menu);
+    const r = anchor.getBoundingClientRect();
+    let left = r.right - menu.offsetWidth;
+    if(left < 8) left = 8;
+    let top = r.bottom + 4;
+    if(top + menu.offsetHeight > window.innerHeight - 8) top = r.top - menu.offsetHeight - 4;
+    menu.style.left = left + 'px';
+    menu.style.top = top + 'px';
+    openMenuEl = menu;
+    const closer = (e) => {
+      if(e.type === 'keydown'){
+        if(e.key === 'Escape'){ closeMenu(); anchor.focus(); }
+        return;
+      }
+      if(!menu.contains(e.target) && e.target !== anchor) closeMenu();
+    };
+    openMenuCloser = closer;
+    setTimeout(() => {
+      document.addEventListener('click', closer, true);
+      document.addEventListener('keydown', closer, true);
+    }, 0);
+
+    // Arrow-key cycling between items, per the APG menu pattern. Tab closes
+    // the menu instead of tabbing into it, since menus aren't a tab stop.
+    menu.addEventListener('keydown', (e) => {
+      const menuItems = Array.from(menu.querySelectorAll('.menu-item'));
+      const i = menuItems.indexOf(document.activeElement);
+      if(e.key === 'ArrowDown'){ e.preventDefault(); (menuItems[i + 1] || menuItems[0]).focus(); }
+      else if(e.key === 'ArrowUp'){ e.preventDefault(); (menuItems[i - 1] || menuItems[menuItems.length - 1]).focus(); }
+      else if(e.key === 'Home'){ e.preventDefault(); menuItems[0].focus(); }
+      else if(e.key === 'End'){ e.preventDefault(); menuItems[menuItems.length - 1].focus(); }
+      else if(e.key === 'Tab'){ closeMenu(); }
+    });
+
+    const first = menu.querySelector('.menu-item');
+    if(first) first.focus();
   }
 
   function detectPlatform(url){
@@ -678,9 +1167,68 @@
 
   function buildLevel(parentId){
     const ul = document.createElement('ul');
+    ul.setAttribute('role', 'group');
     ul.style.margin = '0'; ul.style.padding = '0'; ul.style.borderLeft = 'none'; ul.style.listStyle = 'none';
     childrenOf(parentId).forEach(folder => ul.appendChild(buildFolderLi(folder)));
     return ul;
+  }
+
+  // ---- Folder-tree keyboard navigation (ARIA treeview pattern, roving tabindex) ----
+  function getVisibleTreeItems(){
+    return Array.from(treeEl.querySelectorAll('[role="treeitem"]'));
+  }
+  function focusTreeItem(el){
+    getVisibleTreeItems().forEach(it => { it.tabIndex = -1; });
+    el.tabIndex = 0;
+    el.focus();
+  }
+  function focusTreeItemById(id){
+    const el = treeEl.querySelector('[data-folder-id="' + CSS.escape(id) + '"]');
+    if(el) focusTreeItem(el);
+  }
+  function handleTreeKeydown(e, folder, li, hasKids){
+    // Tree items nest (a folder's <li> contains its children's <li>s), so a
+    // keydown on a deeply-focused item bubbles up through every ancestor
+    // treeitem's own listener too. Without stopping it, each ancestor's
+    // handler would *also* run for the same keypress, each recomputing its
+    // own idx and clobbering the focus change the actual target just made.
+    e.stopPropagation();
+    const items = getVisibleTreeItems();
+    const idx = items.indexOf(li);
+    if(e.key === 'ArrowDown'){
+      e.preventDefault();
+      if(items[idx + 1]) focusTreeItem(items[idx + 1]);
+    } else if(e.key === 'ArrowUp'){
+      e.preventDefault();
+      if(items[idx - 1]) focusTreeItem(items[idx - 1]);
+    } else if(e.key === 'ArrowRight'){
+      e.preventDefault();
+      if(hasKids && !expanded.has(folder.id)){
+        expanded.add(folder.id);
+        renderTree();
+        focusTreeItemById(folder.id);
+      } else if(hasKids && items[idx + 1]){
+        focusTreeItem(items[idx + 1]);
+      }
+    } else if(e.key === 'ArrowLeft'){
+      e.preventDefault();
+      if(hasKids && expanded.has(folder.id)){
+        expanded.delete(folder.id);
+        renderTree();
+        focusTreeItemById(folder.id);
+      } else if(folder.parentId){
+        focusTreeItemById(folder.parentId);
+      }
+    } else if(e.key === 'Home'){
+      e.preventDefault();
+      if(items[0]) focusTreeItem(items[0]);
+    } else if(e.key === 'End'){
+      e.preventDefault();
+      if(items[items.length - 1]) focusTreeItem(items[items.length - 1]);
+    } else if(e.key === 'Enter' || e.key === ' '){
+      e.preventDefault();
+      li.querySelector('.folder-row').click();
+    }
   }
 
   function buildFolderLi(folder){
@@ -688,6 +1236,14 @@
     const kids = childrenOf(folder.id);
     const hasKids = kids.length > 0;
     const isOpen = expanded.has(folder.id);
+    const isActive = folder.id === currentFolderId;
+
+    li.setAttribute('role', 'treeitem');
+    li.setAttribute('aria-selected', String(isActive));
+    if(hasKids) li.setAttribute('aria-expanded', String(isOpen));
+    li.setAttribute('data-folder-id', folder.id);
+    li.tabIndex = isActive ? 0 : -1;
+    li.addEventListener('keydown', (e) => handleTreeKeydown(e, folder, li, hasKids));
 
     const row = document.createElement('div');
     row.className = 'folder-row' + (folder.id === currentFolderId ? ' active' : '');
@@ -711,23 +1267,325 @@
 
     const count = document.createElement('span');
     count.className = 'count';
-    count.textContent = linkCount(folder.id) || '';
+    count.textContent = recursiveLinkCount(folder.id) || '';
+
+    const kebab = document.createElement('button');
+    kebab.type = 'button';
+    kebab.className = 'folder-kebab';
+    kebab.textContent = '⋯';
+    kebab.setAttribute('aria-label', 'Folder actions for ' + folder.name);
+    kebab.onclick = (e) => {
+      e.stopPropagation();
+      const siblings = childrenOf(folder.parentId);
+      const idx = siblings.indexOf(folder);
+      const items = [{ label: 'Edit folder', onClick: () => openFolderModal(folder.id) }];
+      if(idx > 0) items.push({ label: 'Move up', onClick: () => moveFolderUpDown(folder.id, -1) });
+      if(idx < siblings.length - 1) items.push({ label: 'Move down', onClick: () => moveFolderUpDown(folder.id, 1) });
+      if(folder.id !== 'root'){
+        items.push({ label: 'Move to…', onClick: () => openMoveModal({ type: 'folder', ids: [folder.id] }) });
+        items.push({ separator: true });
+        items.push({ label: 'Delete folder', danger: true, onClick: () => confirmDeleteFolder(folder.id) });
+      }
+      openMenu(kebab, items);
+    };
 
     row.appendChild(caret);
     row.appendChild(icon);
     row.appendChild(name);
     row.appendChild(count);
+    row.appendChild(kebab);
     row.onclick = () => {
       currentFolderId = folder.id;
+      saveTargetFolderId = folder.id;
       if(hasKids) expanded.add(folder.id);
-      searchQuery = ''; dateStartVal = ''; dateEndVal = '';
+      searchEverywhere = false;
+      searchQuery = ''; dateStartVal = ''; dateEndVal = ''; platformFilter = null;
       renderAll();
       closeSidebarMobile();
     };
 
+    // Drag-and-drop nesting/reorder. Root can't be dragged (it's the permanent
+    // top-level container) but can still be a drop target.
+    row.draggable = folder.id !== 'root';
+    row.addEventListener('dragstart', (e) => {
+      e.stopPropagation();
+      draggedFolderId = folder.id;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', folder.id);
+    });
+    row.addEventListener('dragend', () => { draggedFolderId = null; });
+    row.addEventListener('dragover', (e) => {
+      if(!draggedFolderId || draggedFolderId === folder.id) return;
+      if(isDescendantOf(folder.id, draggedFolderId)) return; // would create a cycle
+      e.preventDefault();
+      const rect = row.getBoundingClientRect();
+      const relY = (e.clientY - rect.top) / rect.height;
+      row.classList.remove('drop-before', 'drop-after', 'drop-inside');
+      row.classList.add(relY < 0.25 ? 'drop-before' : relY > 0.75 ? 'drop-after' : 'drop-inside');
+    });
+    row.addEventListener('dragleave', () => {
+      row.classList.remove('drop-before', 'drop-after', 'drop-inside');
+    });
+    row.addEventListener('drop', (e) => {
+      e.preventDefault();
+      row.classList.remove('drop-before', 'drop-after', 'drop-inside');
+      if(!draggedFolderId || draggedFolderId === folder.id) return;
+      if(isDescendantOf(folder.id, draggedFolderId)){ draggedFolderId = null; return; }
+      const rect = row.getBoundingClientRect();
+      const relY = (e.clientY - rect.top) / rect.height;
+      const dragged = folderById(draggedFolderId);
+      if(relY >= 0.25 && relY <= 0.75){
+        dragged.parentId = folder.id;
+        expanded.add(folder.id);
+      } else {
+        reorderFolderPosition(dragged, folder, relY < 0.25 ? 'before' : 'after');
+      }
+      save(data);
+      draggedFolderId = null;
+      renderAll();
+    });
+
     li.appendChild(row);
     if(hasKids && isOpen) li.appendChild(buildLevel(folder.id));
     return li;
+  }
+
+  function reorderFolderPosition(dragged, target, where){
+    dragged.parentId = target.parentId;
+    const arr = data.folders;
+    arr.splice(arr.indexOf(dragged), 1);
+    let insertAt = arr.indexOf(target);
+    if(where === 'after') insertAt += 1;
+    arr.splice(insertAt, 0, dragged);
+  }
+
+  function moveFolderUpDown(folderId, dir){
+    const folder = folderById(folderId);
+    const siblings = childrenOf(folder.parentId);
+    const idx = siblings.indexOf(folder);
+    const swapIdx = idx + dir;
+    if(swapIdx < 0 || swapIdx >= siblings.length) return;
+    const other = siblings[swapIdx];
+    const arr = data.folders;
+    const iA = arr.indexOf(folder), iB = arr.indexOf(other);
+    arr[iA] = other; arr[iB] = folder;
+    save(data);
+    renderTree();
+  }
+
+  function deleteFolderRecursive(folderId){
+    const ids = [folderId, ...allDescendantIds(folderId)];
+    data.folders = data.folders.filter(f => !ids.includes(f.id));
+    data.links = data.links.filter(l => !ids.includes(l.folderId));
+    if(ids.includes(currentFolderId)) currentFolderId = 'root';
+    if(ids.includes(saveTargetFolderId)) saveTargetFolderId = 'root';
+    expanded.delete(folderId);
+  }
+
+  function confirmDeleteFolder(folderId){
+    if(folderId === 'root') return;
+    const folder = folderById(folderId);
+    const totalLinks = recursiveLinkCount(folderId);
+    const totalFolders = allDescendantIds(folderId).length;
+    if(totalLinks > 0 || totalFolders > 0){
+      const parts = [];
+      if(totalLinks > 0) parts.push(totalLinks + (totalLinks === 1 ? ' link' : ' links'));
+      if(totalFolders > 0) parts.push(totalFolders + (totalFolders === 1 ? ' subfolder' : ' subfolders'));
+      const ok = confirm('Delete "' + folder.name + '" and everything inside it (' + parts.join(' and ') + ')? This can\'t be undone.');
+      if(!ok) return;
+    }
+    deleteFolderRecursive(folderId);
+    save(data);
+    renderAll();
+    showToast('Deleted "' + folder.name + '"', true);
+  }
+
+  function setCrumb(path){
+    crumbEl.replaceChildren();
+    if(path.length <= 1) return;
+    path.forEach((f, i) => {
+      if(i > 0){
+        const sep = document.createElement('span');
+        sep.textContent = '›';
+        crumbEl.appendChild(sep);
+      }
+      crumbEl.appendChild(document.createTextNode(f.name));
+    });
+  }
+
+  function buildLinkRow(link, opts){
+    opts = opts || {};
+    const li = document.createElement('li');
+    li.className = 'link-item';
+    li.tabIndex = 0;
+    li.setAttribute('role', 'link');
+    li.setAttribute('aria-label', 'Open ' + (link.note || link.url));
+
+    const openLink = () => window.open(link.url, '_blank', 'noopener,noreferrer');
+
+    let cb = null;
+    if(selectMode){
+      cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.className = 'select-checkbox';
+      cb.checked = selectedIds.has(link.id);
+      cb.setAttribute('aria-label', 'Select ' + (link.note || link.url));
+      cb.onchange = () => {
+        if(cb.checked) selectedIds.add(link.id); else selectedIds.delete(link.id);
+        updateBulkBar();
+      };
+      li.appendChild(cb);
+    }
+
+    li.addEventListener('click', (e) => {
+      if(e.target.closest('a, button, input')) return;
+      if(selectMode && cb){ cb.checked = !cb.checked; cb.dispatchEvent(new Event('change')); return; }
+      openLink();
+    });
+    li.addEventListener('keydown', (e) => {
+      if(e.target !== li) return;
+      if(e.key === 'Enter' || e.key === ' '){
+        e.preventDefault();
+        if(selectMode && cb){ cb.checked = !cb.checked; cb.dispatchEvent(new Event('change')); return; }
+        openLink();
+      }
+    });
+
+    const icon = document.createElement('div');
+    icon.className = 'link-icon';
+    if(localIconsOnly){
+      // Privacy mode: never contact Google's favicon service (which would
+      // otherwise leak every saved domain to Google) — show the locally
+      // detected platform glyph instead.
+      icon.textContent = link.icon || '🔗';
+    } else {
+      const favicon = document.createElement('img');
+      favicon.src = 'https://www.google.com/s2/favicons?sz=64&domain_url=' + encodeURIComponent(link.url);
+      favicon.alt = '';
+      favicon.loading = 'lazy';
+      favicon.onerror = () => { icon.textContent = link.icon || '🔗'; };
+      icon.appendChild(favicon);
+    }
+
+    const main = document.createElement('div');
+    main.className = 'link-main';
+    renderLinkMain(main, link);
+
+    const meta = document.createElement('div');
+    meta.className = 'link-meta';
+
+    if(opts.showFolder){
+      const linkFolder = folderById(link.folderId);
+      if(linkFolder){
+        const badge = document.createElement('button');
+        badge.type = 'button';
+        badge.className = 'folder-badge';
+        badge.textContent = linkFolder.name;
+        badge.title = 'Go to ' + linkFolder.name;
+        badge.onclick = (e) => {
+          e.stopPropagation();
+          currentFolderId = linkFolder.id;
+          saveTargetFolderId = linkFolder.id;
+          searchEverywhere = false;
+          searchQuery = ''; dateStartVal = ''; dateEndVal = ''; platformFilter = null;
+          expanded.add(linkFolder.id);
+          renderAll();
+        };
+        meta.appendChild(badge);
+      }
+    }
+
+    const pill = document.createElement('span');
+    pill.className = 'platform-pill';
+    pill.style.background = platformColor(link.platform) + '22';
+    const pillDot = document.createElement('span');
+    pillDot.className = 'platform-dot';
+    pillDot.style.background = platformColor(link.platform);
+    pill.appendChild(pillDot);
+    pill.appendChild(document.createTextNode(link.platform));
+    meta.appendChild(pill);
+
+    if(link.tags && link.tags.length){
+      link.tags.forEach(t => {
+        const chip = document.createElement('span');
+        chip.className = 'tag-chip';
+        chip.textContent = '#' + t;
+        meta.appendChild(chip);
+      });
+    }
+
+    const d = new Date(link.savedAt);
+    const dateEl = document.createElement('span');
+    dateEl.className = 'link-date';
+    dateEl.textContent = 'Saved ' + d.toLocaleDateString(undefined, {month:'short', day:'numeric', year: d.getFullYear() === new Date().getFullYear() ? undefined : 'numeric'});
+    meta.appendChild(dateEl);
+    main.appendChild(meta);
+
+    const actions = document.createElement('div');
+    actions.className = 'link-actions';
+
+    const kebab = document.createElement('button');
+    kebab.type = 'button';
+    kebab.className = 'link-kebab';
+    kebab.textContent = '⋯';
+    kebab.title = 'More actions';
+    kebab.setAttribute('aria-label', 'More actions for ' + (link.note || link.url));
+    kebab.onclick = (e) => {
+      e.stopPropagation();
+      openMenu(kebab, [
+        { label: 'Open', onClick: openLink },
+        { label: 'Edit title / note', onClick: () => startEditTitle(link, main) },
+        { label: 'Copy link', onClick: () => copyLinkUrl(link) },
+        { label: 'Move to…', onClick: () => openMoveModal({ type: 'link', ids: [link.id] }) },
+        { separator: true },
+        { label: 'Delete', danger: true, onClick: () => deleteLinks([link.id]) },
+      ]);
+    };
+    actions.appendChild(kebab);
+
+    li.appendChild(icon);
+    li.appendChild(main);
+    li.appendChild(actions);
+    return li;
+  }
+
+  function renderPlatformChips(){
+    const el = document.getElementById('platformChips');
+    el.replaceChildren();
+    const all = document.createElement('button');
+    all.type = 'button';
+    all.className = 'chip' + (platformFilter ? '' : ' active');
+    all.textContent = 'All platforms';
+    all.onclick = () => { platformFilter = null; renderMain(); };
+    el.appendChild(all);
+    Object.keys(PLATFORM_COLORS).forEach(p => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      const active = platformFilter === p;
+      chip.className = 'chip' + (active ? ' active' : '');
+      chip.textContent = p;
+      if(active){
+        // Tint + colored border carry the platform's identity; text stays the
+        // theme's neutral --ink so it's never the (sometimes AA-failing) brand hue.
+        chip.style.background = platformColor(p) + '22';
+        chip.style.borderColor = platformColor(p);
+        chip.style.color = 'var(--ink)';
+      }
+      chip.onclick = () => { platformFilter = (platformFilter === p) ? null : p; renderMain(); };
+      el.appendChild(chip);
+    });
+  }
+
+  function buildClearFiltersBtn(className){
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = className;
+    btn.textContent = 'Clear filters';
+    btn.onclick = () => {
+      searchQuery = ''; dateStartVal = ''; dateEndVal = ''; platformFilter = null;
+      renderMain();
+    };
+    return btn;
   }
 
   function renderMain(){
@@ -735,27 +1593,41 @@
     document.getElementById('sortSelect').value = sortMode;
     document.getElementById('dateStart').value = dateStartVal;
     document.getElementById('dateEnd').value = dateEndVal;
+    const selectBtn = document.getElementById('selectToggleBtn');
+    selectBtn.textContent = selectMode ? 'Done selecting' : 'Select';
+    selectBtn.setAttribute('aria-pressed', String(selectMode));
+    document.getElementById('globalSearchBtn').setAttribute('aria-pressed', String(searchEverywhere));
 
     const folder = folderById(currentFolderId);
-    const path = pathOf(currentFolderId);
-    crumbEl.innerHTML = path.length > 1 ? path.map(f => f.name).join(' <span>›</span> ') : '';
-    folderTitleEl.innerHTML = '';
-    const dot = document.createElement('span');
-    dot.className = 'dot';
-    dot.style.background = folder.color || COLORS[0];
-    folderTitleEl.appendChild(dot);
-    folderTitleEl.appendChild(document.createTextNode(folder.name));
-    targetFolderNameEl.textContent = folder.name;
+    if(searchEverywhere){
+      crumbEl.replaceChildren();
+      folderTitleEl.innerHTML = '';
+      folderTitleEl.appendChild(document.createTextNode('All bookmarks'));
+    } else {
+      setCrumb(pathOf(currentFolderId));
+      folderTitleEl.innerHTML = '';
+      const dot = document.createElement('span');
+      dot.className = 'dot';
+      dot.style.background = folder.color || COLORS[0];
+      folderTitleEl.appendChild(dot);
+      folderTitleEl.appendChild(document.createTextNode(folder.name));
+    }
 
-    const allInFolder = data.links.filter(l => l.folderId === currentFolderId);
+    const sourceLinks = searchEverywhere ? data.links.slice() : data.links.filter(l => l.folderId === currentFolderId);
     linksListEl.innerHTML = '';
 
-    if(allInFolder.length === 0){
+    if(sourceLinks.length === 0){
       document.getElementById('listToolbar').style.display = 'none';
+      document.getElementById('platformChips').style.display = 'none';
       document.getElementById('resultCount').style.display = 'none';
+      document.getElementById('bulkBar').hidden = true;
       const empty = document.createElement('div');
       empty.className = 'empty';
-      empty.innerHTML = `
+      empty.innerHTML = searchEverywhere ? `
+        <div class="empty-glyph"></div>
+        <p class="empty-title">Nothing saved yet</p>
+        <p>Save your first link and it'll show up here, searchable across every folder.</p>
+      ` : `
         <div class="empty-glyph"></div>
         <p class="empty-title">Nothing saved here yet</p>
         <p>Paste a link above, or share one in from Instagram, YouTube, or Facebook. It'll sit here until you're ready for it.</p>
@@ -764,10 +1636,13 @@
       return;
     }
     document.getElementById('listToolbar').style.display = '';
+    document.getElementById('platformChips').style.display = '';
+    renderPlatformChips();
 
-    let links = allInFolder.slice();
+    let links = sourceLinks.slice();
     const q = searchQuery.trim().toLowerCase();
-    if(q) links = links.filter(l => (l.note && l.note.toLowerCase().includes(q)) || l.url.toLowerCase().includes(q));
+    if(q) links = links.filter(l => matchesQuery(l, folderById(l.folderId), q));
+    if(platformFilter) links = links.filter(l => l.platform === platformFilter);
     if(dateStartVal){
       const startTs = new Date(dateStartVal + 'T00:00:00').getTime();
       links = links.filter(l => l.savedAt >= startTs);
@@ -780,10 +1655,13 @@
     else if(sortMode === 'platform') links.sort((a,b) => a.platform.localeCompare(b.platform) || b.savedAt - a.savedAt);
     else links.sort((a,b) => b.savedAt - a.savedAt);
 
+    const filtersActive = !!(q || dateStartVal || dateEndVal || platformFilter);
     const resultCountEl = document.getElementById('resultCount');
-    if(q || dateStartVal || dateEndVal){
+    resultCountEl.replaceChildren();
+    if(filtersActive){
       resultCountEl.style.display = '';
-      resultCountEl.textContent = links.length + (links.length === 1 ? ' result' : ' results');
+      resultCountEl.appendChild(document.createTextNode(links.length + (links.length === 1 ? ' result · ' : ' results · ')));
+      resultCountEl.appendChild(buildClearFiltersBtn('clear-filters-btn'));
     } else {
       resultCountEl.style.display = 'none';
     }
@@ -791,88 +1669,86 @@
     if(links.length === 0){
       const empty = document.createElement('div');
       empty.className = 'empty';
-      empty.innerHTML = `
-        <div class="empty-glyph"></div>
-        <p class="empty-title">No matches</p>
-        <p>Nothing here fits the current search or date range. Try clearing a filter.</p>
-      `;
+      const glyph = document.createElement('div');
+      glyph.className = 'empty-glyph';
+      const title = document.createElement('p');
+      title.className = 'empty-title';
+      title.textContent = 'No matches';
+      const p = document.createElement('p');
+      p.textContent = 'Nothing fits the current filters.';
+      empty.appendChild(glyph);
+      empty.appendChild(title);
+      empty.appendChild(p);
+      const clearBtn = buildClearFiltersBtn('btn-ghost');
+      clearBtn.style.marginTop = '14px';
+      empty.appendChild(clearBtn);
       linksListEl.appendChild(empty);
       return;
     }
 
     links.forEach((link, i) => {
-      const li = document.createElement('li');
-      li.className = 'link-item';
-      li.style.animationDelay = (i * 0.02) + 's';
-      li.tabIndex = 0;
-      li.setAttribute('role', 'link');
-      li.setAttribute('aria-label', 'Open ' + (link.note || link.url));
-
-      const openLink = () => window.open(link.url, '_blank', 'noopener,noreferrer');
-      li.addEventListener('click', (e) => {
-        if(e.target.closest('a, button, input')) return;
-        openLink();
-      });
-      li.addEventListener('keydown', (e) => {
-        if(e.target !== li) return;
-        if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); openLink(); }
-      });
-
-      const icon = document.createElement('div');
-      icon.className = 'link-icon';
-      const favicon = document.createElement('img');
-      favicon.src = 'https://www.google.com/s2/favicons?sz=64&domain_url=' + encodeURIComponent(link.url);
-      favicon.alt = '';
-      favicon.loading = 'lazy';
-      favicon.onerror = () => { icon.textContent = link.icon || '🔗'; };
-      icon.appendChild(favicon);
-
-      const main = document.createElement('div');
-      main.className = 'link-main';
-      renderLinkMain(main, link);
-
-      const meta = document.createElement('div');
-      meta.className = 'link-meta';
-      const d = new Date(link.savedAt);
-      const pill = document.createElement('span');
-      pill.className = 'platform-pill';
-      pill.textContent = link.platform;
-      pill.style.background = platformColor(link.platform) + '22';
-      pill.style.color = platformColor(link.platform);
-      const dateEl = document.createElement('span');
-      dateEl.className = 'link-date';
-      dateEl.textContent = 'Saved ' + d.toLocaleDateString(undefined, {month:'short', day:'numeric', year: d.getFullYear() === new Date().getFullYear() ? undefined : 'numeric'});
-      meta.appendChild(pill);
-      meta.appendChild(dateEl);
-      main.appendChild(meta);
-
-      const actions = document.createElement('div');
-      actions.className = 'link-actions';
-
-      const edit = document.createElement('button');
-      edit.className = 'link-edit';
-      edit.textContent = '✎';
-      edit.title = 'Edit title';
-      edit.setAttribute('aria-label', 'Edit title');
-      edit.onclick = () => startEditTitle(link, main);
-
-      const del = document.createElement('button');
-      del.className = 'link-del';
-      del.textContent = 'Remove';
-      del.onclick = () => {
-        data.links = data.links.filter(l => l.id !== link.id);
-        save(data);
-        renderAll();
-      };
-
-      actions.appendChild(edit);
-      actions.appendChild(del);
-
-      li.appendChild(icon);
-      li.appendChild(main);
-      li.appendChild(actions);
-      linksListEl.appendChild(li);
+      const row = buildLinkRow(link, { showFolder: searchEverywhere });
+      row.style.animationDelay = (i * 0.02) + 's';
+      linksListEl.appendChild(row);
     });
+
+    updateBulkBar();
+  }
+
+  function copyLinkUrl(link){
+    const done = () => showToast('Link copied', true);
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(link.url).then(done).catch(() => fallbackCopy(link.url, done));
+    } else {
+      fallbackCopy(link.url, done);
+    }
+  }
+  function fallbackCopy(text, done){
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try{ document.execCommand('copy'); done(); }
+    catch(e){ showToast('Copy failed', false); }
+    ta.remove();
+  }
+
+  function deleteLinks(ids){
+    const removed = data.links.filter(l => ids.includes(l.id));
+    if(removed.length === 0) return;
+    data.links = data.links.filter(l => !ids.includes(l.id));
+    undoStash = removed;
+    save(data);
+    exitSelectMode();
+    renderAll();
+    const label = removed.length === 1 ? 'Deleted 1 link' : 'Deleted ' + removed.length + ' links';
+    showToast(label, true, () => {
+      data.links.push(...removed);
+      undoStash = null;
+      save(data);
+      renderAll();
+    });
+  }
+
+  function toggleSelectMode(){
+    selectMode = !selectMode;
+    selectedIds.clear();
+    renderMain();
+  }
+  function exitSelectMode(){
+    selectMode = false;
+    selectedIds.clear();
+  }
+  function updateBulkBar(){
+    const bar = document.getElementById('bulkBar');
+    if(selectMode && selectedIds.size > 0){
+      bar.hidden = false;
+      document.getElementById('bulkCount').textContent = selectedIds.size + ' selected';
+    } else {
+      bar.hidden = true;
+    }
   }
 
   function renderLinkMain(main, link){
@@ -924,9 +1800,23 @@
     input.addEventListener('blur', commit);
   }
 
-  function renderAll(){ renderTree(); renderMain(); }
+  const saveTargetSelect = document.getElementById('saveTargetSelect');
+  function populateSaveTargetSelect(){
+    saveTargetSelect.innerHTML = '';
+    data.folders.forEach(f => {
+      const opt = document.createElement('option');
+      opt.value = f.id;
+      opt.textContent = pathOf(f.id).map(p => p.name).join(' › ');
+      saveTargetSelect.appendChild(opt);
+    });
+    saveTargetSelect.value = saveTargetFolderId;
+  }
+  saveTargetSelect.addEventListener('change', () => { saveTargetFolderId = saveTargetSelect.value; });
+
+  function renderAll(){ renderTree(); renderMain(); populateSaveTargetSelect(); }
 
   const noteInput = document.getElementById('noteInput');
+  const tagsInput = document.getElementById('tagsInput');
   const noteToggle = document.getElementById('noteToggle');
   const saveBtn = document.getElementById('saveBtn');
   const saveBox = document.getElementById('saveBox');
@@ -934,27 +1824,32 @@
   noteToggle.onclick = () => {
     const showing = noteInput.style.display !== 'none';
     if(showing){
-      noteInput.style.display = 'none'; noteInput.value = ''; noteToggle.textContent = '+ Add a note';
+      noteInput.style.display = 'none'; noteInput.value = '';
+      tagsInput.style.display = 'none'; tagsInput.value = '';
+      noteToggle.textContent = '+ Add a note';
     }else{
-      noteInput.style.display = 'block'; noteToggle.textContent = '− Hide note'; noteInput.focus();
+      noteInput.style.display = 'block'; tagsInput.style.display = 'block';
+      noteToggle.textContent = '− Hide note'; noteInput.focus();
     }
   };
 
-  saveBtn.onclick = () => {
-    const url = urlInput.value.trim();
-    if(!url){ urlInput.focus(); return; }
-    let normalized = url;
-    if(!/^https?:\/\//i.test(normalized)) normalized = 'https://' + normalized;
-    const platform = detectPlatform(normalized);
-    const note = noteInput.value.trim();
+  function resetSaveForm(){
+    urlInput.value = ''; noteInput.value = ''; tagsInput.value = '';
+    noteInput.style.display = 'none'; tagsInput.style.display = 'none';
+    noteToggle.textContent = '+ Add a note';
+    urlErrorEl.hidden = true;
+    urlInput.removeAttribute('aria-invalid');
+  }
+
+  function doSave(url, note, tags, folderId){
+    const platform = detectPlatform(url);
     data.links.push({
-      id: uid(), url: normalized, folderId: currentFolderId,
+      id: uid(), url, folderId,
       platform: platform.label, icon: platform.icon,
-      note: note || null, savedAt: Date.now()
+      note: note || null, tags: tags.length ? tags : null, savedAt: Date.now()
     });
     save(data);
-    urlInput.value = ''; noteInput.value = '';
-    noteInput.style.display = 'none'; noteToggle.textContent = '+ Add a note';
+    resetSaveForm();
 
     saveBtn.textContent = 'Saved ✓';
     saveBtn.classList.add('saved');
@@ -965,14 +1860,87 @@
     }, 1100);
 
     renderAll();
-    showToast('Saved to ' + folderById(currentFolderId).name, true);
+    showToast('Saved to ' + folderById(folderId).name, true);
     urlInput.focus();
+  }
+
+  // ---- Duplicate-link detection ----
+  const duplicateModal = document.getElementById('duplicateModal');
+  const dupFolderNameEl = document.getElementById('dupFolderName');
+  const dupPreviewEl = document.getElementById('dupPreview');
+
+  function openDuplicateModal(existing, pending){
+    pendingSave = pending;
+    pendingSave.existing = existing;
+    dupFolderNameEl.textContent = folderById(existing.folderId).name;
+    dupPreviewEl.replaceChildren();
+    const title = document.createElement('div');
+    title.className = 'link-title';
+    title.textContent = existing.note || existing.url;
+    dupPreviewEl.appendChild(title);
+    if(existing.note){
+      const urlLine = document.createElement('div');
+      urlLine.className = 'link-url-sub';
+      urlLine.textContent = existing.url;
+      dupPreviewEl.appendChild(urlLine);
+    }
+    duplicateModal.classList.add('show');
+  }
+  document.getElementById('dupSaveAnywayBtn').onclick = () => {
+    duplicateModal.classList.remove('show');
+    if(pendingSave) doSave(pendingSave.url, pendingSave.note, pendingSave.tags, pendingSave.folderId);
+    pendingSave = null;
+  };
+  document.getElementById('dupOpenBtn').onclick = () => {
+    if(pendingSave) window.open(pendingSave.existing.url, '_blank', 'noopener,noreferrer');
+    duplicateModal.classList.remove('show');
+    pendingSave = null;
+  };
+  document.getElementById('dupMoveBtn').onclick = () => {
+    if(pendingSave){
+      pendingSave.existing.folderId = pendingSave.folderId;
+      save(data);
+      renderAll();
+      showToast('Moved existing link here', true);
+    }
+    duplicateModal.classList.remove('show');
+    pendingSave = null;
+  };
+  duplicateModal.addEventListener('click', (e) => {
+    if(e.target === duplicateModal){ duplicateModal.classList.remove('show'); pendingSave = null; }
+  });
+
+  saveBtn.onclick = () => {
+    const result = normalizeUrlInput(urlInput.value);
+    if(result.error){
+      urlErrorEl.textContent = result.error;
+      urlErrorEl.hidden = false;
+      urlInput.setAttribute('aria-invalid', 'true');
+      urlInput.focus();
+      return;
+    }
+    urlErrorEl.hidden = true;
+    urlInput.removeAttribute('aria-invalid');
+
+    const note = noteInput.value.trim();
+    const tags = parseTags(tagsInput.value);
+    const folderId = saveTargetFolderId;
+
+    const dupKey = normalizeForCompare(result.url);
+    const dup = data.links.find(l => normalizeForCompare(l.url) === dupKey);
+    if(dup){
+      openDuplicateModal(dup, { url: result.url, note, tags, folderId });
+      return;
+    }
+    doSave(result.url, note, tags, folderId);
   };
 
   urlInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') saveBtn.click(); });
+  urlInput.addEventListener('input', () => { urlErrorEl.hidden = true; urlInput.removeAttribute('aria-invalid'); });
   noteInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') saveBtn.click(); });
+  tagsInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') saveBtn.click(); });
 
-  // ---- Sort / search / date filter ----
+  // ---- Sort / search / date filter / global search ----
   const searchInput = document.getElementById('searchInput');
   const sortSelect = document.getElementById('sortSelect');
   const dateStartInput = document.getElementById('dateStart');
@@ -988,6 +1956,12 @@
     dateStartInput.value = ''; dateEndInput.value = '';
     renderMain();
   });
+
+  document.getElementById('globalSearchBtn').onclick = () => {
+    searchEverywhere = !searchEverywhere;
+    renderMain();
+    if(searchEverywhere) searchInput.focus();
+  };
 
   (function handleIncoming(){
     const params = new URLSearchParams(window.location.search);
@@ -1008,46 +1982,148 @@
   function renderColorPicker(){
     colorPicker.innerHTML = '';
     COLORS.forEach(c => {
-      const sw = document.createElement('div');
+      const sw = document.createElement('button');
+      sw.type = 'button';
       sw.className = 'color-swatch' + (c === selectedColor ? ' selected' : '');
       sw.style.background = c;
+      sw.setAttribute('aria-label', 'Color ' + c);
+      sw.setAttribute('aria-pressed', String(c === selectedColor));
       sw.onclick = () => { selectedColor = c; renderColorPicker(); };
       colorPicker.appendChild(sw);
     });
   }
 
-  function openFolderModal(){
+  const folderParentLabel = document.getElementById('folderParentLabel');
+  const deleteFolderBtn = document.getElementById('deleteFolderBtn');
+  const modalTitleEl = document.querySelector('#folderModal h2');
+  const createFolderBtn = document.getElementById('createFolderBtn');
+
+  function openFolderModal(folderId){
+    editingFolderId = folderId || null;
+    const editing = !!editingFolderId;
+    const isRoot = editingFolderId === 'root';
+    modalTitleEl.textContent = editing ? 'Edit folder' : 'New folder';
+    createFolderBtn.textContent = editing ? 'Save changes' : 'Create';
+    deleteFolderBtn.hidden = !editing || isRoot;
+    folderParentLabel.style.display = isRoot ? 'none' : '';
+    folderParentSelect.style.display = isRoot ? 'none' : '';
+
+    const excluded = editing ? [editingFolderId, ...allDescendantIds(editingFolderId)] : [];
     folderParentSelect.innerHTML = '';
     data.folders.forEach(f => {
+      if(excluded.includes(f.id)) return;
       const opt = document.createElement('option');
       opt.value = f.id;
       opt.textContent = pathOf(f.id).map(p => p.name).join(' › ');
       folderParentSelect.appendChild(opt);
     });
-    folderParentSelect.value = currentFolderId;
-    folderNameInput.value = '';
-    selectedColor = COLORS[Math.floor(Math.random() * COLORS.length)];
+
+    if(editing){
+      const f = folderById(editingFolderId);
+      folderNameInput.value = f.name;
+      selectedColor = f.color || COLORS[0];
+      folderParentSelect.value = f.parentId || 'root';
+    } else {
+      folderNameInput.value = '';
+      selectedColor = COLORS[Math.floor(Math.random() * COLORS.length)];
+      folderParentSelect.value = currentFolderId;
+    }
     renderColorPicker();
     folderModal.classList.add('show');
     setTimeout(() => folderNameInput.focus(), 50);
   }
 
-  document.getElementById('newFolderTopBtn').onclick = openFolderModal;
-  document.getElementById('cancelFolderBtn').onclick = () => folderModal.classList.remove('show');
-  folderModal.addEventListener('click', (e) => { if(e.target === folderModal) folderModal.classList.remove('show'); });
+  document.getElementById('newFolderTopBtn').onclick = () => openFolderModal();
+  document.getElementById('cancelFolderBtn').onclick = () => { folderModal.classList.remove('show'); editingFolderId = null; };
+  folderModal.addEventListener('click', (e) => { if(e.target === folderModal){ folderModal.classList.remove('show'); editingFolderId = null; } });
 
-  document.getElementById('createFolderBtn').onclick = () => {
+  createFolderBtn.onclick = () => {
     const name = folderNameInput.value.trim();
     if(!name){ folderNameInput.focus(); return; }
-    const id = uid();
-    data.folders.push({ id, name, parentId: folderParentSelect.value, color: selectedColor });
-    expanded.add(folderParentSelect.value);
-    save(data);
-    currentFolderId = id;
-    folderModal.classList.remove('show');
-    renderAll();
+    if(editingFolderId){
+      const f = folderById(editingFolderId);
+      f.name = name;
+      f.color = selectedColor;
+      if(editingFolderId !== 'root') f.parentId = folderParentSelect.value;
+      save(data);
+      folderModal.classList.remove('show');
+      editingFolderId = null;
+      renderAll();
+      showToast('Folder updated', true);
+    } else {
+      const id = uid();
+      data.folders.push({ id, name, parentId: folderParentSelect.value, color: selectedColor });
+      expanded.add(folderParentSelect.value);
+      save(data);
+      currentFolderId = id;
+      saveTargetFolderId = id;
+      searchEverywhere = false;
+      folderModal.classList.remove('show');
+      renderAll();
+    }
   };
-  folderNameInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') document.getElementById('createFolderBtn').click(); });
+  folderNameInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') createFolderBtn.click(); });
+
+  deleteFolderBtn.onclick = () => {
+    if(!editingFolderId || editingFolderId === 'root') return;
+    const id = editingFolderId;
+    folderModal.classList.remove('show');
+    editingFolderId = null;
+    confirmDeleteFolder(id);
+  };
+
+  // ---- Move modal (bookmarks and folders) ----
+  const moveModal = document.getElementById('moveModal');
+  const moveModalTitle = document.getElementById('moveModalTitle');
+  const moveTargetSelect = document.getElementById('moveTargetSelect');
+
+  function openMoveModal(ctx){
+    moveContext = ctx;
+    moveModalTitle.textContent = ctx.type === 'folder'
+      ? 'Move folder'
+      : (ctx.ids.length > 1 ? 'Move ' + ctx.ids.length + ' links' : 'Move link');
+    const excluded = ctx.type === 'folder' ? [ctx.ids[0], ...allDescendantIds(ctx.ids[0])] : [];
+    moveTargetSelect.innerHTML = '';
+    data.folders.forEach(f => {
+      if(excluded.includes(f.id)) return;
+      const opt = document.createElement('option');
+      opt.value = f.id;
+      opt.textContent = pathOf(f.id).map(p => p.name).join(' › ');
+      moveTargetSelect.appendChild(opt);
+    });
+    moveTargetSelect.value = ctx.type === 'folder' ? (folderById(ctx.ids[0]).parentId || 'root') : currentFolderId;
+    moveModal.classList.add('show');
+    setTimeout(() => moveTargetSelect.focus(), 50);
+  }
+  document.getElementById('cancelMoveBtn').onclick = () => { moveModal.classList.remove('show'); moveContext = null; };
+  moveModal.addEventListener('click', (e) => { if(e.target === moveModal){ moveModal.classList.remove('show'); moveContext = null; } });
+
+  document.getElementById('confirmMoveBtn').onclick = () => {
+    if(!moveContext) return;
+    const targetId = moveTargetSelect.value;
+    const destName = folderById(targetId).name;
+    if(moveContext.type === 'folder'){
+      folderById(moveContext.ids[0]).parentId = targetId;
+      expanded.add(targetId);
+    } else {
+      data.links.forEach(l => { if(moveContext.ids.includes(l.id)) l.folderId = targetId; });
+      exitSelectMode();
+    }
+    save(data);
+    moveModal.classList.remove('show');
+    moveContext = null;
+    renderAll();
+    showToast('Moved to ' + destName, true);
+  };
+
+  // ---- Select mode / bulk actions ----
+  document.getElementById('selectToggleBtn').onclick = toggleSelectMode;
+  document.getElementById('bulkCancelBtn').onclick = () => { exitSelectMode(); renderMain(); };
+  document.getElementById('bulkDeleteBtn').onclick = () => deleteLinks([...selectedIds]);
+  document.getElementById('bulkMoveBtn').onclick = () => {
+    if(selectedIds.size === 0) return;
+    openMoveModal({ type: 'link', ids: [...selectedIds] });
+  };
 
   // ---- Mobile sidebar ----
   const sidebar = document.getElementById('sidebar');
@@ -1056,8 +2132,330 @@
   scrim.onclick = closeSidebarMobile;
   function closeSidebarMobile(){ sidebar.classList.remove('open'); scrim.classList.remove('show'); }
 
+  // ---- Backup / import ----
+  function downloadFile(filename, content, mime){
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function exportBackup(){
+    const payload = {
+      app: 'backpocket',
+      schemaVersion: SCHEMA_VERSION,
+      exportedAt: new Date().toISOString(),
+      folders: data.folders,
+      links: data.links
+    };
+    downloadFile('backpocket-backup-' + new Date().toISOString().slice(0, 10) + '.json', JSON.stringify(payload, null, 2), 'application/json');
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // Netscape Bookmark File format — the same plain-text format Chrome, Firefox
+  // and Safari all export/import, so no library is needed on either side.
+  function exportBookmarksHtml(){
+    function renderFolder(folderId, depth){
+      const indent = '    '.repeat(depth);
+      let html = '';
+      data.links.filter(l => l.folderId === folderId).forEach(l => {
+        const addDate = Math.floor(l.savedAt / 1000);
+        html += indent + '<DT><A HREF="' + escapeHtml(l.url) + '" ADD_DATE="' + addDate + '">' + escapeHtml(l.note || l.url) + '</A>\n';
+      });
+      childrenOf(folderId).forEach(child => {
+        html += indent + '<DT><H3 ADD_DATE="' + Math.floor(Date.now() / 1000) + '">' + escapeHtml(child.name) + '</H3>\n';
+        html += indent + '<DL><p>\n' + renderFolder(child.id, depth + 1) + indent + '</DL><p>\n';
+      });
+      return html;
+    }
+    let out = '<!DOCTYPE NETSCAPE-Bookmark-file-1>\n<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">\n<TITLE>Bookmarks</TITLE>\n<H1>Bookmarks</H1>\n<DL><p>\n';
+    out += renderFolder('root', 1);
+    out += '</DL><p>\n';
+    downloadFile('backpocket-bookmarks-' + new Date().toISOString().slice(0, 10) + '.html', out, 'text/html');
+  }
+
+  // Bookmark HTML is old and browsers are lenient about how a folder's <DL>
+  // nests relative to its <DT><H3> header, so this checks both the "as a
+  // child" and "as a following sibling" shapes rather than assuming one.
+  function parseBookmarksHtml(html){
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const folders = [{ id: 'root', name: 'All saves', parentId: null, color: '#4a5568' }];
+    const links = [];
+
+    function findChildDl(dtOrH3){
+      const child = dtOrH3.querySelector(':scope > DL');
+      if(child) return child;
+      const sib = dtOrH3.nextElementSibling;
+      return (sib && sib.tagName === 'DL') ? sib : null;
+    }
+
+    function walkDl(dl, parentFolderId){
+      if(!dl) return;
+      Array.from(dl.children).filter(c => c.tagName === 'DT').forEach(dt => {
+        const h3 = dt.querySelector(':scope > H3');
+        const a = dt.querySelector(':scope > A');
+        if(h3){
+          const id = uid();
+          folders.push({ id, name: (h3.textContent || 'Imported folder').trim(), parentId: parentFolderId, color: COLORS[folders.length % COLORS.length] });
+          walkDl(findChildDl(dt) || findChildDl(h3), id);
+        } else if(a){
+          const href = a.getAttribute('href');
+          if(href){
+            const addDate = a.getAttribute('add_date');
+            links.push({
+              id: uid(), url: href, folderId: parentFolderId,
+              platform: null, icon: null,
+              note: (a.textContent || '').trim() || null, tags: null,
+              savedAt: addDate ? parseInt(addDate, 10) * 1000 : Date.now()
+            });
+          }
+        }
+      });
+    }
+
+    walkDl(doc.querySelector('DL'), 'root');
+    return { folders, links };
+  }
+
+  function detectImportFormat(filename, text){
+    if(/\.json$/i.test(filename)) return 'json';
+    if(/\.html?$/i.test(filename)) return 'html';
+    const trimmed = text.trim();
+    if(trimmed.startsWith('{')) return 'json';
+    if(trimmed.startsWith('<')) return 'html';
+    return null;
+  }
+
+  function validateBackupShape(obj){
+    if(!obj || typeof obj !== 'object') return 'Not a valid JSON object.';
+    if(!Array.isArray(obj.folders)) return 'Missing or invalid "folders" list.';
+    if(!Array.isArray(obj.links)) return 'Missing or invalid "links" list.';
+    for(const f of obj.folders){
+      if(!f || typeof f.id !== 'string' || typeof f.name !== 'string') return 'A folder entry is missing an id or name.';
+    }
+    for(const l of obj.links){
+      if(!l || typeof l.id !== 'string' || typeof l.url !== 'string') return 'A link entry is missing an id or url.';
+    }
+    if(!obj.folders.some(f => f.id === 'root')) return 'Backup is missing the root "All saves" folder.';
+    return null;
+  }
+
+  // Adds imported folders/links alongside what's already here. Folder ids that
+  // collide with an existing one are regenerated (and every reference to them
+  // remapped) so an import never overwrites an existing folder by accident.
+  // Links that exactly match an existing one (same folder, same normalized
+  // URL) are skipped rather than duplicated.
+  function mergeImportedData(incoming){
+    const idMap = { root: 'root' };
+    const newFolders = [];
+    incoming.folders.forEach(f => {
+      if(f.id === 'root') return;
+      let newId = data.folders.some(e => e.id === f.id) || newFolders.some(nf => nf.id === f.id) ? uid() : f.id;
+      idMap[f.id] = newId;
+      newFolders.push({ id: newId, name: f.name, parentId: f.parentId, color: f.color || COLORS[0] });
+    });
+    newFolders.forEach(nf => {
+      nf.parentId = (nf.parentId && idMap[nf.parentId]) ? idMap[nf.parentId] : 'root';
+    });
+
+    let addedLinks = 0, skippedDup = 0;
+    const newLinks = [];
+    incoming.links.forEach(l => {
+      const targetFolderId = (l.folderId && idMap[l.folderId]) ? idMap[l.folderId] : 'root';
+      const dup = data.links.some(existing => existing.folderId === targetFolderId && normalizeForCompare(existing.url) === normalizeForCompare(l.url));
+      if(dup){ skippedDup++; return; }
+      const p = (!l.platform || !l.icon) ? detectPlatform(l.url) : null;
+      newLinks.push({
+        id: uid(), url: l.url, folderId: targetFolderId,
+        platform: l.platform || p.label, icon: l.icon || p.icon,
+        note: l.note || null, tags: l.tags || null,
+        savedAt: l.savedAt || Date.now()
+      });
+      addedLinks++;
+    });
+
+    data.folders = data.folders.concat(newFolders);
+    data.links = data.links.concat(newLinks);
+    return { addedFolders: newFolders.length, addedLinks, skippedDup };
+  }
+
+  function replaceImportedData(incoming){
+    data.folders = incoming.folders.map(f => ({ id: f.id, name: f.name, parentId: f.id === 'root' ? null : (f.parentId || 'root'), color: f.color || COLORS[0] }));
+    data.links = incoming.links.map(l => {
+      const p = (!l.platform || !l.icon) ? detectPlatform(l.url) : null;
+      return {
+        id: l.id || uid(), url: l.url, folderId: l.folderId || 'root',
+        platform: l.platform || p.label, icon: l.icon || p.icon,
+        note: l.note || null, tags: l.tags || null,
+        savedAt: l.savedAt || Date.now()
+      };
+    });
+    data = migrateData(data);
+    currentFolderId = 'root';
+    saveTargetFolderId = 'root';
+  }
+
+  const backupModal = document.getElementById('backupModal');
+  const importErrorEl = document.getElementById('importError');
+  const backupSummarySection = document.getElementById('backupSummarySection');
+  const importFileInput = document.getElementById('importFileInput');
+
+  function showImportError(msg){
+    importErrorEl.textContent = msg;
+    importErrorEl.hidden = false;
+    backupSummarySection.hidden = true;
+  }
+  function resetImportUi(){
+    pendingImport = null;
+    importFileInput.value = '';
+    importErrorEl.hidden = true;
+    backupSummarySection.hidden = true;
+  }
+  function showImportSummary(incoming){
+    importErrorEl.hidden = true;
+    const incomingFolders = incoming.folders.filter(f => f.id !== 'root').length;
+    const currentFolders = data.folders.length - 1;
+    document.getElementById('importSummaryText').textContent =
+      'Found ' + incoming.links.length + (incoming.links.length === 1 ? ' link' : ' links') +
+      ' and ' + incomingFolders + (incomingFolders === 1 ? ' folder' : ' folders') + ' in this file. ' +
+      'Your library currently has ' + data.links.length + (data.links.length === 1 ? ' link' : ' links') +
+      ' and ' + currentFolders + (currentFolders === 1 ? ' folder' : ' folders') + '. ' +
+      'Merge adds these alongside what you have; Replace wipes your current library first.';
+    backupSummarySection.hidden = false;
+  }
+
+  document.getElementById('backupBtn').onclick = () => { resetImportUi(); backupModal.classList.add('show'); };
+
+  // ---- Privacy: local-icons-only toggle ----
+  const faviconPrivacyToggle = document.getElementById('faviconPrivacyToggle');
+  faviconPrivacyToggle.checked = localIconsOnly;
+  faviconPrivacyToggle.addEventListener('change', () => {
+    localIconsOnly = faviconPrivacyToggle.checked;
+    try{ localStorage.setItem(PRIVACY_KEY, String(localIconsOnly)); }catch(e){}
+    renderMain();
+  });
+  document.getElementById('closeBackupBtn').onclick = () => { backupModal.classList.remove('show'); resetImportUi(); };
+  backupModal.addEventListener('click', (e) => { if(e.target === backupModal){ backupModal.classList.remove('show'); resetImportUi(); } });
+  document.getElementById('exportJsonBtn').onclick = exportBackup;
+  document.getElementById('exportHtmlBtn').onclick = exportBookmarksHtml;
+
+  importFileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result);
+      const format = detectImportFormat(file.name, text);
+      let incoming;
+      if(format === 'json'){
+        let parsed;
+        try{ parsed = JSON.parse(text); }
+        catch(err){ showImportError('That file is not valid JSON.'); return; }
+        const shapeError = validateBackupShape(parsed);
+        if(shapeError){ showImportError(shapeError); return; }
+        incoming = parsed;
+      } else if(format === 'html'){
+        try{ incoming = parseBookmarksHtml(text); }
+        catch(err){ showImportError('Could not read that bookmarks file.'); return; }
+        if(incoming.links.length === 0){ showImportError('No bookmarks found in that file.'); return; }
+      } else {
+        showImportError('Unrecognized file — use a .json backup or a browser bookmarks .html export.');
+        return;
+      }
+      pendingImport = incoming;
+      showImportSummary(incoming);
+    };
+    reader.onerror = () => showImportError('Could not read that file.');
+    reader.readAsText(file);
+  });
+
+  document.getElementById('importMergeBtn').onclick = () => {
+    if(!pendingImport) return;
+    const result = mergeImportedData(pendingImport);
+    save(data);
+    renderAll();
+    backupModal.classList.remove('show');
+    resetImportUi();
+    showToast('Merged ' + result.addedLinks + ' links, ' + result.addedFolders + ' folders' +
+      (result.skippedDup ? ' (' + result.skippedDup + ' duplicates skipped)' : ''), true);
+  };
+  document.getElementById('importReplaceBtn').onclick = () => {
+    if(!pendingImport) return;
+    if(!confirm('Replace your entire library with this backup? This cannot be undone.')) return;
+    replaceImportedData(pendingImport);
+    save(data);
+    renderAll();
+    backupModal.classList.remove('show');
+    resetImportUi();
+    showToast('Library replaced from backup', true);
+  };
+
+  // ---- Dialog accessibility: focus trap, Escape-to-close, focus restoration ----
+  // Watches each modal's own 'show' class rather than wrapping every individual
+  // open/close call site, so this applies uniformly without touching the ~13
+  // existing show/hide call sites (and covers any future modal for free).
+  function setupModalA11y(modalBackdrop){
+    const dialog = modalBackdrop.querySelector('[role="dialog"]');
+    if(!dialog) return;
+    dialog.tabIndex = -1; // guarantees a focusable fallback even if empty
+    let lastFocused = null;
+
+    function getFocusable(){
+      return Array.from(dialog.querySelectorAll(
+        'a[href], button:not([disabled]), input:not([disabled]):not([type=hidden]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )).filter(el => el.offsetParent !== null);
+    }
+
+    function onKeydown(e){
+      if(e.key === 'Escape'){
+        e.preventDefault();
+        modalBackdrop.classList.remove('show');
+        return;
+      }
+      if(e.key === 'Tab'){
+        const items = getFocusable();
+        if(items.length === 0) return;
+        const first = items[0], last = items[items.length - 1];
+        if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+        else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+      }
+    }
+
+    new MutationObserver(() => {
+      if(modalBackdrop.classList.contains('show')){
+        lastFocused = document.activeElement;
+        document.addEventListener('keydown', onKeydown, true);
+        setTimeout(() => { (getFocusable()[0] || dialog).focus(); }, 50);
+      } else {
+        document.removeEventListener('keydown', onKeydown, true);
+        if(lastFocused && document.contains(lastFocused)) lastFocused.focus();
+        lastFocused = null;
+      }
+    }).observe(modalBackdrop, { attributes: true, attributeFilter: ['class'] });
+  }
+  [folderModal, moveModal, duplicateModal, backupModal].forEach(setupModalA11y);
+
   renderAll();
+  if(storageWarning) showToast(storageWarning, false);
 })();
+</script>
+
+<script>
+  // Registers the offline app-shell cache. Guarded because service workers
+  // require a secure context (https or localhost) — this silently no-ops on
+  // plain file:// or http:// so opening the file directly still works fine.
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
 </script>
 
 </body>
