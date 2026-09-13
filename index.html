@@ -265,22 +265,64 @@
   }
   .note-toggle:hover { text-decoration: underline; }
 
+  /* List toolbar (search / sort / date range) */
+  .list-toolbar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+    margin-bottom: 14px;
+  }
+  .search-field { position: relative; flex: 1 1 180px; min-width: 140px; }
+  .search-field .search-icon {
+    position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+    font-size: 12px; opacity: .5; pointer-events: none;
+  }
+  .search-field input {
+    width: 100%; padding: 8px 10px 8px 30px; border: 1px solid var(--line);
+    border-radius: 8px; font-size: 13px; background: var(--paper-raised);
+    color: var(--ink); font-family: inherit;
+  }
+  .list-toolbar select {
+    padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
+    font-size: 13px; background: var(--paper-raised); color: var(--ink);
+    font-family: inherit; flex: 0 0 auto;
+  }
+  .date-range { display: flex; align-items: center; gap: 5px; flex: 0 0 auto; }
+  .date-range input[type=date] {
+    padding: 7px 8px; border: 1px solid var(--line); border-radius: 8px;
+    font-size: 12.5px; background: var(--paper-raised); color: var(--ink);
+    font-family: inherit;
+  }
+  .date-range span { color: var(--ink-faint); font-size: 12px; }
+  .date-range .clear-date-btn {
+    background: none; border: none; color: var(--ink-faint); cursor: pointer;
+    font-size: 13px; padding: 4px 6px; border-radius: 6px;
+  }
+  .date-range .clear-date-btn:hover { color: var(--danger); background: rgba(164,69,58,0.08); }
+  .list-toolbar input:focus, .list-toolbar select:focus {
+    outline: none; border-color: var(--focus); box-shadow: 0 0 0 3px rgba(44,95,111,.13);
+  }
+  .result-count { font-size: 12px; color: var(--ink-faint); margin: -6px 0 12px; }
+
   /* Links list */
   .links { list-style: none; margin: 0; padding: 0; }
   .link-item {
-    display: flex; align-items: flex-start; gap: 14px;
-    padding: 14px 10px;
-    border-bottom: 1px solid var(--line-soft);
+    display: flex; align-items: flex-start; gap: 13px;
+    padding: 13px 12px;
+    background: var(--paper-raised);
+    border: 1px solid var(--line-soft);
     border-radius: 10px;
-    transition: background .15s ease;
+    margin-bottom: 8px;
+    cursor: pointer;
+    user-select: none;
+    transition: background .15s ease, border-color .15s ease, transform .1s ease;
     animation: rise .28s ease both;
   }
   @keyframes rise {
     from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: translateY(0); }
   }
-  .link-item:hover { background: rgba(169,122,53,0.05); }
-  .link-item:first-child { border-top: 1px solid var(--line-soft); }
+  .link-item:hover { border-color: var(--mustard); background: rgba(169,122,53,0.05); }
+  .link-item:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+  .link-item:active { transform: scale(.995); }
 
   .link-icon {
     width: 36px; height: 36px; border-radius: 8px;
@@ -295,31 +337,40 @@
   .link-title {
     font-size: 14.5px; text-decoration: none; color: var(--ink);
     display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    font-weight: 500;
+    font-weight: 600;
   }
   .link-title:hover { color: var(--mustard); }
+  .link-title.is-url { font-weight: 500; color: var(--ink-soft); }
   .link-url-sub {
-    font-size: 12px; color: var(--ink-faint);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;
+    font-size: 12px; color: var(--ink-faint); font-family: 'Inter', monospace;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 3px;
   }
-  .link-meta { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+  .link-meta { display: flex; align-items: center; gap: 8px; margin-top: 7px; }
   .platform-pill {
     display: inline-flex; align-items: center;
-    background: var(--paper-sunk); color: var(--ink-soft);
     padding: 2px 8px; border-radius: 999px;
-    font-size: 10.5px; font-weight: 500; letter-spacing: .01em;
+    font-size: 10.5px; font-weight: 600; letter-spacing: .01em;
     text-transform: uppercase; flex-shrink: 0;
   }
   .link-date { font-size: 11.5px; color: var(--ink-faint); }
 
-  .link-del {
+  .title-edit-input {
+    width: 100%; padding: 6px 9px; border: 1px solid var(--focus);
+    border-radius: 6px; font-size: 14px; background: var(--paper);
+    color: var(--ink); font-family: inherit;
+    box-shadow: 0 0 0 3px rgba(44,95,111,.13);
+  }
+
+  .link-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+  .link-edit, .link-del {
     background: none; border: none; color: var(--ink-faint); cursor: pointer;
     font-size: 12.5px; padding: 6px 9px; border-radius: 6px; flex-shrink: 0;
     opacity: 0; transform: translateX(2px);
     transition: opacity .15s ease, color .12s ease, background .12s ease, transform .15s ease;
     margin-top: 1px;
   }
-  .link-item:hover .link-del { opacity: 1; transform: translateX(0); }
+  .link-item:hover .link-edit, .link-item:hover .link-del { opacity: 1; transform: translateX(0); }
+  .link-edit:hover { color: var(--focus); background: rgba(44,95,111,0.08); }
   .link-del:hover { color: var(--danger); background: rgba(164,69,58,0.08); }
 
   /* Empty state */
@@ -489,6 +540,25 @@
       </div>
     </div>
 
+    <div class="list-toolbar" id="listToolbar">
+      <div class="search-field">
+        <span class="search-icon">⌕</span>
+        <input type="text" id="searchInput" placeholder="Search title or URL…" />
+      </div>
+      <select id="sortSelect">
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+        <option value="platform">By platform</option>
+      </select>
+      <div class="date-range">
+        <input type="date" id="dateStart" aria-label="From date" />
+        <span>–</span>
+        <input type="date" id="dateEnd" aria-label="To date" />
+        <button type="button" class="clear-date-btn" id="clearDateBtn" title="Clear date filter">✕</button>
+      </div>
+    </div>
+    <p class="result-count" id="resultCount" style="display:none"></p>
+
     <ul class="links" id="linksList"></ul>
   </main>
 </div>
@@ -516,6 +586,11 @@
   const STORAGE_KEY = 'backpocket_data_v1';
   const THEME_KEY = 'backpocket_theme';
   const COLORS = ['#a97a35', '#6b7f63', '#2c5f6f', '#a4453a', '#7a5c9e', '#4a5568'];
+  const PLATFORM_COLORS = {
+    Instagram: '#c1387e', YouTube: '#d1372e', Facebook: '#3266a8',
+    TikTok: '#1f9e9e', X: '#33383f', Link: '#8b93a1'
+  };
+  function platformColor(label){ return PLATFORM_COLORS[label] || PLATFORM_COLORS.Link; }
 
   const themeToggle = document.getElementById('themeToggle');
   function applyTheme(theme){
@@ -557,6 +632,10 @@
   let currentFolderId = 'root';
   let expanded = new Set(['root']);
   let selectedColor = COLORS[0];
+  let sortMode = 'newest';
+  let searchQuery = '';
+  let dateStartVal = '';
+  let dateEndVal = '';
 
   const treeEl = document.getElementById('tree');
   const linksListEl = document.getElementById('linksList');
@@ -641,6 +720,7 @@
     row.onclick = () => {
       currentFolderId = folder.id;
       if(hasKids) expanded.add(folder.id);
+      searchQuery = ''; dateStartVal = ''; dateEndVal = '';
       renderAll();
       closeSidebarMobile();
     };
@@ -651,6 +731,11 @@
   }
 
   function renderMain(){
+    document.getElementById('searchInput').value = searchQuery;
+    document.getElementById('sortSelect').value = sortMode;
+    document.getElementById('dateStart').value = dateStartVal;
+    document.getElementById('dateEnd').value = dateEndVal;
+
     const folder = folderById(currentFolderId);
     const path = pathOf(currentFolderId);
     crumbEl.innerHTML = path.length > 1 ? path.map(f => f.name).join(' <span>›</span> ') : '';
@@ -662,10 +747,12 @@
     folderTitleEl.appendChild(document.createTextNode(folder.name));
     targetFolderNameEl.textContent = folder.name;
 
-    const links = data.links.filter(l => l.folderId === currentFolderId).sort((a,b) => b.savedAt - a.savedAt);
+    const allInFolder = data.links.filter(l => l.folderId === currentFolderId);
     linksListEl.innerHTML = '';
 
-    if(links.length === 0){
+    if(allInFolder.length === 0){
+      document.getElementById('listToolbar').style.display = 'none';
+      document.getElementById('resultCount').style.display = 'none';
       const empty = document.createElement('div');
       empty.className = 'empty';
       empty.innerHTML = `
@@ -676,11 +763,60 @@
       linksListEl.appendChild(empty);
       return;
     }
+    document.getElementById('listToolbar').style.display = '';
+
+    let links = allInFolder.slice();
+    const q = searchQuery.trim().toLowerCase();
+    if(q) links = links.filter(l => (l.note && l.note.toLowerCase().includes(q)) || l.url.toLowerCase().includes(q));
+    if(dateStartVal){
+      const startTs = new Date(dateStartVal + 'T00:00:00').getTime();
+      links = links.filter(l => l.savedAt >= startTs);
+    }
+    if(dateEndVal){
+      const endTs = new Date(dateEndVal + 'T23:59:59.999').getTime();
+      links = links.filter(l => l.savedAt <= endTs);
+    }
+    if(sortMode === 'oldest') links.sort((a,b) => a.savedAt - b.savedAt);
+    else if(sortMode === 'platform') links.sort((a,b) => a.platform.localeCompare(b.platform) || b.savedAt - a.savedAt);
+    else links.sort((a,b) => b.savedAt - a.savedAt);
+
+    const resultCountEl = document.getElementById('resultCount');
+    if(q || dateStartVal || dateEndVal){
+      resultCountEl.style.display = '';
+      resultCountEl.textContent = links.length + (links.length === 1 ? ' result' : ' results');
+    } else {
+      resultCountEl.style.display = 'none';
+    }
+
+    if(links.length === 0){
+      const empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.innerHTML = `
+        <div class="empty-glyph"></div>
+        <p class="empty-title">No matches</p>
+        <p>Nothing here fits the current search or date range. Try clearing a filter.</p>
+      `;
+      linksListEl.appendChild(empty);
+      return;
+    }
 
     links.forEach((link, i) => {
       const li = document.createElement('li');
       li.className = 'link-item';
       li.style.animationDelay = (i * 0.02) + 's';
+      li.tabIndex = 0;
+      li.setAttribute('role', 'link');
+      li.setAttribute('aria-label', 'Open ' + (link.note || link.url));
+
+      const openLink = () => window.open(link.url, '_blank', 'noopener,noreferrer');
+      li.addEventListener('click', (e) => {
+        if(e.target.closest('a, button, input')) return;
+        openLink();
+      });
+      li.addEventListener('keydown', (e) => {
+        if(e.target !== li) return;
+        if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); openLink(); }
+      });
 
       const icon = document.createElement('div');
       icon.className = 'link-icon';
@@ -693,22 +829,7 @@
 
       const main = document.createElement('div');
       main.className = 'link-main';
-
-      const a = document.createElement('a');
-      a.className = 'link-title';
-      a.href = link.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
-
-      if(link.note){
-        a.textContent = link.note;
-        const urlLine = document.createElement('div');
-        urlLine.className = 'link-url-sub';
-        urlLine.textContent = link.url;
-        main.appendChild(a);
-        main.appendChild(urlLine);
-      }else{
-        a.textContent = link.url;
-        main.appendChild(a);
-      }
+      renderLinkMain(main, link);
 
       const meta = document.createElement('div');
       meta.className = 'link-meta';
@@ -716,12 +837,24 @@
       const pill = document.createElement('span');
       pill.className = 'platform-pill';
       pill.textContent = link.platform;
+      pill.style.background = platformColor(link.platform) + '22';
+      pill.style.color = platformColor(link.platform);
       const dateEl = document.createElement('span');
       dateEl.className = 'link-date';
-      dateEl.textContent = 'Saved ' + d.toLocaleDateString(undefined, {month:'short', day:'numeric'});
+      dateEl.textContent = 'Saved ' + d.toLocaleDateString(undefined, {month:'short', day:'numeric', year: d.getFullYear() === new Date().getFullYear() ? undefined : 'numeric'});
       meta.appendChild(pill);
       meta.appendChild(dateEl);
       main.appendChild(meta);
+
+      const actions = document.createElement('div');
+      actions.className = 'link-actions';
+
+      const edit = document.createElement('button');
+      edit.className = 'link-edit';
+      edit.textContent = '✎';
+      edit.title = 'Edit title';
+      edit.setAttribute('aria-label', 'Edit title');
+      edit.onclick = () => startEditTitle(link, main);
 
       const del = document.createElement('button');
       del.className = 'link-del';
@@ -732,11 +865,63 @@
         renderAll();
       };
 
+      actions.appendChild(edit);
+      actions.appendChild(del);
+
       li.appendChild(icon);
       li.appendChild(main);
-      li.appendChild(del);
+      li.appendChild(actions);
       linksListEl.appendChild(li);
     });
+  }
+
+  function renderLinkMain(main, link){
+    main.querySelectorAll('.link-title, .link-url-sub').forEach(el => el.remove());
+    const a = document.createElement('a');
+    a.className = 'link-title';
+    a.href = link.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+
+    if(link.note){
+      a.textContent = link.note;
+      const urlLine = document.createElement('div');
+      urlLine.className = 'link-url-sub';
+      urlLine.textContent = link.url;
+      main.insertBefore(urlLine, main.firstChild);
+      main.insertBefore(a, urlLine);
+    }else{
+      a.classList.add('is-url');
+      a.textContent = link.url;
+      main.insertBefore(a, main.firstChild);
+    }
+  }
+
+  function startEditTitle(link, main){
+    main.querySelectorAll('.link-title, .link-url-sub').forEach(el => el.remove());
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'title-edit-input';
+    input.value = link.note || '';
+    input.placeholder = 'Add a title…';
+    main.insertBefore(input, main.firstChild);
+    input.focus();
+    input.select();
+
+    let done = false;
+    const commit = () => {
+      if(done) return; done = true;
+      link.note = input.value.trim() || null;
+      save(data);
+      renderLinkMain(main, link);
+    };
+    const cancel = () => {
+      if(done) return; done = true;
+      renderLinkMain(main, link);
+    };
+    input.addEventListener('keydown', (e) => {
+      if(e.key === 'Enter'){ e.preventDefault(); commit(); }
+      else if(e.key === 'Escape'){ e.preventDefault(); cancel(); }
+    });
+    input.addEventListener('blur', commit);
   }
 
   function renderAll(){ renderTree(); renderMain(); }
@@ -786,6 +971,23 @@
 
   urlInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') saveBtn.click(); });
   noteInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') saveBtn.click(); });
+
+  // ---- Sort / search / date filter ----
+  const searchInput = document.getElementById('searchInput');
+  const sortSelect = document.getElementById('sortSelect');
+  const dateStartInput = document.getElementById('dateStart');
+  const dateEndInput = document.getElementById('dateEnd');
+  const clearDateBtn = document.getElementById('clearDateBtn');
+
+  searchInput.addEventListener('input', () => { searchQuery = searchInput.value; renderMain(); });
+  sortSelect.addEventListener('change', () => { sortMode = sortSelect.value; renderMain(); });
+  dateStartInput.addEventListener('change', () => { dateStartVal = dateStartInput.value; renderMain(); });
+  dateEndInput.addEventListener('change', () => { dateEndVal = dateEndInput.value; renderMain(); });
+  clearDateBtn.addEventListener('click', () => {
+    dateStartVal = ''; dateEndVal = '';
+    dateStartInput.value = ''; dateEndInput.value = '';
+    renderMain();
+  });
 
   (function handleIncoming(){
     const params = new URLSearchParams(window.location.search);
