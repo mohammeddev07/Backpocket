@@ -8,13 +8,14 @@
 <link rel="icon" href="icons/favicon-16.png" sizes="16x16" type="image/png">
 <link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#a97a35">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Backpocket">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600&display=swap">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600&display=swap');
-
   :root{
     --ink: #1a2130;
     --ink-soft: #5b6472;
@@ -35,6 +36,14 @@
     --shadow-card: 0 1px 2px rgba(26,22,14,.04), 0 8px 20px rgba(26,22,14,.05);
     --shadow-modal: 0 24px 70px rgba(20,16,8,.28);
     --dot: rgba(26,22,14,.035);
+
+    /* System fallbacks keep text crisp while web fonts load, offline, or when a
+       privacy browser/extension blocks Google Fonts. */
+    --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --font-serif: 'Source Serif 4', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+    --gutter: clamp(16px, 4vw, 44px); /* fluid page side padding, phone → desktop */
+    --platform-x: #33383f;
+    color-scheme: light; /* native date pickers, selects, checkboxes and scrollbars follow the theme */
   }
 
   :root[data-theme="dark"]{
@@ -57,16 +66,20 @@
     --shadow-card: 0 1px 2px rgba(0,0,0,.3), 0 8px 20px rgba(0,0,0,.35);
     --shadow-modal: 0 24px 70px rgba(0,0,0,.6);
     --dot: rgba(255,251,240,.04);
+    --platform-x: #c9ccd1; /* X's near-black brand colour disappears on dark paper */
+    color-scheme: dark;
   }
 
   * { box-sizing: border-box; }
   html, body { height: 100%; }
+  html { scrollbar-gutter: stable; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   body {
     margin: 0;
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-sans);
     background: var(--paper);
     color: var(--ink);
     -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent; /* no grey flash box on Android taps; :active states give feedback instead */
     background-image:
       radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 0);
     background-size: 22px 22px;
@@ -74,7 +87,16 @@
   }
   ::selection { background: var(--mustard-dim); }
   a { color: inherit; }
-  button { font-family: inherit; }
+  button { font-family: inherit; touch-action: manipulation; }
+
+  /* Inline SVG icons (sprite at the top of <body>): crisp at any DPI and identical
+     on every platform, unlike ☰ ⌕ ▶ glyphs, which some Android fonts lack or
+     render as colour emoji. */
+  .icon {
+    width: 1em; height: 1em; display: block; flex-shrink: 0;
+    fill: none; stroke: currentColor; stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round;
+  }
   /* Blanket keyboard-focus ring so every interactive element gets one even if
      a more specific rule elsewhere didn't cover it — :focus-visible only
      fires for keyboard/programmatic focus, so mouse clicks stay ring-free. */
@@ -86,11 +108,15 @@
   @media (prefers-reduced-motion: reduce) {
     * { animation: none !important; transition: none !important; }
   }
+  /* Theme switch cross-fades the whole page as one (View Transitions) instead of
+     each element transitioning on its own schedule. */
+  ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .28s; }
+  html:active-view-transition body { transition: none; }
 
   /* ---------- App shell ---------- */
   .app {
     display: grid;
-    grid-template-columns: 292px 1fr;
+    grid-template-columns: 292px minmax(0, 1fr);
     min-height: 100vh;
     min-height: 100dvh; /* dvh accounts for mobile browser chrome; vh above is the fallback */
   }
@@ -117,6 +143,7 @@
     flex: 1 1 auto;
     min-height: 0; /* required for a flex child to actually scroll instead of overflowing */
     overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 14px 18px 0;
   }
   .sidebar-footer {
@@ -132,6 +159,7 @@
     color: var(--ink-soft);
     transition: border-color .15s ease, color .15s ease, transform .1s ease;
   }
+  .theme-toggle .icon { width: 15px; height: 15px; }
   .theme-toggle:hover { border-color: var(--mustard); color: var(--mustard-text); }
   .theme-toggle:active { transform: scale(.92); }
   .brand-mark {
@@ -148,7 +176,7 @@
     border-bottom: 2px solid rgba(255,255,255,.75);
     border-radius: 1px;
   }
-  .brand { font-family: 'Source Serif 4', serif; font-size: 20px; font-weight: 600; margin: 0; }
+  .brand { font-family: var(--font-serif); font-size: 20px; font-weight: 600; margin: 0; }
   .brand-sub { font-size: 12px; color: var(--ink-faint); margin: 0 0 24px; line-height: 1.55; padding-left: 31px; }
 
   .tree-label {
@@ -163,7 +191,7 @@
   .folder-row {
     display: flex; align-items: center; gap: 9px;
     padding: 8px 9px; border-radius: 8px; cursor: pointer;
-    font-family: 'Source Serif 4', serif;
+    font-family: var(--font-serif);
     font-size: 14.5px;
     color: var(--ink);
     user-select: none;
@@ -178,7 +206,7 @@
   .folder-row.active .folder-icon { box-shadow: 0 0 0 2px rgba(255,255,255,.35); }
   .folder-row.active .caret { color: var(--paper-raised); opacity: .65; }
   .folder-row .count {
-    margin-left: auto; font-family: 'Inter', sans-serif; font-size: 11px;
+    margin-left: auto; font-family: var(--font-sans); font-size: 11px;
     color: var(--ink-faint); font-variant-numeric: tabular-nums;
   }
   .folder-row.active .count { color: var(--mustard-dim); }
@@ -199,8 +227,9 @@
   .caret {
     width: 10px; height: 10px; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
-    transition: transform .15s ease, color .15s ease; color: var(--ink-faint); font-size: 9px;
+    transition: transform .15s ease, color .15s ease; color: var(--ink-faint);
   }
+  .caret .icon { width: 10px; height: 10px; stroke-width: 3; }
   .caret.rot { transform: rotate(90deg); }
   .caret.hidden { visibility: hidden; }
 
@@ -210,7 +239,7 @@
     margin-top: 12px; width: 100%; padding: 10px 12px;
     background: transparent; border: 1px dashed var(--line);
     border-radius: 8px; color: var(--ink-soft); font-size: 13px;
-    cursor: pointer; text-align: left; font-family: 'Inter', sans-serif;
+    cursor: pointer; text-align: left; font-family: var(--font-sans);
     transition: border-color .15s ease, color .15s ease;
   }
   .new-folder-btn:hover { border-color: var(--mustard); color: var(--mustard-text); }
@@ -229,24 +258,27 @@
   .privacy-toggle input { margin-top: 2px; accent-color: var(--mustard); flex-shrink: 0; cursor: pointer; }
 
   /* ---------- Main ---------- */
-  .main { padding: 34px 44px 70px; max-width: 860px; width: 100%; }
+  .main { padding: clamp(14px, 3.5vw, 34px) var(--gutter) 70px; max-width: 860px; width: 100%; min-width: 0; }
 
   .topbar { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 4px; }
   .menu-btn {
     display: none; align-items: center; justify-content: center;
     width: 40px; height: 40px; border-radius: 9px;
     border: 1px solid var(--line); background: var(--paper-raised);
-    cursor: pointer; flex-shrink: 0; font-size: 16px;
+    cursor: pointer; flex-shrink: 0; font-size: 16px; color: var(--ink);
     box-shadow: var(--shadow-card);
+    transition: transform .1s ease;
   }
+  .menu-btn .icon, .global-search-btn .icon { width: 18px; height: 18px; }
+  .menu-btn:active, .global-search-btn:active { transform: scale(.94); }
 
   .crumb { font-size: 12.5px; color: var(--ink-faint); margin: 0 0 4px; }
   .crumb span { margin: 0 6px; }
 
   .title-row { display: flex; align-items: center; gap: 12px; margin-bottom: 26px; flex-wrap: wrap; }
   h1.folder-title {
-    font-family: 'Source Serif 4', serif; font-size: 32px; font-weight: 600;
-    margin: 0; display: flex; align-items: center; gap: 12px;
+    font-family: var(--font-serif); font-size: clamp(22px, 14px + 2.2vw, 32px); font-weight: 600;
+    margin: 0; display: flex; align-items: center; gap: 12px; min-width: 0;
   }
   h1.folder-title .dot { width: 13px; height: 13px; }
 
@@ -255,8 +287,8 @@
     background: var(--paper-raised);
     border: 1px solid var(--line);
     border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 28px;
+    padding: clamp(14px, 2.5vw, 20px);
+    margin-bottom: clamp(18px, 3vw, 28px);
     box-shadow: var(--shadow-card);
     transition: border-color .2s ease, box-shadow .2s ease;
   }
@@ -268,10 +300,10 @@
   /* flex-wrap lets Save drop to its own line whenever the row is too narrow
      to fit both — driven by available space, not a viewport breakpoint */
   .save-row { display: flex; gap: 10px; flex-wrap: wrap; }
-  .url-field { position: relative; flex: 1 1 180px; min-width: 0; display: flex; align-items: center; }
+  .url-field { position: relative; flex: 1 1 150px; min-width: 0; display: flex; align-items: center; }
   .url-field-icon {
-    position: absolute; left: 13px; font-size: 13px; opacity: .5;
-    pointer-events: none;
+    position: absolute; left: 13px; display: flex; font-size: 15px;
+    color: var(--ink-faint); pointer-events: none;
   }
   .save-row input[type=text] {
     flex: 1; padding: 12px 14px 12px 36px; border: 1px solid var(--line);
@@ -289,7 +321,7 @@
     cursor: pointer; white-space: nowrap; position: relative; overflow: hidden;
     transition: background .15s ease, transform .1s ease;
   }
-  .save-row button:hover { background: #2a3446; }
+  .save-row button:hover { background: color-mix(in srgb, var(--ink) 86%, var(--paper)); }
   .save-row button:active { transform: scale(.97); }
   .save-row button.saved { background: var(--sage); }
 
@@ -318,7 +350,7 @@
   .search-field { position: relative; flex: 1 1 180px; min-width: 140px; }
   .search-field .search-icon {
     position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
-    font-size: 12px; opacity: .5; pointer-events: none;
+    display: flex; font-size: 14px; color: var(--ink-faint); pointer-events: none;
   }
   .search-field input {
     width: 100%; padding: 8px 10px 8px 30px; border: 1px solid var(--line);
@@ -339,7 +371,8 @@
   .date-range span { color: var(--ink-faint); font-size: 12px; }
   .date-range .clear-date-btn {
     background: none; border: none; color: var(--ink-faint); cursor: pointer;
-    font-size: 13px; padding: 4px 6px; border-radius: 6px;
+    font-size: 14px; padding: 4px 6px; border-radius: 6px;
+    display: inline-flex; align-items: center; justify-content: center;
   }
   .date-range .clear-date-btn:hover { color: var(--danger); background: rgba(164,69,58,0.08); }
   .list-toolbar input:focus, .list-toolbar select:focus {
@@ -387,10 +420,10 @@
   .link-title:hover { color: var(--mustard-text); }
   .link-title.is-url { font-weight: 500; color: var(--ink-soft); }
   .link-url-sub {
-    font-size: 12px; color: var(--ink-faint); font-family: 'Inter', monospace;
+    font-size: 12px; color: var(--ink-faint); font-family: var(--font-sans);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 3px;
   }
-  .link-meta { display: flex; align-items: center; gap: 8px; margin-top: 7px; }
+  .link-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 5px 8px; margin-top: 7px; }
   .platform-pill {
     display: inline-flex; align-items: center; gap: 4px;
     padding: 2px 8px; border-radius: 999px;
@@ -417,6 +450,7 @@
     font-size: 17px; padding: 6px 10px; border-radius: 6px; flex-shrink: 0;
     opacity: 0; transition: opacity .15s ease, color .12s ease, background .12s ease;
     margin-top: 1px; line-height: 1;
+    display: inline-flex; align-items: center; justify-content: center;
   }
   .link-item:hover .link-kebab, .link-kebab:focus-visible { opacity: 1; }
   .link-kebab:hover, .link-kebab:focus-visible { color: var(--ink); background: var(--paper-sunk); outline: none; }
@@ -448,6 +482,7 @@
     font-size: 14px; padding: 3px 6px; border-radius: 6px; flex-shrink: 0;
     opacity: 0; transition: opacity .15s ease, color .12s ease, background .12s ease;
     margin-left: 2px;
+    display: inline-flex; align-items: center; justify-content: center;
   }
   .folder-row:hover .folder-kebab, .folder-kebab:focus-visible { opacity: 1; }
   .folder-kebab:hover, .folder-kebab:focus-visible { background: rgba(0,0,0,0.08); outline: none; }
@@ -565,7 +600,7 @@
   .empty-glyph::before { top: 16px; }
   .empty-glyph::after { top: 24px; right: 20px; }
   .empty-title {
-    font-family: 'Source Serif 4', serif; font-size: 19px; color: var(--ink);
+    font-family: var(--font-serif); font-size: 19px; color: var(--ink);
     margin: 0 0 7px;
   }
   .empty p { font-size: 13.5px; margin: 0; line-height: 1.65; max-width: 340px; margin-inline: auto; }
@@ -575,6 +610,7 @@
     position: fixed; inset: 0; background: rgba(22,18,12,.42);
     display: none; align-items: center; justify-content: center;
     z-index: 50; padding: 20px; backdrop-filter: blur(2px);
+    overscroll-behavior: contain;
   }
   .modal-backdrop.show { display: flex; }
   .modal {
@@ -583,7 +619,7 @@
     animation: pop .18s cubic-bezier(.32,.72,0,1);
   }
   @keyframes pop { from { opacity: 0; transform: scale(.96) translateY(6px); } to { opacity: 1; transform: none; } }
-  .modal h2 { font-family: 'Source Serif 4', serif; font-size: 20px; margin: 0 0 18px; }
+  .modal h2 { font-family: var(--font-serif); font-size: 20px; margin: 0 0 18px; }
   .modal label { display: block; font-size: 12px; color: var(--ink-faint); margin: 0 0 6px; }
   .modal input, .modal select {
     width: 100%; padding: 11px 13px; border: 1px solid var(--line);
@@ -614,9 +650,10 @@
   .btn-primary {
     background: var(--ink); color: var(--paper-raised); border: none;
     padding: 10px 17px; border-radius: 8px; cursor: pointer;
-    font-size: 13.5px; font-weight: 500; transition: background .12s ease;
+    font-size: 13.5px; font-weight: 500; transition: background .12s ease, transform .1s ease;
   }
-  .btn-primary:hover { background: #2a3446; }
+  .btn-primary:active, .btn-ghost:active { transform: scale(.97); }
+  .btn-primary:hover { background: color-mix(in srgb, var(--ink) 86%, var(--paper)); }
 
   .toast {
     position: fixed; bottom: 26px; left: 50%;
@@ -633,32 +670,29 @@
 
   /* ---------- Mobile overrides (kept last so they always win the cascade) ---------- */
   @media (max-width: 780px) {
-    .app { grid-template-columns: 1fr; }
+    .app { grid-template-columns: minmax(0, 1fr); }
     .sidebar {
       position: fixed !important; inset: 0 10% 0 0 !important; z-index: 20;
       height: 100vh !important;
       height: 100dvh !important;
       transform: translateX(-100%);
-      transition: transform .25s cubic-bezier(.32,.72,0,1);
+      /* visibility waits for the slide-out to finish, otherwise closing just vanishes */
+      transition: transform .25s cubic-bezier(.32,.72,0,1), visibility 0s linear .25s;
       box-shadow: 4px 0 32px rgba(0,0,0,.18);
       visibility: hidden;
     }
-    .sidebar.open { transform: translateX(0); visibility: visible; }
+    .sidebar.open { transform: translateX(0); visibility: visible; transition-delay: 0s; }
     .scrim {
       position: fixed; inset: 0; background: rgba(20,16,10,.38);
       z-index: 19; opacity: 0; pointer-events: none; transition: opacity .2s ease;
-      backdrop-filter: blur(1px);
     }
     .scrim.show { opacity: 1; pointer-events: auto; }
     .menu-btn { display: inline-flex !important; }
 
-    .main { padding: 14px 16px 60px; }
     .topbar { margin-bottom: 12px; align-items: center; }
     .crumb { display: none; }
     .title-row { margin-bottom: 14px; }
-    h1.folder-title { font-size: 22px; }
     h1.folder-title .dot { width: 10px; height: 10px; }
-    .save-box { padding: 14px; margin-bottom: 18px; }
     .save-hint-row { flex-wrap: wrap; }
     .link-item { padding: 12px 6px; gap: 11px; }
     .link-icon { width: 32px; height: 32px; }
@@ -679,11 +713,52 @@
     }
     .note-toggle { padding: 10px 0; }
     .color-swatch { width: 40px; height: 40px; }
-    .chip, .folder-badge, .tag-chip { padding: 9px 13px; }
+    .chip, .folder-badge { padding: 9px 13px; }
+
+    /* Search + sort + Select share the first toolbar row; the date range takes
+       its own full-width row (two fixed-width date inputs overflow a 320px screen). */
+    .search-field { flex-basis: 120px; }
+    .date-range { flex: 1 1 100%; min-width: 0; order: 1; }
+    /* Folder picker shrinks so "+ Add a note" stays on the same line */
+    .inline-folder-select { max-width: 150px; }
+    .date-range input[type=date] { flex: 1 1 0; min-width: 0; }
+
+    /* One swipeable row of platform chips instead of wrapping into a tall block,
+       bleeding to the screen edges with a soft fade. */
+    .chip-row {
+      flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
+      overscroll-behavior-x: contain;
+      margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter);
+      -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--gutter), #000 calc(100% - var(--gutter)), transparent);
+      mask-image: linear-gradient(to right, transparent, #000 var(--gutter), #000 calc(100% - var(--gutter)), transparent);
+    }
+    .chip-row::-webkit-scrollbar { display: none; }
+    .chip { flex-shrink: 0; }
+  }
+
+  /* Touch screens have no hover: keep row actions visible (they were hover-only,
+     so unreachable on phones), and don't leave a "stuck" hover state after a tap. */
+  @media (hover: none) {
+    .link-kebab, .folder-kebab { opacity: 1; }
+    .link-item:hover { border-color: var(--line-soft); background: var(--paper-raised); }
+    .link-item:active { background: var(--paper-sunk); }
+    .folder-row:hover { transform: none; }
+    .folder-row:not(.active):hover { background: transparent; }
+    .folder-row:not(.active):active { background: var(--paper-sunk); }
   }
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6 6 6M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a4.5 4.5 0 0 0 6.4.4l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.6 1.6"/><path d="M14 11a4.5 4.5 0 0 0-6.4-.4l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.6-1.6"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.8" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.8" fill="currentColor" stroke="none"/></symbol>
+</svg>
 
 <div class="scrim" id="scrim"></div>
 
@@ -693,7 +768,7 @@
       <div class="brand-row">
         <div class="brand-mark"></div>
         <p class="brand">Backpocket</p>
-        <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">☾</button>
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode"><svg class="icon" aria-hidden="true"><use href="#i-moon"/></svg></button>
       </div>
       <p class="brand-sub">Everything you found and meant to come back to.</p>
     </div>
@@ -716,8 +791,8 @@
 
   <main class="main">
     <div class="topbar">
-      <button class="menu-btn" id="menuBtn" aria-label="Open folders">☰</button>
-      <button class="global-search-btn" id="globalSearchBtn" aria-label="Search all folders" aria-pressed="false" title="Search all folders">⌕</button>
+      <button class="menu-btn" id="menuBtn" aria-label="Open folders"><svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg></button>
+      <button class="global-search-btn" id="globalSearchBtn" aria-label="Search all folders" aria-pressed="false" title="Search all folders"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg></button>
       <div style="flex:1">
         <p class="crumb" id="crumb"></p>
         <div class="title-row">
@@ -729,12 +804,12 @@
     <div class="save-box" id="saveBox">
       <div class="save-row">
         <div class="url-field">
-          <span class="url-field-icon">🔗</span>
+          <span class="url-field-icon"><svg class="icon" aria-hidden="true"><use href="#i-link"/></svg></span>
           <input type="text" id="urlInput" placeholder="Paste a link here…" aria-describedby="urlError" />
         </div>
         <button id="saveBtn">Save</button>
       </div>
-      <p class="field-error" id="urlError" hidden></p>
+      <p class="field-error" id="urlError" role="alert" hidden></p>
       <input type="text" id="noteInput" class="note-input" placeholder="Add a note — what's this for? (optional)" style="display:none" />
       <input type="text" id="tagsInput" class="note-input" placeholder="Tags — comma separated (optional)" style="display:none" />
       <div class="save-hint-row">
@@ -745,7 +820,7 @@
 
     <div class="list-toolbar" id="listToolbar">
       <div class="search-field">
-        <span class="search-icon">⌕</span>
+        <span class="search-icon"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg></span>
         <input type="text" id="searchInput" placeholder="Search everything…" />
       </div>
       <select id="sortSelect">
@@ -757,7 +832,7 @@
         <input type="date" id="dateStart" aria-label="From date" />
         <span>–</span>
         <input type="date" id="dateEnd" aria-label="To date" />
-        <button type="button" class="clear-date-btn" id="clearDateBtn" title="Clear date filter">✕</button>
+        <button type="button" class="clear-date-btn" id="clearDateBtn" title="Clear date filter" aria-label="Clear date filter"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
       </div>
       <button type="button" class="select-toggle-btn" id="selectToggleBtn" aria-pressed="false">Select</button>
     </div>
@@ -856,14 +931,27 @@
   const COLORS = ['#a97a35', '#6b7f63', '#2c5f6f', '#a4453a', '#7a5c9e', '#4a5568'];
   const PLATFORM_COLORS = {
     Instagram: '#c1387e', YouTube: '#d1372e', Facebook: '#3266a8',
-    TikTok: '#1f9e9e', X: '#33383f', Link: '#8b93a1'
+    TikTok: '#1f9e9e', X: 'var(--platform-x)', Link: '#8b93a1'
   };
   function platformColor(label){ return PLATFORM_COLORS[label] || PLATFORM_COLORS.Link; }
+  // color-mix (not hex+alpha) so theme-dependent colours like var(--platform-x) tint too.
+  function platformTint(label){ return 'color-mix(in srgb, ' + platformColor(label) + ' 14%, transparent)'; }
+
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  function svgIcon(name){
+    const svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('class', 'icon');
+    svg.setAttribute('aria-hidden', 'true');
+    const use = document.createElementNS(SVG_NS, 'use');
+    use.setAttribute('href', '#i-' + name);
+    svg.appendChild(use);
+    return svg;
+  }
 
   const themeToggle = document.getElementById('themeToggle');
   function applyTheme(theme){
     document.documentElement.setAttribute('data-theme', theme);
-    themeToggle.textContent = theme === 'dark' ? '☀' : '☾';
+    themeToggle.replaceChildren(svgIcon(theme === 'dark' ? 'sun' : 'moon'));
   }
   function initTheme(){
     const saved = localStorage.getItem(THEME_KEY);
@@ -873,7 +961,9 @@
   themeToggle.onclick = () => {
     const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
     localStorage.setItem(THEME_KEY, next);
-    applyTheme(next);
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(document.startViewTransition && !reduceMotion) document.startViewTransition(() => applyTheme(next));
+    else applyTheme(next);
   };
   initTheme();
 
@@ -983,6 +1073,7 @@
   let toastTimer = null;
   let searchEverywhere = false;
   let platformFilter = null;
+  let shownLinkIds = new Set(); // link rows in the last render, so re-renders only animate new ones
   let saveTargetFolderId = currentFolderId;
   let pendingSave = null;
   let pendingImport = null;
@@ -1250,7 +1341,7 @@
 
     const caret = document.createElement('span');
     caret.className = 'caret' + (isOpen ? ' rot' : '') + (!hasKids ? ' hidden' : '');
-    caret.innerHTML = '▶';
+    caret.appendChild(svgIcon('chevron'));
     caret.onclick = (e) => {
       e.stopPropagation();
       if(expanded.has(folder.id)) expanded.delete(folder.id); else expanded.add(folder.id);
@@ -1272,7 +1363,7 @@
     const kebab = document.createElement('button');
     kebab.type = 'button';
     kebab.className = 'folder-kebab';
-    kebab.textContent = '⋯';
+    kebab.appendChild(svgIcon('dots'));
     kebab.setAttribute('aria-label', 'Folder actions for ' + folder.name);
     kebab.onclick = (e) => {
       e.stopPropagation();
@@ -1459,12 +1550,7 @@
       // detected platform glyph instead.
       icon.textContent = link.icon || '🔗';
     } else {
-      const favicon = document.createElement('img');
-      favicon.src = 'https://www.google.com/s2/favicons?sz=64&domain_url=' + encodeURIComponent(link.url);
-      favicon.alt = '';
-      favicon.loading = 'lazy';
-      favicon.onerror = () => { icon.textContent = link.icon || '🔗'; };
-      icon.appendChild(favicon);
+      icon.appendChild(faviconFor(link));
     }
 
     const main = document.createElement('div');
@@ -1497,7 +1583,7 @@
 
     const pill = document.createElement('span');
     pill.className = 'platform-pill';
-    pill.style.background = platformColor(link.platform) + '22';
+    pill.style.background = platformTint(link.platform);
     const pillDot = document.createElement('span');
     pillDot.className = 'platform-dot';
     pillDot.style.background = platformColor(link.platform);
@@ -1527,7 +1613,7 @@
     const kebab = document.createElement('button');
     kebab.type = 'button';
     kebab.className = 'link-kebab';
-    kebab.textContent = '⋯';
+    kebab.appendChild(svgIcon('dots'));
     kebab.title = 'More actions';
     kebab.setAttribute('aria-label', 'More actions for ' + (link.note || link.url));
     kebab.onclick = (e) => {
@@ -1549,6 +1635,25 @@
     return li;
   }
 
+  // Re-use already-loaded favicon <img>s across re-renders. Fresh <img>s blink
+  // empty for a frame while they decode, even from cache, so every search
+  // keystroke made the icon column flicker.
+  const faviconCache = new Map();
+  function faviconFor(link){
+    const src = 'https://www.google.com/s2/favicons?sz=64&domain_url=' + encodeURIComponent(link.url);
+    const key = link.id + ' ' + src;
+    const cached = faviconCache.get(key);
+    if(cached && cached.complete && cached.naturalWidth > 0) return cached;
+    const img = document.createElement('img');
+    img.alt = '';
+    img.loading = 'lazy';
+    img.decoding = 'async';
+    img.onerror = () => { faviconCache.delete(key); img.replaceWith(document.createTextNode(link.icon || '🔗')); };
+    img.src = src;
+    faviconCache.set(key, img);
+    return img;
+  }
+
   function renderPlatformChips(){
     const el = document.getElementById('platformChips');
     el.replaceChildren();
@@ -1567,7 +1672,7 @@
       if(active){
         // Tint + colored border carry the platform's identity; text stays the
         // theme's neutral --ink so it's never the (sometimes AA-failing) brand hue.
-        chip.style.background = platformColor(p) + '22';
+        chip.style.background = platformTint(p);
         chip.style.borderColor = platformColor(p);
         chip.style.color = 'var(--ink)';
       }
@@ -1615,6 +1720,8 @@
 
     const sourceLinks = searchEverywhere ? data.links.slice() : data.links.filter(l => l.folderId === currentFolderId);
     linksListEl.innerHTML = '';
+    const previouslyShown = shownLinkIds;
+    shownLinkIds = new Set();
 
     if(sourceLinks.length === 0){
       document.getElementById('listToolbar').style.display = 'none';
@@ -1686,9 +1793,15 @@
       return;
     }
 
-    links.forEach((link, i) => {
+    // Rows that were already on screen don't replay the entrance animation, so
+    // typing in search or toggling a filter doesn't make the whole list flash.
+    // New rows stagger in, capped so long lists don't take seconds to appear.
+    let entering = 0;
+    links.forEach(link => {
       const row = buildLinkRow(link, { showFolder: searchEverywhere });
-      row.style.animationDelay = (i * 0.02) + 's';
+      if(previouslyShown.has(link.id)) row.style.animation = 'none';
+      else row.style.animationDelay = (Math.min(entering++, 8) * 0.025) + 's';
+      shownLinkIds.add(link.id);
       linksListEl.appendChild(row);
     });
 
@@ -1963,15 +2076,73 @@
     if(searchEverywhere) searchInput.focus();
   };
 
-  (function handleIncoming(){
-    const params = new URLSearchParams(window.location.search);
-    const incoming = params.get('url') || params.get('text');
-    if(incoming){
-      const match = incoming.match(/https?:\/\/[^\s]+/);
-      if(match) urlInput.value = match[0];
-      window.history.replaceState({}, '', window.location.pathname);
+  // ---- Android share sheet (Web Share Target — see share_target in manifest.webmanifest) ----
+  // Apps disagree on where the link goes: Chrome maps Android's EXTRA_TEXT to
+  // `text`, so Instagram/YouTube/Facebook usually send a bare URL there,
+  // TikTok/X often wrap it in a caption ("Check out … https://…"), and only
+  // some apps fill `url`. Check all three and take the first valid http(s) link.
+  const SHARE_PARAMS = ['url', 'text', 'title'];
+  const URL_IN_TEXT = /https?:\/\/[^\s<>"]+/gi;
+  const TRAILING_PUNCT = /[.,;:!?'’”»…]$/;
+  const CLOSER_TO_OPENER = { ')': '(', ']': '[', '}': '{' };
+
+  // Trim prose punctuation the regex swallowed ("…at https://x.com/a." or
+  // "(https://…)") while keeping balanced parens like /wiki/Foo_(bar).
+  function trimSharedUrl(s){
+    for(;;){
+      const last = s.slice(-1);
+      const opener = CLOSER_TO_OPENER[last];
+      if(TRAILING_PUNCT.test(last)){ s = s.slice(0, -1); continue; }
+      if(opener && s.split(opener).length < s.split(last).length){ s = s.slice(0, -1); continue; }
+      return s;
     }
-  })();
+  }
+
+  function firstSharedUrl(values){
+    for(const value of values){
+      if(!value) continue;
+      for(const m of value.matchAll(URL_IN_TEXT)){
+        try{
+          const u = new URL(trimSharedUrl(m[0]));
+          if((u.protocol === 'http:' || u.protocol === 'https:') && u.hostname.includes('.')) return u.href;
+        }catch(e){}
+      }
+    }
+    return null;
+  }
+
+  // Prefills the save form from a share — never saves by itself, so the user
+  // still picks the folder/tags and confirms with Save.
+  function applySharedPayload(){
+    const params = new URLSearchParams(window.location.search);
+    if(!SHARE_PARAMS.some(k => params.has(k))) return;
+
+    const title = (params.get('title') || '').trim();
+    const sharedUrl = firstSharedUrl(SHARE_PARAMS.map(k => params.get(k)));
+
+    // Drop the share params so reload/back doesn't re-apply them; keep anything else.
+    SHARE_PARAMS.forEach(k => params.delete(k));
+    const qs = params.toString();
+    window.history.replaceState(window.history.state, '',
+      window.location.pathname + (qs ? '?' + qs : '') + window.location.hash);
+
+    if(!sharedUrl){
+      urlErrorEl.hidden = false;
+      urlInput.setAttribute('aria-invalid', 'true');
+      // Fill the alert after it's visible so screen readers announce it on load.
+      requestAnimationFrame(() => {
+        urlErrorEl.textContent = "No link found in what was shared. Copy the link from the other app and paste it here.";
+      });
+      return;
+    }
+
+    urlInput.value = sharedUrl;
+    noteInput.style.display = 'block'; tagsInput.style.display = 'block';
+    noteToggle.textContent = '− Hide note';
+    if(title && !/^https?:\/\/\S+$/i.test(title)) noteInput.value = title;
+    saveBox.scrollIntoView({ block: 'nearest' });
+    showToast('Link ready — pick a folder and tap Save', true);
+  }
 
   // ---- Folder modal ----
   const folderModal = document.getElementById('folderModal');
@@ -2443,6 +2614,7 @@
   [folderModal, moveModal, duplicateModal, backupModal].forEach(setupModalA11y);
 
   renderAll();
+  applySharedPayload();
   if(storageWarning) showToast(storageWarning, false);
 })();
 </script>
