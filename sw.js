@@ -1,15 +1,16 @@
 // Minimal offline app-shell cache. Backpocket's actual data lives in
 // localStorage (see index.html), not here — this only lets the page itself
 // load without a network connection after the first visit.
-const CACHE_NAME = 'backpocket-shell-v1';
+const CACHE_NAME = 'backpocket-shell-v2';
 const APP_SHELL = [
   './',
   './index.html',
-  './manifest.json',
+  './manifest.webmanifest',
   './icons/favicon-16.png',
   './icons/favicon-32.png',
   './icons/icon-192.png',
   './icons/icon-512.png',
+  './icons/icon-512-maskable.png',
   './icons/apple-touch-icon.png',
 ];
 
@@ -43,12 +44,21 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Share-sheet launches arrive as navigations to index.html?title=…&text=…&url=…
+  // Key page navigations on the path alone so a share hits the cached shell
+  // (works offline) instead of missing and storing one cache entry per share.
+  const cacheKey = req.mode === 'navigate' && url.search
+    ? url.origin + url.pathname
+    : req;
+
   event.respondWith(
-    caches.match(req).then((cached) => {
+    caches.match(cacheKey).then((cached) => {
       const network = fetch(req)
         .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
+          if (res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(cacheKey, copy));
+          }
           return res;
         })
         .catch(() => cached);
