@@ -46,9 +46,9 @@ To use the share sheet on Android, install Backpocket from **Chrome**, even if B
 
 ### Backpocket isn't in the share sheet?
 
-1. **Check that it's really installed and not a shortcut.** Open `chrome://webapks` in Chrome on the phone. Backpocket should be listed, with **Share Action** and **Share Params** filled in.
+1. **Check that it's really installed and not a shortcut.** Open `chrome://webapks` in Chrome on the phone. Backpocket should be listed, with **Manifest URL** ending in `/Backpocket/manifest.webmanifest`.
    - **Not listed:** you have a shortcut (Brave's home-screen icon, or Chrome's **Create shortcut**). Delete it and install from Chrome as above.
-   - **Listed, but the share fields are empty:** the install came from an older version of the page. Uninstall it, open the site in Chrome, reload once, then install again. The **Install app** button is gone while the old install exists, so uninstall first.
+   - **Listed, but Manifest URL ends in `manifest.json`:** the install came from an older version of the page. Uninstall it, open the site in Chrome, reload once, then install again. The **Install app** button is gone while the old install exists, so uninstall first.
 2. **Open Android's full share sheet.** Instagram, TikTok and X show their own share panel first. Tap **More**, **Share to…** or **Other** to reach Android's list, and scroll it: new apps usually aren't in the top row.
 3. **Install from Chrome.** Brave on Android can't register share targets (see below).
 
