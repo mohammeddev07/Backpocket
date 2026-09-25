@@ -25,7 +25,7 @@ explorer.exe "$(wslpath -w ./index.html)"
 Backpocket is a PWA hosted on GitHub Pages under `/Backpocket/`. Once installed, it shows up in the Android share sheet.
 
 1. Open the GitHub Pages site in Chrome on Android.
-2. Menu (⋮) → **Add to Home screen** / **Install app** → **Install**.
+2. Open the folder menu (☰) and tap **Install app**. Or use Chrome's menu (⋮) → **Add to Home screen** → **Install**. Don't pick **Create shortcut**: a shortcut never appears in the share sheet.
 3. In Instagram, YouTube, TikTok, Facebook, X (or any app), tap **Share** → **Backpocket**.
 4. Backpocket opens with the link filled in (and the shared title as the note, when the app sends one). Pick a folder, add tags if you like, and tap **Save**. Nothing is saved until you tap Save.
 
@@ -44,12 +44,20 @@ If the shared content has no `http(s)` link, Backpocket shows an error under the
 
 To use the share sheet on Android, install Backpocket from **Chrome**, even if Brave is your everyday browser. Each browser keeps its own `localStorage`, so links saved in Brave won't appear in the Chrome-installed app. To move them across, use **Backup & import** (download a backup in one browser, import it in the other).
 
+### Backpocket isn't in the share sheet?
+
+1. **Check that it's really installed and not a shortcut.** Open `chrome://webapks` in Chrome on the phone. Backpocket should be listed, with **Share Action** and **Share Params** filled in.
+   - **Not listed:** you have a shortcut (Brave's home-screen icon, or Chrome's **Create shortcut**). Delete it and install from Chrome as above.
+   - **Listed, but the share fields are empty:** the install came from an older version of the page. Uninstall it, open the site in Chrome, reload once, then install again. The **Install app** button is gone while the old install exists, so uninstall first.
+2. **Open Android's full share sheet.** Instagram, TikTok and X show their own share panel first. Tap **More**, **Share to…** or **Other** to reach Android's list, and scroll it: new apps usually aren't in the top row.
+3. **Install from Chrome.** Brave on Android can't register share targets (see below).
+
 ### How it works
 
 - `manifest.webmanifest` declares a GET `share_target` pointing at `./index.html`, with `title`, `text` and `url` params. All paths are relative, so it works under `/Backpocket/` without hardcoding the repo name.
 - Apps are inconsistent about where they put the link. Chrome maps Android's shared text to `text`, so most social apps send the link there, sometimes inside a caption ("Check out … https://vm.tiktok.com/…"). Backpocket checks `url`, then `text`, then `title`, and takes the first valid `http`/`https` URL. It drops trailing punctuation but keeps balanced parentheses.
 - Once the form is filled in, the share params are removed from the address bar with `history.replaceState`, so a reload or Back doesn't apply them again. Normal loads (with no share params) aren't affected.
-- The service worker caches page loads by path, ignoring the query string. A share launch therefore opens from the cached app shell even when offline, and it doesn't add a cache entry per share.
+- The service worker fetches the page and manifest from the network first and uses the cache only offline. Otherwise, the first visit after a deploy would load the previous release's page and manifest, and installing then gave an app with no share target. Page loads are cached by path, ignoring the query string, so a share launch still opens offline and doesn't add a cache entry per share.
 - Icons: `icon-192.png` and `icon-512.png` (`purpose: any`), plus `icon-512-maskable.png`, which has the artwork inside the 80% safe zone on an opaque background so Android's adaptive-icon masks don't clip it.
 
 ## Stack

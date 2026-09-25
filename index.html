@@ -244,6 +244,13 @@
   }
   .new-folder-btn:hover { border-color: var(--mustard); color: var(--mustard-text); }
 
+  .install-hint {
+    font-size: 11px; color: var(--ink-soft); line-height: 1.5;
+    margin: 10px 0 0; padding: 8px 10px; border-radius: 8px;
+    background: var(--paper-sunk);
+  }
+  .install-hint[hidden], .new-folder-btn[hidden] { display: none; }
+
   .storage-note {
     font-size: 11px; color: var(--ink-faint);
     border-top: 1px solid var(--line-soft);
@@ -781,6 +788,8 @@
     <div class="sidebar-footer">
       <button class="new-folder-btn" id="newFolderTopBtn">+ New folder</button>
       <button class="new-folder-btn" id="backupBtn" style="margin-top:6px;">⇅ Backup &amp; import</button>
+      <button class="new-folder-btn" id="installBtn" style="margin-top:6px;" hidden>⤓ Install app (adds it to the share menu)</button>
+      <p class="install-hint" id="installHint" hidden></p>
       <label class="privacy-toggle">
         <input type="checkbox" id="faviconPrivacyToggle" />
         <span>Use local icons only (skip Google favicon lookups)</span>
@@ -2500,6 +2509,34 @@
       ' and ' + currentFolders + (currentFolders === 1 ? ' folder' : ' folders') + '. ' +
       'Merge adds these alongside what you have; Replace wipes your current library first.';
     backupSummarySection.hidden = false;
+  }
+
+  // ---- Install ----
+  // Android lists Backpocket in the share sheet only when Chrome installs it as
+  // a real app (WebAPK). "Add to home screen → Create shortcut" and Brave's
+  // home-screen shortcuts never register the share target, so offer Chrome's
+  // install flow directly, and tell Brave-on-Android users where to install.
+  const installBtn = document.getElementById('installBtn');
+  const installHint = document.getElementById('installHint');
+  let deferredInstall = null;
+  const braveOnAndroid = !!navigator.brave && /Android/i.test(navigator.userAgent);
+  window.addEventListener('beforeinstallprompt', (e) => {
+    if(braveOnAndroid) return; // its install is a shortcut — the hint below explains instead
+    e.preventDefault();
+    deferredInstall = e;
+    installBtn.hidden = false;
+  });
+  installBtn.onclick = async () => {
+    if(!deferredInstall) return;
+    deferredInstall.prompt();
+    await deferredInstall.userChoice;
+    deferredInstall = null;
+    installBtn.hidden = true;
+  };
+  window.addEventListener('appinstalled', () => { deferredInstall = null; installBtn.hidden = true; });
+  if(braveOnAndroid && !window.matchMedia('(display-mode: standalone)').matches){
+    installHint.textContent = 'To share links into Backpocket from other apps, open this page in Chrome and install it from there. Brave on Android can only add a home-screen shortcut, which Android doesn\'t list in the share menu.';
+    installHint.hidden = false;
   }
 
   document.getElementById('backupBtn').onclick = () => { resetImportUi(); backupModal.classList.add('show'); };

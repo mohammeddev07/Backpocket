@@ -1,7 +1,7 @@
 // Minimal offline app-shell cache. Backpocket's actual data lives in
 // localStorage (see index.html), not here — this only lets the page itself
 // load without a network connection after the first visit.
-const CACHE_NAME = 'backpocket-shell-v2';
+const CACHE_NAME = 'backpocket-shell-v3';
 const APP_SHELL = [
   './',
   './index.html',
@@ -51,19 +51,34 @@ self.addEventListener('fetch', (event) => {
     ? url.origin + url.pathname
     : req;
 
+  const putInCache = (res) => {
+    if (res.ok) {
+      const copy = res.clone();
+      caches.open(CACHE_NAME).then((cache) => cache.put(cacheKey, copy));
+    }
+    return res;
+  };
+
+  // The page and the manifest are network-first, with the cache only as the
+  // offline fallback. Serving them cache-first meant the first visit after a
+  // deploy got the previous release's page — and its manifest — so installing
+  // right then produced an app without the new share_target.
+  if (req.mode === 'navigate' || url.pathname.endsWith('.webmanifest')) {
+    event.respondWith(
+      fetch(req)
+        .then(putInCache)
+        .catch(() => caches.match(cacheKey).then((cached) => cached || caches.match('./index.html')))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(cacheKey).then((cached) => {
       const network = fetch(req)
-        .then((res) => {
-          if (res.ok) {
-            const copy = res.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(cacheKey, copy));
-          }
-          return res;
-        })
+        .then(putInCache)
         .catch(() => cached);
-      // Cache-first for instant offline loads; a background refetch keeps
-      // the cache from going stale on the next online visit.
+      // Static assets (icons) are cache-first for instant loads; a background
+      // refetch keeps the cache from going stale on the next online visit.
       return cached || network;
     })
   );
