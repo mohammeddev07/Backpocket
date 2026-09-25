@@ -24,12 +24,28 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((names) =>
-      Promise.all(names.filter((n) => n !== CACHE_NAME).map((n) => caches.delete(n)))
-    )
-  );
-  self.clients.claim();
+  const activated = (async () => {
+    const names = await caches.keys();
+    // The v1 worker served the page cache-first, so anyone upgrading from it
+    // is looking at the old page right now: it links manifest.json (no
+    // share_target) and has none of the new code, so it can't refresh itself.
+    // Installing from it would create an app missing from the share sheet.
+    // Once we control those windows, reload them to get the current page.
+    // Later versions already link manifest.webmanifest, so their windows are
+    // left alone (a reload there could drop a shared link mid-edit).
+    const upgradingFromV1 = names.includes('backpocket-shell-v1');
+    await Promise.all(names.filter((n) => n !== CACHE_NAME).map((n) => caches.delete(n)));
+    await self.clients.claim();
+    return upgradingFromV1;
+  })();
+  event.waitUntil(activated);
+  // Reload outside waitUntil: the reload's own fetch is held until this worker
+  // finishes activating, so waiting on it inside waitUntil deadlocks the page.
+  activated.then(async (upgradingFromV1) => {
+    if (!upgradingFromV1) return;
+    const windows = await self.clients.matchAll({ type: 'window' });
+    windows.forEach((client) => client.navigate(client.url).catch(() => {}));
+  });
 });
 
 self.addEventListener('fetch', (event) => {
