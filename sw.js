@@ -1,7 +1,7 @@
 // Minimal offline app-shell cache. Backpocket's actual data lives in
 // localStorage (see index.html), not here — this only lets the page itself
 // load without a network connection after the first visit.
-const CACHE_NAME = 'backpocket-shell-v3';
+const CACHE_NAME = 'backpocket-shell-v4';
 const APP_SHELL = [
   './',
   './index.html',

@@ -21,7 +21,7 @@
     --ink-soft: #5b6472;
     --ink-faint: #646973; /* darkened from #8b93a1 to clear WCAG AA 4.5:1 on paper/paper-raised/paper-sunk */
     --paper: #f6f2ea;
-    --paper-raised: #fffdf8;
+    --paper-raised: #ffffff;
     --paper-sunk: #efe9dc;
     --line: #ddd4c0;
     --line-soft: #e8e1d1;
@@ -32,11 +32,25 @@
     --sage-dim: #d9e0d3;
     --danger: #a4453a;
     --focus: #2c5f6f;
+    /* Bright personality accent for primary CTAs and selection marks — dark
+       text on this stays >4.5:1 automatically since the fill is always light. */
+    --accent: #f0b429;
+    --accent-hover: #dfa41d;
+    --accent-ink: #2a2110;
+
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
 
     --shadow-card: 0 1px 2px rgba(26,22,14,.04), 0 8px 20px rgba(26,22,14,.05);
+    --shadow-soft: 0 2px 6px rgba(26,22,14,.05), 0 10px 24px rgba(26,22,14,.06);
     --shadow-modal: 0 24px 70px rgba(20,16,8,.28);
-    --dot: rgba(26,22,14,.035);
-
     /* System fallbacks keep text crisp while web fonts load, offline, or when a
        privacy browser/extension blocks Google Fonts. */
     --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -50,11 +64,11 @@
     --ink: #efe9dd;
     --ink-soft: #b8b0a0;
     --ink-faint: #8e877a; /* lightened from #837c6d to clear WCAG AA 4.5:1 on paper/paper-raised/paper-sunk */
-    --paper: #1b1914;
-    --paper-raised: #242119;
-    --paper-sunk: #141310;
-    --line: #3a3427;
-    --line-soft: #2a2620;
+    --paper: #17140f;
+    --paper-raised: #221d15;
+    --paper-sunk: #100d09;
+    --line: #3d3626;
+    --line-soft: #2c2619;
     --mustard: #d9a45c;
     --mustard-text: #d9a45c; /* already AA-safe as text in dark mode, no separate darken needed */
     --mustard-dim: #4a3a20;
@@ -62,17 +76,20 @@
     --sage-dim: #2b3527;
     --danger: #dd8776;
     --focus: #6cb0c9;
+    --accent: #e8b93f;
+    --accent-hover: #d5a62e;
+    --accent-ink: #201804;
 
     --shadow-card: 0 1px 2px rgba(0,0,0,.3), 0 8px 20px rgba(0,0,0,.35);
+    --shadow-soft: 0 2px 6px rgba(0,0,0,.28), 0 10px 26px rgba(0,0,0,.32);
     --shadow-modal: 0 24px 70px rgba(0,0,0,.6);
-    --dot: rgba(255,251,240,.04);
     --platform-x: #c9ccd1; /* X's near-black brand colour disappears on dark paper */
     color-scheme: dark;
   }
 
   * { box-sizing: border-box; }
   html, body { height: 100%; }
-  html { scrollbar-gutter: stable; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  html { scrollbar-gutter: stable; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scroll-behavior: smooth; }
   body {
     margin: 0;
     font-family: var(--font-sans);
@@ -80,9 +97,6 @@
     color: var(--ink);
     -webkit-font-smoothing: antialiased;
     -webkit-tap-highlight-color: transparent; /* no grey flash box on Android taps; :active states give feedback instead */
-    background-image:
-      radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 0);
-    background-size: 22px 22px;
     transition: background-color .2s ease, color .2s ease;
   }
   ::selection { background: var(--mustard-dim); }
@@ -107,6 +121,7 @@
   }
   @media (prefers-reduced-motion: reduce) {
     * { animation: none !important; transition: none !important; }
+    html { scroll-behavior: auto; }
   }
   /* Theme switch cross-fades the whole page as one (View Transitions) instead of
      each element transitioning on its own schedule. */
@@ -151,10 +166,18 @@
     padding: 0 18px max(18px, env(safe-area-inset-bottom));
   }
   .brand-row { display: flex; align-items: center; gap: 9px; margin-bottom: 3px; }
-  .theme-toggle {
-    margin-left: auto; width: 30px; height: 30px; flex-shrink: 0;
+  .sidebar-close-btn {
+    display: none; margin-left: auto; width: 30px; height: 30px; flex-shrink: 0;
     border: 1px solid var(--line); background: var(--paper);
-    border-radius: 8px; cursor: pointer; font-size: 14px;
+    border-radius: var(--radius-sm); cursor: pointer;
+    align-items: center; justify-content: center; color: var(--ink-soft);
+    transition: border-color .15s ease, color .15s ease;
+  }
+  .sidebar-close-btn:hover { border-color: var(--mustard); color: var(--mustard-text); }
+  .theme-toggle {
+    width: 34px; height: 34px; flex-shrink: 0;
+    border: 1px solid var(--line); background: var(--paper);
+    border-radius: var(--radius-sm); cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     color: var(--ink-soft);
     transition: border-color .15s ease, color .15s ease, transform .1s ease;
@@ -162,6 +185,9 @@
   .theme-toggle .icon { width: 15px; height: 15px; }
   .theme-toggle:hover { border-color: var(--mustard); color: var(--mustard-text); }
   .theme-toggle:active { transform: scale(.92); }
+  .settings-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+  .settings-label { font-size: 13.5px; font-weight: 600; margin: 0; color: var(--ink); }
+  .settings-desc { font-size: 12px; color: var(--ink-faint); margin: 2px 0 0; }
   .brand-mark {
     width: 22px; height: 22px;
     border-radius: 4px;
@@ -176,7 +202,7 @@
     border-bottom: 2px solid rgba(255,255,255,.75);
     border-radius: 1px;
   }
-  .brand { font-family: var(--font-serif); font-size: 20px; font-weight: 600; margin: 0; }
+  .brand { font-family: var(--font-serif); font-size: 20px; font-weight: 700; letter-spacing: -.01em; margin: 0; }
   .brand-sub { font-size: 12px; color: var(--ink-faint); margin: 0 0 24px; line-height: 1.55; padding-left: 31px; }
 
   .tree-label {
@@ -200,16 +226,13 @@
   .folder-row:hover { background: var(--paper-sunk); transform: translateX(1px); }
   .folder-row:hover .caret { color: var(--ink-soft); }
   .folder-row.active {
-    background: var(--ink); color: var(--paper-raised);
-    box-shadow: 0 2px 10px rgba(26,22,14,.18);
+    background: var(--mustard-dim); font-weight: 700;
+    box-shadow: inset 3px 0 0 0 var(--accent);
   }
-  .folder-row.active .folder-icon { box-shadow: 0 0 0 2px rgba(255,255,255,.35); }
-  .folder-row.active .caret { color: var(--paper-raised); opacity: .65; }
   .folder-row .count {
     margin-left: auto; font-family: var(--font-sans); font-size: 11px;
     color: var(--ink-faint); font-variant-numeric: tabular-nums;
   }
-  .folder-row.active .count { color: var(--mustard-dim); }
 
   .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 
@@ -225,7 +248,7 @@
   }
 
   .caret {
-    width: 10px; height: 10px; flex-shrink: 0;
+    width: 14px; height: 14px; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
     transition: transform .15s ease, color .15s ease; color: var(--ink-faint);
   }
@@ -236,20 +259,35 @@
   .folder-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   .new-folder-btn {
-    margin-top: 12px; width: 100%; padding: 10px 12px;
-    background: transparent; border: 1px dashed var(--line);
-    border-radius: 8px; color: var(--ink-soft); font-size: 13px;
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 12px; width: 100%; padding: 11px 13px;
+    background: var(--accent); border: none; font-weight: 600;
+    border-radius: var(--radius-sm); color: var(--accent-ink); font-size: 13px;
     cursor: pointer; text-align: left; font-family: var(--font-sans);
-    transition: border-color .15s ease, color .15s ease;
+    transition: background .15s ease, transform .1s ease;
   }
-  .new-folder-btn:hover { border-color: var(--mustard); color: var(--mustard-text); }
+  .new-folder-btn:hover { background: var(--accent-hover); }
+  .new-folder-btn:active { transform: scale(.98); }
+
+  .footer-links {
+    display: flex; flex-direction: column; gap: 2px;
+    margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line-soft);
+  }
+  .footer-link-btn {
+    display: flex; align-items: center; gap: 8px; width: 100%;
+    padding: 8px 6px; background: none; border: none;
+    border-radius: var(--radius-sm); color: var(--ink-soft); font-size: 12.5px;
+    cursor: pointer; font-family: inherit; text-align: left;
+    transition: background .12s ease, color .12s ease;
+  }
+  .footer-link-btn:hover { background: var(--paper-sunk); color: var(--ink); }
 
   .install-hint {
     font-size: 11px; color: var(--ink-soft); line-height: 1.5;
     margin: 10px 0 0; padding: 8px 10px; border-radius: 8px;
     background: var(--paper-sunk);
   }
-  .install-hint[hidden], .new-folder-btn[hidden] { display: none; }
+  .install-hint[hidden], .footer-link-btn[hidden] { display: none; }
 
   .storage-note {
     font-size: 11px; color: var(--ink-faint);
@@ -259,7 +297,7 @@
 
   .privacy-toggle {
     display: flex; align-items: flex-start; gap: 8px;
-    margin-top: 10px; font-size: 11px; color: var(--ink-faint);
+    font-size: 12px; color: var(--ink-faint);
     line-height: 1.5; cursor: pointer;
   }
   .privacy-toggle input { margin-top: 2px; accent-color: var(--mustard); flex-shrink: 0; cursor: pointer; }
@@ -282,21 +320,23 @@
   .crumb { font-size: 12.5px; color: var(--ink-faint); margin: 0 0 4px; }
   .crumb span { margin: 0 6px; }
 
-  .title-row { display: flex; align-items: center; gap: 12px; margin-bottom: 26px; flex-wrap: wrap; }
+  .title-row { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; flex-wrap: wrap; }
   h1.folder-title {
-    font-family: var(--font-serif); font-size: clamp(22px, 14px + 2.2vw, 32px); font-weight: 600;
+    font-family: var(--font-serif); font-size: clamp(22px, 13px + 2.6vw, 34px); font-weight: 700;
+    letter-spacing: -.015em; text-wrap: balance;
     margin: 0; display: flex; align-items: center; gap: 12px; min-width: 0;
   }
   h1.folder-title .dot { width: 13px; height: 13px; }
+  .folder-count { font-size: 12.5px; color: var(--ink-faint); margin: 0 0 24px; }
 
   /* Save box */
   .save-box {
     background: var(--paper-raised);
     border: 1px solid var(--line);
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
     padding: clamp(14px, 2.5vw, 20px);
     margin-bottom: clamp(18px, 3vw, 28px);
-    box-shadow: var(--shadow-card);
+    box-shadow: var(--shadow-soft);
     transition: border-color .2s ease, box-shadow .2s ease;
   }
   .save-box:focus-within {
@@ -309,12 +349,12 @@
   .save-row { display: flex; gap: 10px; flex-wrap: wrap; }
   .url-field { position: relative; flex: 1 1 150px; min-width: 0; display: flex; align-items: center; }
   .url-field-icon {
-    position: absolute; left: 13px; display: flex; font-size: 15px;
+    position: absolute; left: 13px; display: flex;
     color: var(--ink-faint); pointer-events: none;
   }
   .save-row input[type=text] {
     flex: 1; padding: 12px 14px 12px 36px; border: 1px solid var(--line);
-    border-radius: 8px; font-size: 14px; background: var(--paper);
+    border-radius: var(--radius-sm); font-size: 14px; background: var(--paper);
     color: var(--ink); transition: border-color .15s ease, box-shadow .15s ease;
     width: 100%;
   }
@@ -323,18 +363,18 @@
     box-shadow: 0 0 0 3px rgba(44,95,111,.13);
   }
   .save-row button {
-    padding: 12px 20px; background: var(--ink); color: var(--paper-raised);
-    border: none; border-radius: 8px; font-size: 14px; font-weight: 500;
+    padding: 12px 22px; background: var(--accent); color: var(--accent-ink);
+    border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 700;
     cursor: pointer; white-space: nowrap; position: relative; overflow: hidden;
     transition: background .15s ease, transform .1s ease;
   }
-  .save-row button:hover { background: color-mix(in srgb, var(--ink) 86%, var(--paper)); }
+  .save-row button:hover { background: var(--accent-hover); }
   .save-row button:active { transform: scale(.97); }
-  .save-row button.saved { background: var(--sage); }
+  .save-row button.saved { background: var(--sage); color: var(--paper-raised); }
 
   .note-input {
     width: 100%; padding: 11px 14px; border: 1px solid var(--line);
-    border-radius: 8px; font-size: 13.5px; background: var(--paper);
+    border-radius: var(--radius-sm); font-size: 13.5px; background: var(--paper);
     color: var(--ink); margin-top: 10px; font-family: inherit;
     transition: border-color .15s ease, box-shadow .15s ease;
   }
@@ -357,29 +397,29 @@
   .search-field { position: relative; flex: 1 1 180px; min-width: 140px; }
   .search-field .search-icon {
     position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
-    display: flex; font-size: 14px; color: var(--ink-faint); pointer-events: none;
+    display: flex; color: var(--ink-faint); pointer-events: none;
   }
   .search-field input {
-    width: 100%; padding: 8px 10px 8px 30px; border: 1px solid var(--line);
-    border-radius: 8px; font-size: 13px; background: var(--paper-raised);
+    width: 100%; padding: 8px 10px 8px 32px; border: 1px solid var(--line);
+    border-radius: var(--radius-sm); font-size: 13px; background: var(--paper-raised);
     color: var(--ink); font-family: inherit;
   }
   .list-toolbar select {
-    padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
+    padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius-sm);
     font-size: 13px; background: var(--paper-raised); color: var(--ink);
     font-family: inherit; flex: 0 0 auto;
   }
   .date-range { display: flex; align-items: center; gap: 5px; flex: 0 0 auto; }
   .date-range input[type=date] {
-    padding: 7px 8px; border: 1px solid var(--line); border-radius: 8px;
-    font-size: 12.5px; background: var(--paper-raised); color: var(--ink);
+    padding: 7px 8px; border: 1px solid var(--line); border-radius: var(--radius-sm);
+    font-size: 12.5px; background: var(--paper); color: var(--ink);
     font-family: inherit;
   }
   .date-range span { color: var(--ink-faint); font-size: 12px; }
   .date-range .clear-date-btn {
-    background: none; border: none; color: var(--ink-faint); cursor: pointer;
-    font-size: 14px; padding: 4px 6px; border-radius: 6px;
     display: inline-flex; align-items: center; justify-content: center;
+    background: none; border: none; color: var(--ink-faint); cursor: pointer;
+    padding: 4px 6px; border-radius: 6px;
   }
   .date-range .clear-date-btn:hover { color: var(--danger); background: rgba(164,69,58,0.08); }
   .list-toolbar input:focus, .list-toolbar select:focus {
@@ -391,44 +431,48 @@
   .links { list-style: none; margin: 0; padding: 0; }
   .link-item {
     display: flex; align-items: flex-start; gap: 13px;
-    padding: 13px 12px;
+    padding: 14px 14px;
     background: var(--paper-raised);
     border: 1px solid var(--line-soft);
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     margin-bottom: 8px;
     cursor: pointer;
     user-select: none;
-    transition: background .15s ease, border-color .15s ease, transform .1s ease;
+    transition: background .15s ease, border-color .15s ease, transform .12s ease, box-shadow .15s ease;
     animation: rise .28s ease both;
   }
   @keyframes rise {
     from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: translateY(0); }
   }
-  .link-item:hover { border-color: var(--mustard); background: rgba(169,122,53,0.05); }
+  .link-item:hover {
+    border-color: var(--mustard); background: rgba(169,122,53,0.05);
+    transform: translateY(-1px); box-shadow: var(--shadow-soft);
+  }
   .link-item:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
   .link-item:active { transform: scale(.995); }
 
   .link-icon {
-    width: 36px; height: 36px; border-radius: 8px;
+    width: 36px; height: 36px; border-radius: var(--radius-sm);
     background: var(--paper-sunk); border: 1px solid var(--line-soft);
     display: flex; align-items: center; justify-content: center;
-    font-size: 14px; flex-shrink: 0; color: var(--ink-soft);
+    flex-shrink: 0; color: var(--ink-soft);
     margin-top: 1px; overflow: hidden;
   }
   .link-icon img { width: 18px; height: 18px; border-radius: 3px; object-fit: contain; }
+  .link-icon .icon { width: 17px; height: 17px; }
 
   .link-main { flex: 1; min-width: 0; }
   .link-title {
     font-size: 14.5px; text-decoration: none; color: var(--ink);
-    display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    display: block; overflow-wrap: anywhere;
     font-weight: 600;
   }
   .link-title:hover { color: var(--mustard-text); }
   .link-title.is-url { font-weight: 500; color: var(--ink-soft); }
   .link-url-sub {
     font-size: 12px; color: var(--ink-faint); font-family: var(--font-sans);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 3px;
+    overflow-wrap: anywhere; margin-top: 3px;
   }
   .link-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 5px 8px; margin-top: 7px; }
   .platform-pill {
@@ -453,8 +497,9 @@
   .link-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
 
   .link-kebab {
+    display: inline-flex; align-items: center; justify-content: center;
     background: none; border: none; color: var(--ink-faint); cursor: pointer;
-    font-size: 17px; padding: 6px 10px; border-radius: 6px; flex-shrink: 0;
+    padding: 6px 10px; border-radius: 6px; flex-shrink: 0;
     opacity: 0; transition: opacity .15s ease, color .12s ease, background .12s ease;
     margin-top: 1px; line-height: 1;
     display: inline-flex; align-items: center; justify-content: center;
@@ -471,7 +516,7 @@
   .dropdown-menu {
     position: fixed; z-index: 80; min-width: 180px;
     background: var(--paper-raised); border: 1px solid var(--line);
-    border-radius: 10px; padding: 6px; box-shadow: var(--shadow-modal);
+    border-radius: var(--radius-md); padding: 6px; box-shadow: var(--shadow-modal);
   }
   .menu-item {
     display: block; width: 100%; text-align: left; background: none; border: none;
@@ -485,15 +530,15 @@
 
   /* Folder row kebab + drag-and-drop nesting/reorder */
   .folder-kebab {
+    display: inline-flex; align-items: center; justify-content: center;
     background: none; border: none; color: var(--ink-faint); cursor: pointer;
-    font-size: 14px; padding: 3px 6px; border-radius: 6px; flex-shrink: 0;
+    padding: 3px 6px; border-radius: 6px; flex-shrink: 0;
     opacity: 0; transition: opacity .15s ease, color .12s ease, background .12s ease;
     margin-left: 2px;
     display: inline-flex; align-items: center; justify-content: center;
   }
   .folder-row:hover .folder-kebab, .folder-kebab:focus-visible { opacity: 1; }
   .folder-kebab:hover, .folder-kebab:focus-visible { background: rgba(0,0,0,0.08); outline: none; }
-  .folder-row.active .folder-kebab { color: var(--paper-raised); }
   .folder-row.drop-before { box-shadow: inset 0 2px 0 var(--focus); }
   .folder-row.drop-after { box-shadow: inset 0 -2px 0 var(--focus); }
   .folder-row.drop-inside { outline: 2px dashed var(--focus); outline-offset: -2px; }
@@ -532,21 +577,25 @@
   .field-error[hidden] { display: none; }
 
   .inline-folder-select {
-    border: 1px solid var(--line); border-radius: 6px; padding: 2px 6px;
-    font: inherit; font-weight: 600; font-size: 12px; color: var(--ink-soft);
-    background: var(--paper); cursor: pointer; max-width: 220px; vertical-align: middle;
+    border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 4px 8px;
+    font: inherit; font-weight: 600; font-size: 12.5px; color: var(--ink);
+    background: var(--paper-raised); cursor: pointer; max-width: 220px; vertical-align: middle;
   }
 
-  .global-search-btn {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 40px; height: 40px; border-radius: 9px; flex-shrink: 0;
-    border: 1px solid var(--line); background: var(--paper-raised);
-    cursor: pointer; font-size: 17px; color: var(--ink-soft);
-    box-shadow: var(--shadow-card);
+  .filter-toggle-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--radius-sm);
+    font-size: 13px; background: var(--paper-raised); color: var(--ink-soft);
+    cursor: pointer; font-family: inherit; flex: 0 0 auto;
     transition: background .12s ease, color .12s ease, border-color .12s ease;
   }
-  .global-search-btn:hover { border-color: var(--mustard); color: var(--mustard-text); }
-  .global-search-btn[aria-pressed="true"] { background: var(--ink); color: var(--paper-raised); border-color: var(--ink); }
+  .filter-toggle-btn:hover { border-color: var(--mustard); color: var(--mustard-text); }
+  .filter-toggle-btn[aria-expanded="true"] { background: var(--ink); color: var(--paper-raised); border-color: var(--ink); }
+  .filter-panel {
+    margin: -6px 0 14px; padding: 12px; background: var(--paper-raised);
+    border: 1px solid var(--line-soft); border-radius: var(--radius-sm);
+  }
+  .filter-panel[hidden] { display: none; }
 
   .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
   .chip {
@@ -586,31 +635,22 @@
 
   /* Empty state */
   .empty {
-    padding: 64px 20px 56px;
+    padding: 52px 20px 48px;
     text-align: center;
     color: var(--ink-faint);
-    border: 1px dashed var(--line);
-    border-radius: 12px;
-  }
-  .empty-glyph {
-    width: 46px; height: 46px; margin: 0 auto 18px;
-    border-radius: 10px;
-    border: 1.5px solid var(--line);
-    position: relative;
     background: var(--paper-raised);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-soft);
   }
-  .empty-glyph::before, .empty-glyph::after {
-    content: '';
-    position: absolute; left: 12px; right: 12px;
-    height: 1.5px; background: var(--line);
-  }
-  .empty-glyph::before { top: 16px; }
-  .empty-glyph::after { top: 24px; right: 20px; }
+  .empty-illustration { width: 52px; height: 52px; margin: 0 auto 16px; color: var(--ink-faint); }
+  .empty-illustration .accent-dot { fill: var(--accent); }
   .empty-title {
-    font-family: var(--font-serif); font-size: 19px; color: var(--ink);
+    font-family: var(--font-serif); font-size: 19px; font-weight: 600; color: var(--ink);
     margin: 0 0 7px;
   }
   .empty p { font-size: 13.5px; margin: 0; line-height: 1.65; max-width: 340px; margin-inline: auto; }
+  .empty .btn-primary { margin-top: 18px; }
 
   /* Modal */
   .modal-backdrop {
@@ -621,7 +661,7 @@
   }
   .modal-backdrop.show { display: flex; }
   .modal {
-    background: var(--paper-raised); border-radius: 14px; padding: 26px;
+    background: var(--paper-raised); border-radius: var(--radius-lg); padding: 26px;
     width: 100%; max-width: 380px; box-shadow: var(--shadow-modal);
     animation: pop .18s cubic-bezier(.32,.72,0,1);
   }
@@ -673,7 +713,7 @@
     box-shadow: 0 12px 30px rgba(0,0,0,.22);
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-  .toast .check { color: var(--sage-dim); font-size: 14px; }
+  .toast .check { color: var(--sage-dim); }
 
   /* ---------- Mobile overrides (kept last so they always win the cascade) ---------- */
   @media (max-width: 780px) {
@@ -695,6 +735,7 @@
     }
     .scrim.show { opacity: 1; pointer-events: auto; }
     .menu-btn { display: inline-flex !important; }
+    .sidebar-close-btn { display: inline-flex !important; }
 
     .topbar { margin-bottom: 12px; align-items: center; }
     .crumb { display: none; }
@@ -710,12 +751,13 @@
        literal 44px box — at that size a tag chip row would balloon and break
        the compact editorial layout, so they get extra padding hit-area
        without matching every other button 1:1 (documented trade-off). */
-    .menu-btn, .global-search-btn, .theme-toggle { width: 44px; height: 44px; }
+    .menu-btn, .sidebar-close-btn, .theme-toggle { width: 44px; height: 44px; }
     .link-kebab, .folder-kebab {
       min-width: 44px; min-height: 44px;
       display: inline-flex; align-items: center; justify-content: center;
     }
-    .select-toggle-btn, .clear-date-btn, .new-folder-btn, .btn-ghost, .btn-primary {
+    .select-toggle-btn, .filter-toggle-btn, .footer-link-btn, .clear-date-btn,
+    .new-folder-btn, .btn-ghost, .btn-primary {
       min-height: 44px;
     }
     .note-toggle { padding: 10px 0; }
@@ -775,7 +817,9 @@
       <div class="brand-row">
         <div class="brand-mark"></div>
         <p class="brand">Backpocket</p>
-        <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode"><svg class="icon" aria-hidden="true"><use href="#i-moon"/></svg></button>
+        <button class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Close folders">
+          <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
+        </button>
       </div>
       <p class="brand-sub">Everything you found and meant to come back to.</p>
     </div>
@@ -786,27 +830,38 @@
     </div>
 
     <div class="sidebar-footer">
-      <button class="new-folder-btn" id="newFolderTopBtn">+ New folder</button>
-      <button class="new-folder-btn" id="backupBtn" style="margin-top:6px;">⇅ Backup &amp; import</button>
-      <button class="new-folder-btn" id="installBtn" style="margin-top:6px;" hidden>⤓ Install app (adds it to the share menu)</button>
-      <p class="install-hint" id="installHint" hidden></p>
-      <label class="privacy-toggle">
-        <input type="checkbox" id="faviconPrivacyToggle" />
-        <span>Use local icons only (skip Google favicon lookups)</span>
-      </label>
-      <p class="storage-note">Saved only on this device's browser, in local storage. No account, no sync yet.</p>
+      <button class="new-folder-btn" id="newFolderTopBtn">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        New folder
+      </button>
+      <div class="footer-links">
+        <button class="footer-link-btn" id="installBtn" hidden>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M12 8v6m0 0-2.2-2.2M12 14l2.2-2.2"/></svg>
+          Install app
+        </button>
+        <p class="install-hint" id="installHint" hidden></p>
+        <button class="footer-link-btn" id="backupBtn">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6M6 11l6-6 6 6M5 21h14"/></svg>
+          Backup &amp; import
+        </button>
+        <button class="footer-link-btn" id="settingsBtn">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </button>
+      </div>
+      <p class="storage-note" aria-label="Stored only on this device's browser, in local storage. No account, no sync yet.">Stored on this browser</p>
     </div>
   </aside>
 
   <main class="main">
     <div class="topbar">
       <button class="menu-btn" id="menuBtn" aria-label="Open folders"><svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg></button>
-      <button class="global-search-btn" id="globalSearchBtn" aria-label="Search all folders" aria-pressed="false" title="Search all folders"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg></button>
       <div style="flex:1">
         <p class="crumb" id="crumb"></p>
         <div class="title-row">
           <h1 class="folder-title" id="folderTitle"></h1>
         </div>
+        <p class="folder-count" id="folderCount"></p>
       </div>
     </div>
 
@@ -822,28 +877,38 @@
       <input type="text" id="noteInput" class="note-input" placeholder="Add a note — what's this for? (optional)" style="display:none" />
       <input type="text" id="tagsInput" class="note-input" placeholder="Tags — comma separated (optional)" style="display:none" />
       <div class="save-hint-row">
-        <p class="save-hint">Saving into <select id="saveTargetSelect" class="inline-folder-select" aria-label="Folder to save into"></select></p>
-        <button type="button" class="note-toggle" id="noteToggle">+ Add a note</button>
+        <p class="save-hint">To <select id="saveTargetSelect" class="inline-folder-select" aria-label="Folder to save into"></select></p>
+        <button type="button" class="note-toggle" id="noteToggle">+ Add details</button>
       </div>
     </div>
 
     <div class="list-toolbar" id="listToolbar">
       <div class="search-field">
         <span class="search-icon"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg></span>
-        <input type="text" id="searchInput" placeholder="Search everything…" />
+        <input type="text" id="searchInput" placeholder="Search…" />
       </div>
+      <select id="searchScopeSelect" aria-label="Search scope">
+        <option value="folder">This folder</option>
+        <option value="all">All folders</option>
+      </select>
       <select id="sortSelect">
         <option value="newest">Newest first</option>
         <option value="oldest">Oldest first</option>
         <option value="platform">By platform</option>
       </select>
+      <button type="button" class="filter-toggle-btn" id="filterToggleBtn" aria-expanded="false" aria-controls="filterPanel">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+        Filters
+      </button>
+      <button type="button" class="select-toggle-btn" id="selectToggleBtn" aria-pressed="false">Select</button>
+    </div>
+    <div class="filter-panel" id="filterPanel" hidden>
       <div class="date-range">
         <input type="date" id="dateStart" aria-label="From date" />
         <span>–</span>
         <input type="date" id="dateEnd" aria-label="To date" />
         <button type="button" class="clear-date-btn" id="clearDateBtn" title="Clear date filter" aria-label="Clear date filter"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
       </div>
-      <button type="button" class="select-toggle-btn" id="selectToggleBtn" aria-pressed="false">Select</button>
     </div>
     <div class="chip-row" id="platformChips"></div>
     <p class="result-count" id="resultCount" style="display:none" aria-live="polite"></p>
@@ -900,6 +965,26 @@
   </div>
 </div>
 
+<div class="modal-backdrop" id="settingsModal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
+    <h2 id="settingsModalTitle">Settings</h2>
+    <div class="settings-row">
+      <div>
+        <p class="settings-label">Appearance</p>
+        <p class="settings-desc">Switch between light and dark.</p>
+      </div>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode"></button>
+    </div>
+    <label class="privacy-toggle" style="margin-top:20px;">
+      <input type="checkbox" id="faviconPrivacyToggle" />
+      <span>Use local icons only — skip Google's favicon lookups, so the domains you save are never sent there.</span>
+    </label>
+    <div class="modal-actions" style="margin-top:22px;">
+      <button class="btn-primary" id="closeSettingsBtn">Done</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-backdrop" id="backupModal">
   <div class="modal" style="max-width:440px;" role="dialog" aria-modal="true" aria-labelledby="backupModalTitle">
     <h2 id="backupModalTitle">Backup &amp; import</h2>
@@ -937,7 +1022,9 @@
   const STORAGE_KEY = 'backpocket_data_v1';
   const THEME_KEY = 'backpocket_theme';
   const PRIVACY_KEY = 'backpocket_local_icons_only';
-  const COLORS = ['#a97a35', '#6b7f63', '#2c5f6f', '#a4453a', '#7a5c9e', '#4a5568'];
+  // Soft, pastel folder-tag palette — decorative dots/swatches only, never used
+  // as text color, so contrast against paper doesn't need to clear AA here.
+  const COLORS = ['#f2b8c6', '#bcd9b0', '#c7c6ee', '#f7d59c', '#a9d8d1', '#e3b8dd'];
   const PLATFORM_COLORS = {
     Instagram: '#c1387e', YouTube: '#d1372e', Facebook: '#3266a8',
     TikTok: '#1f9e9e', X: 'var(--platform-x)', Link: '#8b93a1'
@@ -956,6 +1043,17 @@
     svg.appendChild(use);
     return svg;
   }
+
+  const ICON_CHECK = '<svg class="icon check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+  const PLATFORM_ICONS = {
+    Instagram: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1"/></svg>',
+    YouTube: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"><rect x="2.5" y="5.5" width="19" height="13" rx="3.5"/><path d="M10.5 9.5v5l4.5-2.5z" fill="currentColor" stroke="none"/></svg>',
+    Facebook: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 8.5h-2a2 2 0 0 0-2 2V21M9 13h4M6 3h12a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3z"/></svg>',
+    TikTok: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4v10.5a3.5 3.5 0 1 1-3.5-3.5M14 4a4.5 4.5 0 0 0 4.5 4.5V10A6.5 6.5 0 0 1 14 8.2"/></svg>',
+    X: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l16 16M20 4 4 20"/></svg>',
+    Link: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17H7a5 5 0 0 1 0-10h2M15 7h2a5 5 0 0 1 0 10h-2M8 12h8"/></svg>'
+  };
+  function platformIcon(label){ return PLATFORM_ICONS[label] || PLATFORM_ICONS.Link; }
 
   const themeToggle = document.getElementById('themeToggle');
   function applyTheme(theme){
@@ -991,7 +1089,7 @@
     if(!Array.isArray(parsed.folders)) parsed.folders = [];
     if(!Array.isArray(parsed.links)) parsed.links = [];
     if(!parsed.folders.some(f => f.id === 'root')){
-      parsed.folders.unshift({ id: 'root', name: 'All saves', parentId: null, color: '#4a5568' });
+      parsed.folders.unshift({ id: 'root', name: 'All saves', parentId: null, color: '#c9cdd6' });
     }
     parsed.folders.forEach(f => { if(!f.color) f.color = COLORS[0]; });
     parsed.links.forEach(l => {
@@ -1009,7 +1107,7 @@
 
   function freshData(){
     return migrateData({
-      folders: [ { id: 'root', name: 'All saves', parentId: null, color: '#4a5568' } ],
+      folders: [ { id: 'root', name: 'All saves', parentId: null, color: '#c9cdd6' } ],
       links: []
     });
   }
@@ -1162,7 +1260,7 @@
     if(ok){
       const check = document.createElement('span');
       check.className = 'check';
-      check.textContent = '✓';
+      check.innerHTML = ICON_CHECK;
       toastEl.appendChild(check);
     }
     const text = document.createElement('span');
@@ -1556,8 +1654,8 @@
     if(localIconsOnly){
       // Privacy mode: never contact Google's favicon service (which would
       // otherwise leak every saved domain to Google) — show the locally
-      // detected platform glyph instead.
-      icon.textContent = link.icon || '🔗';
+      // detected platform icon instead.
+      icon.innerHTML = platformIcon(link.platform);
     } else {
       icon.appendChild(faviconFor(link));
     }
@@ -1657,7 +1755,12 @@
     img.alt = '';
     img.loading = 'lazy';
     img.decoding = 'async';
-    img.onerror = () => { faviconCache.delete(key); img.replaceWith(document.createTextNode(link.icon || '🔗')); };
+    img.onerror = () => {
+      faviconCache.delete(key);
+      const fallback = document.createElement('span');
+      fallback.innerHTML = platformIcon(link.platform);
+      img.replaceWith(fallback.firstChild);
+    };
     img.src = src;
     faviconCache.set(key, img);
     return img;
@@ -1710,7 +1813,7 @@
     const selectBtn = document.getElementById('selectToggleBtn');
     selectBtn.textContent = selectMode ? 'Done selecting' : 'Select';
     selectBtn.setAttribute('aria-pressed', String(selectMode));
-    document.getElementById('globalSearchBtn').setAttribute('aria-pressed', String(searchEverywhere));
+    document.getElementById('searchScopeSelect').value = searchEverywhere ? 'all' : 'folder';
 
     const folder = folderById(currentFolderId);
     if(searchEverywhere){
@@ -1728,30 +1831,44 @@
     }
 
     const sourceLinks = searchEverywhere ? data.links.slice() : data.links.filter(l => l.folderId === currentFolderId);
+    const folderCountEl = document.getElementById('folderCount');
+    folderCountEl.textContent = sourceLinks.length + (sourceLinks.length === 1 ? ' saved link' : ' saved links');
     linksListEl.innerHTML = '';
     const previouslyShown = shownLinkIds;
     shownLinkIds = new Set();
 
     if(sourceLinks.length === 0){
       document.getElementById('listToolbar').style.display = 'none';
+      document.getElementById('filterPanel').style.display = 'none';
       document.getElementById('platformChips').style.display = 'none';
       document.getElementById('resultCount').style.display = 'none';
       document.getElementById('bulkBar').hidden = true;
       const empty = document.createElement('div');
       empty.className = 'empty';
-      empty.innerHTML = searchEverywhere ? `
-        <div class="empty-glyph"></div>
-        <p class="empty-title">Nothing saved yet</p>
-        <p>Save your first link and it'll show up here, searchable across every folder.</p>
-      ` : `
-        <div class="empty-glyph"></div>
-        <p class="empty-title">Nothing saved here yet</p>
-        <p>Paste a link above, or share one in from Instagram, YouTube, or Facebook. It'll sit here until you're ready for it.</p>
-      `;
+      const illustration = document.createElement('div');
+      illustration.className = 'empty-illustration';
+      illustration.innerHTML = '<svg viewBox="0 0 52 52" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="100%" height="100%"><path d="M9 10a4 4 0 0 1 4-4h18a4 4 0 0 1 4 4v28a4 4 0 0 1-4 4h-9l-4.5 5-4.5-5H13a4 4 0 0 1-4-4z"/><circle class="accent-dot" cx="26" cy="21" r="2.4" stroke="none"/><path d="M20 30h5a3.5 3.5 0 1 0-3.5-3.5M32 21h-5a3.5 3.5 0 1 0 3.5 3.5" stroke-width="1.4"/></svg>';
+      const title = document.createElement('p');
+      title.className = 'empty-title';
+      title.textContent = 'Your next good find belongs here';
+      const desc = document.createElement('p');
+      desc.textContent = searchEverywhere
+        ? 'Save your first link and it\'ll show up here, searchable across every folder.'
+        : 'Paste a link above — from Instagram, YouTube, Facebook, or anywhere else.';
+      const cta = document.createElement('button');
+      cta.type = 'button';
+      cta.className = 'btn-primary';
+      cta.textContent = 'Save your first link';
+      cta.onclick = () => { closeSidebarMobile(); urlInput.focus(); };
+      empty.appendChild(illustration);
+      empty.appendChild(title);
+      empty.appendChild(desc);
+      empty.appendChild(cta);
       linksListEl.appendChild(empty);
       return;
     }
     document.getElementById('listToolbar').style.display = '';
+    document.getElementById('filterPanel').style.display = '';
     document.getElementById('platformChips').style.display = '';
     renderPlatformChips();
 
@@ -1786,7 +1903,8 @@
       const empty = document.createElement('div');
       empty.className = 'empty';
       const glyph = document.createElement('div');
-      glyph.className = 'empty-glyph';
+      glyph.className = 'empty-illustration';
+      glyph.innerHTML = '<svg viewBox="0 0 52 52" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="100%" height="100%"><circle cx="23" cy="23" r="13"/><path d="m32.5 32.5 8 8"/></svg>';
       const title = document.createElement('p');
       title.className = 'empty-title';
       title.textContent = 'No matches';
@@ -1873,6 +1991,11 @@
     }
   }
 
+  function domainOf(url){
+    try{ return new URL(url).hostname.replace(/^www\./, ''); }
+    catch(e){ return url; }
+  }
+
   function renderLinkMain(main, link){
     main.querySelectorAll('.link-title, .link-url-sub').forEach(el => el.remove());
     const a = document.createElement('a');
@@ -1881,14 +2004,14 @@
 
     if(link.note){
       a.textContent = link.note;
-      const urlLine = document.createElement('div');
-      urlLine.className = 'link-url-sub';
-      urlLine.textContent = link.url;
-      main.insertBefore(urlLine, main.firstChild);
-      main.insertBefore(a, urlLine);
+      const domainLine = document.createElement('div');
+      domainLine.className = 'link-url-sub';
+      domainLine.textContent = domainOf(link.url);
+      main.insertBefore(domainLine, main.firstChild);
+      main.insertBefore(a, domainLine);
     }else{
       a.classList.add('is-url');
-      a.textContent = link.url;
+      a.textContent = domainOf(link.url);
       main.insertBefore(a, main.firstChild);
     }
   }
@@ -1948,17 +2071,17 @@
     if(showing){
       noteInput.style.display = 'none'; noteInput.value = '';
       tagsInput.style.display = 'none'; tagsInput.value = '';
-      noteToggle.textContent = '+ Add a note';
+      noteToggle.textContent = '+ Add details';
     }else{
       noteInput.style.display = 'block'; tagsInput.style.display = 'block';
-      noteToggle.textContent = '− Hide note'; noteInput.focus();
+      noteToggle.textContent = '− Hide details'; noteInput.focus();
     }
   };
 
   function resetSaveForm(){
     urlInput.value = ''; noteInput.value = ''; tagsInput.value = '';
     noteInput.style.display = 'none'; tagsInput.style.display = 'none';
-    noteToggle.textContent = '+ Add a note';
+    noteToggle.textContent = '+ Add details';
     urlErrorEl.hidden = true;
     urlInput.removeAttribute('aria-invalid');
   }
@@ -1973,7 +2096,7 @@
     save(data);
     resetSaveForm();
 
-    saveBtn.textContent = 'Saved ✓';
+    saveBtn.textContent = 'Saved';
     saveBtn.classList.add('saved');
     saveBox.classList.add('success');
     setTimeout(() => {
@@ -2079,10 +2202,18 @@
     renderMain();
   });
 
-  document.getElementById('globalSearchBtn').onclick = () => {
-    searchEverywhere = !searchEverywhere;
+  const searchScopeSelect = document.getElementById('searchScopeSelect');
+  searchScopeSelect.addEventListener('change', () => {
+    searchEverywhere = searchScopeSelect.value === 'all';
     renderMain();
-    if(searchEverywhere) searchInput.focus();
+  });
+
+  const filterToggleBtn = document.getElementById('filterToggleBtn');
+  const filterPanel = document.getElementById('filterPanel');
+  filterToggleBtn.onclick = () => {
+    const open = filterPanel.hidden;
+    filterPanel.hidden = !open;
+    filterToggleBtn.setAttribute('aria-expanded', String(open));
   };
 
   // ---- Android share sheet (Web Share Target — see share_target in manifest.webmanifest) ----
@@ -2309,8 +2440,15 @@
   const sidebar = document.getElementById('sidebar');
   const scrim = document.getElementById('scrim');
   document.getElementById('menuBtn').onclick = () => { sidebar.classList.add('open'); scrim.classList.add('show'); };
+  document.getElementById('sidebarCloseBtn').onclick = closeSidebarMobile;
   scrim.onclick = closeSidebarMobile;
   function closeSidebarMobile(){ sidebar.classList.remove('open'); scrim.classList.remove('show'); }
+
+  // ---- Settings modal ----
+  const settingsModal = document.getElementById('settingsModal');
+  document.getElementById('settingsBtn').onclick = () => { settingsModal.classList.add('show'); closeSidebarMobile(); };
+  document.getElementById('closeSettingsBtn').onclick = () => settingsModal.classList.remove('show');
+  settingsModal.addEventListener('click', (e) => { if(e.target === settingsModal) settingsModal.classList.remove('show'); });
 
   // ---- Backup / import ----
   function downloadFile(filename, content, mime){
@@ -2366,7 +2504,7 @@
   // child" and "as a following sibling" shapes rather than assuming one.
   function parseBookmarksHtml(html){
     const doc = new DOMParser().parseFromString(html, 'text/html');
-    const folders = [{ id: 'root', name: 'All saves', parentId: null, color: '#4a5568' }];
+    const folders = [{ id: 'root', name: 'All saves', parentId: null, color: '#c9cdd6' }];
     const links = [];
 
     function findChildDl(dtOrH3){
@@ -2648,7 +2786,7 @@
       }
     }).observe(modalBackdrop, { attributes: true, attributeFilter: ['class'] });
   }
-  [folderModal, moveModal, duplicateModal, backupModal].forEach(setupModalA11y);
+  [folderModal, moveModal, duplicateModal, backupModal, settingsModal].forEach(setupModalA11y);
 
   renderAll();
   applySharedPayload();
