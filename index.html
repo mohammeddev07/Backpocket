@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Backpocket — save what you find</title>
+<title>Backpocket - save what you find</title>
 <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="icons/favicon-16.png" sizes="16x16" type="image/png">
 <link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
@@ -26,12 +26,12 @@
     --line: #ddd4c0;
     --line-soft: #e8e1d1;
     --mustard: #a97a35;
-    --mustard-text: #87612a; /* darkened mustard for text use (links, hover labels) — AA-safe; --mustard itself stays for decorative fills/borders */
+    --mustard-text: #87612a; /* darkened mustard for text use (links, hover labels) - AA-safe; --mustard itself stays for decorative fills/borders */
     --sage: #6b7f63;
     --sage-dim: #d9e0d3;
     --danger: #a4453a;
     --focus: #2c5f6f;
-    /* Bright personality accent for primary CTAs and selection marks — dark
+    /* Bright personality accent for primary CTAs and selection marks - dark
        text on this stays >4.5:1 automatically since the fill is always light. */
     --accent: #f0b429;
     --accent-hover: #dfa41d;
@@ -74,7 +74,7 @@
     --line: #30353b;
     --line-soft: #262a2f;
     /* --mustard/--mustard-text drive hover borders/text on buttons, badges and
-       chips — kept a cool neutral here so yellow reads only on --accent
+       chips - kept a cool neutral here so yellow reads only on --accent
        (primary actions) and the active-folder tint, per design brief. */
     --mustard: #6b7278;
     --mustard-text: #c3c8cd;
@@ -93,7 +93,7 @@
     color-scheme: dark;
     /* Same yellow blend turns olive against a dark surface (low-lightness +
        high-saturation yellow desaturates toward brown), so the selected row
-       gets a neutral recessed fill instead — the accent bar alone carries
+       gets a neutral recessed fill instead - the accent bar alone carries
        the yellow "selected" cue here. */
     --selected-tint: var(--paper-sunk);
   }
@@ -123,7 +123,7 @@
     stroke-linecap: round; stroke-linejoin: round;
   }
   /* Blanket keyboard-focus ring so every interactive element gets one even if
-     a more specific rule elsewhere didn't cover it — :focus-visible only
+     a more specific rule elsewhere didn't cover it - :focus-visible only
      fires for keyboard/programmatic focus, so mouse clicks stay ring-free. */
   a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible,
   textarea:focus-visible, [tabindex]:focus-visible {
@@ -148,7 +148,7 @@
   }
   /* ---------- Sidebar ----------
      Three-part flex column so "New folder" + storage note stay pinned at the
-     bottom in every browser, regardless of how tall the folder tree grows —
+     bottom in every browser, regardless of how tall the folder tree grows -
      only .sidebar-scroll scrolls, header and footer never move. */
   .sidebar {
     background: var(--paper-raised);
@@ -348,7 +348,7 @@
   }
   .save-box.success { border-color: var(--sage); }
   /* flex-wrap lets Save drop to its own line whenever the row is too narrow
-     to fit both — driven by available space, not a viewport breakpoint */
+     to fit both - driven by available space, not a viewport breakpoint */
   .save-row { display: flex; gap: 10px; flex-wrap: wrap; }
   .url-field { position: relative; flex: 1 1 150px; min-width: 0; display: flex; align-items: center; }
   .url-field-icon {
@@ -483,7 +483,7 @@
     padding: 2px 8px; border-radius: 999px;
     font-size: 10.5px; font-weight: 600; letter-spacing: .01em;
     text-transform: uppercase; flex-shrink: 0;
-    color: var(--ink-soft); /* always the neutral, AA-safe color — the platform's
+    color: var(--ink-soft); /* always the neutral, AA-safe color - the platform's
       own hue only tints the background and the dot, never carries the text
       itself, since some brand colors don't reach 4.5:1 as text in both themes */
   }
@@ -516,7 +516,7 @@
     accent-color: var(--mustard); cursor: pointer;
   }
 
-  /* Dropdown menu — used for both the bookmark "⋯" menu and the folder kebab menu */
+  /* Dropdown menu - used for both the bookmark "⋯" menu and the folder kebab menu */
   .dropdown-menu {
     position: fixed; z-index: 80; min-width: 180px;
     background: var(--paper-raised); border: 1px solid var(--line);
@@ -614,7 +614,7 @@
   .chip:hover { border-color: var(--mustard); }
   .chip.active { background: var(--ink); color: var(--paper-raised); border-color: var(--ink); }
 
-  /* Plain text + icon, no chip/box — reads as metadata, not another
+  /* Plain text + icon, no chip/box - reads as metadata, not another
      interactive pill competing with the platform badge next to it. */
   .folder-badge {
     display: inline-flex; align-items: center; gap: 4px;
@@ -642,7 +642,7 @@
   }
   .dup-preview .link-title { white-space: normal; }
 
-  /* Empty state — deliberately unboxed: no card border/background, so it
+  /* Empty state - deliberately unboxed: no card border/background, so it
      reads as a resting page state rather than another panel. */
   .empty { padding: 30px 20px 6px; text-align: center; color: var(--ink-faint); }
   .empty-illustration { width: 56px; height: 56px; margin: 0 auto 14px; color: var(--ink-faint); }
@@ -681,7 +681,7 @@
   .color-picker { display: flex; gap: 8px; margin-bottom: 18px; }
   .color-swatch {
     width: 26px; height: 26px; border-radius: 50%; cursor: pointer;
-    padding: 0; font: inherit; /* reset native <button> chrome — it's a real button now, for keyboard access */
+    padding: 0; font: inherit; /* reset native <button> chrome - it's a real button now, for keyboard access */
     border: 2px solid transparent; transition: transform .1s ease, border-color .12s ease;
   }
   .color-swatch.selected { border-color: var(--ink); transform: scale(1.1); }
@@ -749,7 +749,7 @@
 
     /* 44x44 minimum touch targets (WCAG 2.5.5) for discrete tap actions.
        Pills/chips/badges keep a lighter, padding-driven bump instead of a
-       literal 44px box — at that size a tag chip row would balloon and break
+       literal 44px box - at that size a tag chip row would balloon and break
        the compact editorial layout, so they get extra padding hit-area
        without matching every other button 1:1 (documented trade-off). */
     .menu-btn, .sidebar-close-btn, .theme-toggle { width: 44px; height: 44px; }
@@ -764,7 +764,7 @@
     .note-toggle { padding: 10px 0; }
     .color-swatch { width: 40px; height: 40px; }
     .chip { padding: 9px 13px; }
-    .folder-badge { padding: 10px 0; } /* plain text link — height not width carries the tap target */
+    .folder-badge { padding: 10px 0; } /* plain text link - height not width carries the tap target */
 
     /* Search + sort + Select share the first toolbar row; the date range takes
        its own full-width row (two fixed-width date inputs overflow a 320px screen). */
@@ -875,8 +875,8 @@
         <button id="saveBtn">Save</button>
       </div>
       <p class="field-error" id="urlError" role="alert" hidden></p>
-      <input type="text" id="noteInput" class="note-input" placeholder="Add a note — what's this for? (optional)" style="display:none" />
-      <input type="text" id="tagsInput" class="note-input" placeholder="Tags — comma separated (optional)" style="display:none" />
+      <input type="text" id="noteInput" class="note-input" placeholder="Add a note - what's this for? (optional)" style="display:none" />
+      <input type="text" id="tagsInput" class="note-input" placeholder="Tags - comma separated (optional)" style="display:none" />
       <div class="save-hint-row">
         <p class="save-hint">To <select id="saveTargetSelect" class="inline-folder-select" aria-label="Folder to save into"></select></p>
         <button type="button" class="note-toggle" id="noteToggle">+ Add details</button>
@@ -978,7 +978,7 @@
     </div>
     <label class="privacy-toggle" style="margin-top:20px;">
       <input type="checkbox" id="faviconPrivacyToggle" />
-      <span>Use local icons only — skip Google's favicon lookups, so the domains you save are never sent there.</span>
+      <span>Use local icons only - skip Google's favicon lookups, so the domains you save are never sent there.</span>
     </label>
     <div class="modal-actions" style="margin-top:22px;">
       <button class="btn-primary" id="closeSettingsBtn">Done</button>
@@ -1023,7 +1023,7 @@
   const STORAGE_KEY = 'backpocket_data_v1';
   const THEME_KEY = 'backpocket_theme';
   const PRIVACY_KEY = 'backpocket_local_icons_only';
-  // Soft, pastel folder-tag palette — decorative dots/swatches only, never used
+  // Soft, pastel folder-tag palette - decorative dots/swatches only, never used
   // as text color, so contrast against paper doesn't need to clear AA here.
   const COLORS = ['#f2b8c6', '#bcd9b0', '#c7c6ee', '#f7d59c', '#a9d8d1', '#e3b8dd'];
   const PLATFORM_COLORS = {
@@ -1120,7 +1120,7 @@
     try{
       raw = localStorage.getItem(STORAGE_KEY);
     }catch(e){
-      storageWarning = "Browser storage is unavailable (private browsing?) — changes won't be saved this session.";
+      storageWarning = "Browser storage is unavailable (private browsing?) - changes won't be saved this session.";
       return freshData();
     }
     if(!raw) return freshData();
@@ -1139,7 +1139,7 @@
 
   function storageErrorMessage(e){
     if(e && (e.name === 'QuotaExceededError' || e.code === 22 || e.code === 1014)){
-      return "storage is full — try exporting a backup (Backup & import) and removing some old links.";
+      return "storage is full - try exporting a backup (Backup & import) and removing some old links.";
     }
     return 'browser storage is unavailable right now.';
   }
@@ -1149,7 +1149,7 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
       return true;
     }catch(e){
-      showToast("Couldn't save — " + storageErrorMessage(e), false);
+      showToast("Couldn't save - " + storageErrorMessage(e), false);
       return false;
     }
   }
@@ -1226,7 +1226,7 @@
     return false;
   }
 
-  // Best-effort URL validation using the platform's own parser — accepts bare
+  // Best-effort URL validation using the platform's own parser - accepts bare
   // domains (prepends https://) but rejects obvious non-URLs like plain text.
   function normalizeUrlInput(raw){
     const v = raw.trim();
@@ -1654,7 +1654,7 @@
     icon.className = 'link-icon';
     if(localIconsOnly){
       // Privacy mode: never contact Google's favicon service (which would
-      // otherwise leak every saved domain to Google) — show the locally
+      // otherwise leak every saved domain to Google) - show the locally
       // detected platform icon instead.
       icon.innerHTML = platformIcon(link.platform);
     } else {
@@ -1825,7 +1825,7 @@
     } else {
       setCrumb(pathOf(currentFolderId));
       folderTitleEl.innerHTML = '';
-      // Root ("All saves") isn't a user-colored folder — its dot would just be
+      // Root ("All saves") isn't a user-colored folder - its dot would just be
       // a meaningless neutral swatch, so only real folders show one.
       if(folder.id !== 'root'){
         const dot = document.createElement('span');
@@ -1837,7 +1837,7 @@
     }
 
     // "All saves" (root) is a smart view over everything, not just links
-    // filed directly under it — so it aggregates like global search does,
+    // filed directly under it - so it aggregates like global search does,
     // tagging each card with its actual folder.
     const isRootAll = !searchEverywhere && currentFolderId === 'root';
     const sourceLinks = (searchEverywhere || isRootAll) ? data.links.slice() : data.links.filter(l => l.folderId === currentFolderId);
@@ -2226,7 +2226,7 @@
     filterToggleBtn.setAttribute('aria-expanded', String(open));
   };
 
-  // ---- Android share sheet (Web Share Target — see share_target in manifest.webmanifest) ----
+  // ---- Android share sheet (Web Share Target - see share_target in manifest.webmanifest) ----
   // Apps disagree on where the link goes: Chrome maps Android's EXTRA_TEXT to
   // `text`, so Instagram/YouTube/Facebook usually send a bare URL there,
   // TikTok/X often wrap it in a caption ("Check out … https://…"), and only
@@ -2261,7 +2261,7 @@
     return null;
   }
 
-  // Prefills the save form from a share — never saves by itself, so the user
+  // Prefills the save form from a share - never saves by itself, so the user
   // still picks the folder/tags and confirms with Save.
   function applySharedPayload(){
     const params = new URLSearchParams(window.location.search);
@@ -2291,7 +2291,7 @@
     noteToggle.textContent = '− Hide note';
     if(title && !/^https?:\/\/\S+$/i.test(title)) noteInput.value = title;
     saveBox.scrollIntoView({ block: 'nearest' });
-    showToast('Link ready — pick a folder and tap Save', true);
+    showToast('Link ready - pick a folder and tap Save', true);
   }
 
   // ---- Folder modal ----
@@ -2487,7 +2487,7 @@
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
-  // Netscape Bookmark File format — the same plain-text format Chrome, Firefox
+  // Netscape Bookmark File format - the same plain-text format Chrome, Firefox
   // and Safari all export/import, so no library is needed on either side.
   function exportBookmarksHtml(){
     function renderFolder(folderId, depth){
@@ -2669,7 +2669,7 @@
   let deferredInstall = null;
   const braveOnAndroid = !!navigator.brave && /Android/i.test(navigator.userAgent);
   window.addEventListener('beforeinstallprompt', (e) => {
-    if(braveOnAndroid) return; // its install is a shortcut — the hint below explains instead
+    if(braveOnAndroid) return; // its install is a shortcut - the hint below explains instead
     e.preventDefault();
     deferredInstall = e;
     installBtn.hidden = false;
@@ -2722,7 +2722,7 @@
         catch(err){ showImportError('Could not read that bookmarks file.'); return; }
         if(incoming.links.length === 0){ showImportError('No bookmarks found in that file.'); return; }
       } else {
-        showImportError('Unrecognized file — use a .json backup or a browser bookmarks .html export.');
+        showImportError('Unrecognized file - use a .json backup or a browser bookmarks .html export.');
         return;
       }
       pendingImport = incoming;
@@ -2806,7 +2806,7 @@
 
 <script>
   // Registers the offline app-shell cache. Guarded because service workers
-  // require a secure context (https or localhost) — this silently no-ops on
+  // require a secure context (https or localhost) - this silently no-ops on
   // plain file:// or http:// so opening the file directly still works fine.
   if('serviceWorker' in navigator){
     window.addEventListener('load', () => {
