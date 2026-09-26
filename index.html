@@ -27,7 +27,6 @@
     --line-soft: #e8e1d1;
     --mustard: #a97a35;
     --mustard-text: #87612a; /* darkened mustard for text use (links, hover labels) — AA-safe; --mustard itself stays for decorative fills/borders */
-    --mustard-dim: #e4d1ab;
     --sage: #6b7f63;
     --sage-dim: #d9e0d3;
     --danger: #a4453a;
@@ -61,28 +60,32 @@
   }
 
   :root[data-theme="dark"]{
-    --ink: #efe9dd;
-    --ink-soft: #b8b0a0;
-    --ink-faint: #8e877a; /* lightened from #837c6d to clear WCAG AA 4.5:1 on paper/paper-raised/paper-sunk */
-    --paper: #17140f;
-    --paper-raised: #221d15;
-    --paper-sunk: #100d09;
-    --line: #3d3626;
-    --line-soft: #2c2619;
-    --mustard: #d9a45c;
-    --mustard-text: #d9a45c; /* already AA-safe as text in dark mode, no separate darken needed */
-    --mustard-dim: #4a3a20;
-    --sage: #94ab89;
-    --sage-dim: #2b3527;
-    --danger: #dd8776;
+    /* Neutral charcoal, not brown: page < input < card in lightness so the
+       three surfaces stay tellable apart without leaning on heavier shadows. */
+    --ink: #edeef0;
+    --ink-soft: #9ba1a8;
+    --ink-faint: #868d94; /* clears WCAG AA 4.5:1 on paper/paper-raised/paper-sunk */
+    --paper: #121416;
+    --paper-raised: #1c1f23;
+    --paper-sunk: #15181b;
+    --line: #30353b;
+    --line-soft: #262a2f;
+    /* --mustard/--mustard-text drive hover borders/text on buttons, badges and
+       chips — kept a cool neutral here so yellow reads only on --accent
+       (primary actions) and the active-folder tint, per design brief. */
+    --mustard: #6b7278;
+    --mustard-text: #c3c8cd;
+    --sage: #8fb08a;
+    --sage-dim: #24312a;
+    --danger: #e0897a;
     --focus: #6cb0c9;
     --accent: #e8b93f;
     --accent-hover: #d5a62e;
-    --accent-ink: #201804;
+    --accent-ink: #1a1404;
 
-    --shadow-card: 0 1px 2px rgba(0,0,0,.3), 0 8px 20px rgba(0,0,0,.35);
-    --shadow-soft: 0 2px 6px rgba(0,0,0,.28), 0 10px 26px rgba(0,0,0,.32);
-    --shadow-modal: 0 24px 70px rgba(0,0,0,.6);
+    --shadow-card: 0 1px 2px rgba(0,0,0,.18), 0 6px 14px rgba(0,0,0,.22);
+    --shadow-soft: 0 2px 5px rgba(0,0,0,.2), 0 8px 18px rgba(0,0,0,.24);
+    --shadow-modal: 0 20px 50px rgba(0,0,0,.4);
     --platform-x: #c9ccd1; /* X's near-black brand colour disappears on dark paper */
     color-scheme: dark;
   }
@@ -99,7 +102,7 @@
     -webkit-tap-highlight-color: transparent; /* no grey flash box on Android taps; :active states give feedback instead */
     transition: background-color .2s ease, color .2s ease;
   }
-  ::selection { background: var(--mustard-dim); }
+  ::selection { background: color-mix(in srgb, var(--accent) 35%, transparent); }
   a { color: inherit; }
   button { font-family: inherit; touch-action: manipulation; }
 
@@ -190,19 +193,11 @@
   .settings-desc { font-size: 12px; color: var(--ink-faint); margin: 2px 0 0; }
   .brand-mark {
     width: 22px; height: 22px;
-    border-radius: 4px;
-    background: linear-gradient(155deg, var(--mustard), #8f6a35);
+    border-radius: 5px;
     flex-shrink: 0;
-    position: relative;
+    display: block;
   }
-  .brand-mark::after{
-    content:'';
-    position: absolute; left: 5px; top: 4px; right: 5px; bottom: 5px;
-    border-left: 2px solid rgba(255,255,255,.75);
-    border-bottom: 2px solid rgba(255,255,255,.75);
-    border-radius: 1px;
-  }
-  .brand { font-family: var(--font-serif); font-size: 20px; font-weight: 700; letter-spacing: -.01em; margin: 0; }
+  .brand { font-family: var(--font-sans); font-size: 20px; font-weight: 700; letter-spacing: -.01em; margin: 0; }
   .brand-sub { font-size: 12px; color: var(--ink-faint); margin: 0 0 24px; line-height: 1.55; padding-left: 31px; }
 
   .tree-label {
@@ -217,8 +212,8 @@
   .folder-row {
     display: flex; align-items: center; gap: 9px;
     padding: 8px 9px; border-radius: 8px; cursor: pointer;
-    font-family: var(--font-serif);
-    font-size: 14.5px;
+    font-family: var(--font-sans);
+    font-size: 14px;
     color: var(--ink);
     user-select: none;
     transition: background .15s ease, color .15s ease, transform .12s ease;
@@ -226,7 +221,7 @@
   .folder-row:hover { background: var(--paper-sunk); transform: translateX(1px); }
   .folder-row:hover .caret { color: var(--ink-soft); }
   .folder-row.active {
-    background: var(--mustard-dim); font-weight: 700;
+    background: color-mix(in srgb, var(--accent) 16%, var(--paper-raised)); font-weight: 700;
     box-shadow: inset 3px 0 0 0 var(--accent);
   }
   .folder-row .count {
@@ -381,7 +376,7 @@
   .note-input:focus { outline: none; border-color: var(--focus); box-shadow: 0 0 0 3px rgba(44,95,111,.13); }
 
   .save-hint-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 11px; }
-  .save-hint { font-size: 12px; color: var(--ink-faint); margin: 0; }
+  .save-hint { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--ink-faint); margin: 0; }
   .save-hint strong { color: var(--ink-soft); font-weight: 600; }
   .note-toggle {
     background: none; border: none; color: var(--mustard-text); font-size: 12px;
@@ -446,7 +441,7 @@
     to { opacity: 1; transform: translateY(0); }
   }
   .link-item:hover {
-    border-color: var(--mustard); background: rgba(169,122,53,0.05);
+    border-color: var(--mustard); background: color-mix(in srgb, var(--mustard) 8%, transparent);
     transform: translateY(-1px); box-shadow: var(--shadow-soft);
   }
   .link-item:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
@@ -568,19 +563,22 @@
   .bulk-bar button.danger:hover { background: #b8564a; }
 
   .toast-undo {
-    background: none; border: none; color: var(--mustard-dim); font-weight: 600;
+    background: none; border: none; color: var(--paper-raised); font-weight: 600;
+    text-decoration: underline; text-underline-offset: 2px;
     font-size: 13px; cursor: pointer; padding: 0; margin-left: 4px; font-family: inherit;
   }
-  .toast-undo:hover { text-decoration: underline; }
+  .toast-undo:hover { opacity: .8; }
 
   .field-error { color: var(--danger); font-size: 12px; margin: 7px 2px 0; }
   .field-error[hidden] { display: none; }
 
   .inline-folder-select {
-    border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 4px 8px;
-    font: inherit; font-weight: 600; font-size: 12.5px; color: var(--ink);
-    background: var(--paper-raised); cursor: pointer; max-width: 220px; vertical-align: middle;
+    border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 7px 10px;
+    min-height: 32px; font: inherit; font-weight: 600; font-size: 12.5px; color: var(--ink);
+    background: var(--paper-sunk); cursor: pointer; max-width: 220px; vertical-align: middle;
+    transition: border-color .12s ease, background .12s ease;
   }
+  .inline-folder-select:hover { border-color: var(--mustard); }
 
   .filter-toggle-btn {
     display: inline-flex; align-items: center; gap: 6px;
@@ -635,22 +633,21 @@
 
   /* Empty state */
   .empty {
-    padding: 52px 20px 48px;
+    padding: 32px 20px 30px;
     text-align: center;
     color: var(--ink-faint);
     background: var(--paper-raised);
     border: 1px solid var(--line-soft);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-soft);
   }
-  .empty-illustration { width: 52px; height: 52px; margin: 0 auto 16px; color: var(--ink-faint); }
+  .empty-illustration { width: 36px; height: 36px; margin: 0 auto 12px; color: var(--ink-faint); }
   .empty-illustration .accent-dot { fill: var(--accent); }
   .empty-title {
-    font-family: var(--font-serif); font-size: 19px; font-weight: 600; color: var(--ink);
-    margin: 0 0 7px;
+    font-family: var(--font-sans); font-size: 15.5px; font-weight: 700; color: var(--ink);
+    margin: 0 0 5px;
   }
-  .empty p { font-size: 13.5px; margin: 0; line-height: 1.65; max-width: 340px; margin-inline: auto; }
-  .empty .btn-primary { margin-top: 18px; }
+  .empty p { font-size: 13px; margin: 0; line-height: 1.5; max-width: 320px; margin-inline: auto; }
+  .empty .btn-ghost { margin-top: 14px; }
 
   /* Modal */
   .modal-backdrop {
@@ -666,7 +663,7 @@
     animation: pop .18s cubic-bezier(.32,.72,0,1);
   }
   @keyframes pop { from { opacity: 0; transform: scale(.96) translateY(6px); } to { opacity: 1; transform: none; } }
-  .modal h2 { font-family: var(--font-serif); font-size: 20px; margin: 0 0 18px; }
+  .modal h2 { font-family: var(--font-sans); font-weight: 700; font-size: 18px; margin: 0 0 18px; }
   .modal label { display: block; font-size: 12px; color: var(--ink-faint); margin: 0 0 6px; }
   .modal input, .modal select {
     width: 100%; padding: 11px 13px; border: 1px solid var(--line);
@@ -815,7 +812,7 @@
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <div class="brand-row">
-        <div class="brand-mark"></div>
+        <img class="brand-mark" src="icons/icon-192.png" alt="" width="22" height="22">
         <p class="brand">Backpocket</p>
         <button class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Close folders">
           <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
@@ -1857,7 +1854,7 @@
         : 'Paste a link above — from Instagram, YouTube, Facebook, or anywhere else.';
       const cta = document.createElement('button');
       cta.type = 'button';
-      cta.className = 'btn-primary';
+      cta.className = 'btn-ghost';
       cta.textContent = 'Save your first link';
       cta.onclick = () => { closeSidebarMobile(); urlInput.focus(); };
       empty.appendChild(illustration);
