@@ -57,6 +57,9 @@
     --gutter: clamp(16px, 4vw, 44px); /* fluid page side padding, phone → desktop */
     --platform-x: #33383f;
     color-scheme: light; /* native date pickers, selects, checkboxes and scrollbars follow the theme */
+    /* Selected-folder fill: a pale yellow wash blends cleanly here, since
+       tinting a light surface with --accent keeps its hue instead of muddying. */
+    --selected-tint: color-mix(in srgb, var(--accent) 16%, var(--paper-raised));
   }
 
   :root[data-theme="dark"]{
@@ -88,6 +91,11 @@
     --shadow-modal: 0 20px 50px rgba(0,0,0,.4);
     --platform-x: #c9ccd1; /* X's near-black brand colour disappears on dark paper */
     color-scheme: dark;
+    /* Same yellow blend turns olive against a dark surface (low-lightness +
+       high-saturation yellow desaturates toward brown), so the selected row
+       gets a neutral recessed fill instead — the accent bar alone carries
+       the yellow "selected" cue here. */
+    --selected-tint: var(--paper-sunk);
   }
 
   * { box-sizing: border-box; }
@@ -192,13 +200,13 @@
   .settings-label { font-size: 13.5px; font-weight: 600; margin: 0; color: var(--ink); }
   .settings-desc { font-size: 12px; color: var(--ink-faint); margin: 2px 0 0; }
   .brand-mark {
-    width: 22px; height: 22px;
-    border-radius: 5px;
+    width: 28px; height: 28px;
+    border-radius: 7px;
     flex-shrink: 0;
     display: block;
   }
   .brand { font-family: var(--font-sans); font-size: 20px; font-weight: 700; letter-spacing: -.01em; margin: 0; }
-  .brand-sub { font-size: 12px; color: var(--ink-faint); margin: 0 0 24px; line-height: 1.55; padding-left: 31px; }
+  .brand-sub { font-size: 12px; color: var(--ink-faint); margin: 0 0 24px; line-height: 1.55; padding-left: 37px; }
 
   .tree-label {
     font-size: 11px; color: var(--ink-faint); letter-spacing: .02em;
@@ -221,7 +229,7 @@
   .folder-row:hover { background: var(--paper-sunk); transform: translateX(1px); }
   .folder-row:hover .caret { color: var(--ink-soft); }
   .folder-row.active {
-    background: color-mix(in srgb, var(--accent) 16%, var(--paper-raised)); font-weight: 700;
+    background: var(--selected-tint); font-weight: 700;
     box-shadow: inset 3px 0 0 0 var(--accent);
   }
   .folder-row .count {
@@ -300,29 +308,29 @@
   /* ---------- Main ---------- */
   .main { padding: clamp(14px, 3.5vw, 34px) var(--gutter) 70px; max-width: 860px; width: 100%; min-width: 0; }
 
-  .topbar { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 4px; }
+  .topbar { display: flex; align-items: center; gap: 12px; }
+  .topbar-text { flex: 1; min-width: 0; }
   .menu-btn {
     display: none; align-items: center; justify-content: center;
     width: 40px; height: 40px; border-radius: 9px;
     border: 1px solid var(--line); background: var(--paper-raised);
-    cursor: pointer; flex-shrink: 0; font-size: 16px; color: var(--ink);
+    cursor: pointer; flex-shrink: 0; color: var(--ink);
     box-shadow: var(--shadow-card);
     transition: transform .1s ease;
   }
-  .menu-btn .icon, .global-search-btn .icon { width: 18px; height: 18px; }
-  .menu-btn:active, .global-search-btn:active { transform: scale(.94); }
+  .menu-btn .icon { width: 18px; height: 18px; }
+  .menu-btn:active { transform: scale(.94); }
 
   .crumb { font-size: 12.5px; color: var(--ink-faint); margin: 0 0 4px; }
   .crumb span { margin: 0 6px; }
 
-  .title-row { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; flex-wrap: wrap; }
   h1.folder-title {
     font-family: var(--font-serif); font-size: clamp(22px, 13px + 2.6vw, 34px); font-weight: 700;
     letter-spacing: -.015em; text-wrap: balance;
     margin: 0; display: flex; align-items: center; gap: 12px; min-width: 0;
   }
   h1.folder-title .dot { width: 13px; height: 13px; }
-  .folder-count { font-size: 12.5px; color: var(--ink-faint); margin: 0 0 24px; }
+  .folder-count { font-size: 12.5px; color: var(--ink-faint); margin: 5px 0 24px; }
 
   /* Save box */
   .save-box {
@@ -631,23 +639,16 @@
   }
   .dup-preview .link-title { white-space: normal; }
 
-  /* Empty state */
-  .empty {
-    padding: 32px 20px 30px;
-    text-align: center;
-    color: var(--ink-faint);
-    background: var(--paper-raised);
-    border: 1px solid var(--line-soft);
-    border-radius: var(--radius-lg);
-  }
-  .empty-illustration { width: 36px; height: 36px; margin: 0 auto 12px; color: var(--ink-faint); }
-  .empty-illustration .accent-dot { fill: var(--accent); }
+  /* Empty state — deliberately unboxed: no card border/background, so it
+     reads as a resting page state rather than another panel. */
+  .empty { padding: 30px 20px 6px; text-align: center; color: var(--ink-faint); }
+  .empty-illustration { width: 56px; height: 56px; margin: 0 auto 14px; color: var(--ink-faint); }
   .empty-title {
-    font-family: var(--font-sans); font-size: 15.5px; font-weight: 700; color: var(--ink);
-    margin: 0 0 5px;
+    font-family: var(--font-sans); font-size: 16px; font-weight: 700; color: var(--ink);
+    margin: 0 0 6px;
   }
-  .empty p { font-size: 13px; margin: 0; line-height: 1.5; max-width: 320px; margin-inline: auto; }
-  .empty .btn-ghost { margin-top: 14px; }
+  .empty p { font-size: 13px; margin: 0; line-height: 1.5; max-width: 300px; margin-inline: auto; }
+  .empty .btn-ghost { margin-top: 16px; }
 
   /* Modal */
   .modal-backdrop {
@@ -734,9 +735,9 @@
     .menu-btn { display: inline-flex !important; }
     .sidebar-close-btn { display: inline-flex !important; }
 
-    .topbar { margin-bottom: 12px; align-items: center; }
+    .topbar { margin-bottom: 4px; }
     .crumb { display: none; }
-    .title-row { margin-bottom: 14px; }
+    .folder-count { margin: 4px 0 18px; }
     h1.folder-title .dot { width: 10px; height: 10px; }
     .save-hint-row { flex-wrap: wrap; }
     .link-item { padding: 12px 6px; gap: 11px; }
@@ -812,7 +813,7 @@
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <div class="brand-row">
-        <img class="brand-mark" src="icons/icon-192.png" alt="" width="22" height="22">
+        <img class="brand-mark" src="icons/icon-192.png" alt="" width="28" height="28">
         <p class="brand">Backpocket</p>
         <button class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Close folders">
           <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
@@ -853,14 +854,12 @@
   <main class="main">
     <div class="topbar">
       <button class="menu-btn" id="menuBtn" aria-label="Open folders"><svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg></button>
-      <div style="flex:1">
+      <div class="topbar-text">
         <p class="crumb" id="crumb"></p>
-        <div class="title-row">
-          <h1 class="folder-title" id="folderTitle"></h1>
-        </div>
-        <p class="folder-count" id="folderCount"></p>
+        <h1 class="folder-title" id="folderTitle"></h1>
       </div>
     </div>
+    <p class="folder-count" id="folderCount"></p>
 
     <div class="save-box" id="saveBox">
       <div class="save-row">
@@ -1820,10 +1819,14 @@
     } else {
       setCrumb(pathOf(currentFolderId));
       folderTitleEl.innerHTML = '';
-      const dot = document.createElement('span');
-      dot.className = 'dot';
-      dot.style.background = folder.color || COLORS[0];
-      folderTitleEl.appendChild(dot);
+      // Root ("All saves") isn't a user-colored folder — its dot would just be
+      // a meaningless neutral swatch, so only real folders show one.
+      if(folder.id !== 'root'){
+        const dot = document.createElement('span');
+        dot.className = 'dot';
+        dot.style.background = folder.color || COLORS[0];
+        folderTitleEl.appendChild(dot);
+      }
       folderTitleEl.appendChild(document.createTextNode(folder.name));
     }
 
@@ -1844,7 +1847,7 @@
       empty.className = 'empty';
       const illustration = document.createElement('div');
       illustration.className = 'empty-illustration';
-      illustration.innerHTML = '<svg viewBox="0 0 52 52" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="100%" height="100%"><path d="M9 10a4 4 0 0 1 4-4h18a4 4 0 0 1 4 4v28a4 4 0 0 1-4 4h-9l-4.5 5-4.5-5H13a4 4 0 0 1-4-4z"/><circle class="accent-dot" cx="26" cy="21" r="2.4" stroke="none"/><path d="M20 30h5a3.5 3.5 0 1 0-3.5-3.5M32 21h-5a3.5 3.5 0 1 0 3.5 3.5" stroke-width="1.4"/></svg>';
+      illustration.innerHTML = '<svg viewBox="0 0 52 52" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="100%" height="100%"><path d="M9 10a4 4 0 0 1 4-4h18a4 4 0 0 1 4 4v28a4 4 0 0 1-4 4h-9l-4.5 5-4.5-5H13a4 4 0 0 1-4-4z"/><g transform="translate(12,11)" stroke-width="1.7"><path d="M10 13a4.5 4.5 0 0 0 6.4.4l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.6 1.6"/><path d="M14 11a4.5 4.5 0 0 0-6.4-.4l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.6-1.6"/></g></svg>';
       const title = document.createElement('p');
       title.className = 'empty-title';
       title.textContent = 'Your next good find belongs here';
