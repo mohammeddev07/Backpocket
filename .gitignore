@@ -1,0 +1,11 @@
+plan.md
+node_modules
+node_modules/
+dist/
+dev-dist/
+.env
+.env.*
+!.env.example
+supabase/.temp/
+supabase/.branches/
+.DS_Store
