@@ -3,7 +3,7 @@ import { backfillThumbnails } from './actions';
 import { openLocalDb } from './data/localStore';
 import { migrateFromV1, upgradeLocalDb } from './data/migrate';
 import { storageErrorMessage, store } from './data/store';
-import { consumeSharePayload } from './share/extractSharedUrl';
+import { consumeSharePayload, firstSharedUrl } from './share/extractSharedUrl';
 import { initAi } from './ai';
 import { initAccount } from './ui/account';
 import { initBackupModal } from './ui/backupModal';
@@ -62,6 +62,7 @@ async function boot(): Promise<void> {
   initIosHelp(!!shared);
   MODALS.forEach((id) => setupModalA11y(byId(id)));
   onNavigate(resetSaveTarget);
+  initDesktopShortcuts();
 
   go('all');
   renderAll();
@@ -71,6 +72,35 @@ async function boot(): Promise<void> {
   // AI + account + sync load after the first render: guests never wait on them.
   initAi();
   void initAccount();
+}
+
+// Web affordances: "/" jumps to search, and pasting a link anywhere outside a
+// text field drops it into the save box. Both stand down while a dialog is open.
+function initDesktopShortcuts(): void {
+  const typing = (t: EventTarget | null) =>
+    t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement ||
+    (t instanceof HTMLElement && t.isContentEditable);
+  const dialogOpen = () => !!document.querySelector('.modal-backdrop.show');
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey || typing(e.target) || dialogOpen()) return;
+    const search = byId<HTMLInputElement>('searchInput');
+    if (search.offsetParent === null) return; // toolbar hidden (e.g. plan view)
+    e.preventDefault();
+    search.focus();
+    search.select();
+  });
+
+  document.addEventListener('paste', (e) => {
+    if (typing(e.target) || dialogOpen()) return;
+    const url = firstSharedUrl([e.clipboardData?.getData('text')]);
+    if (!url) return;
+    e.preventDefault();
+    const input = byId<HTMLInputElement>('urlInput');
+    input.value = url;
+    input.dispatchEvent(new Event('input'));
+    input.focus();
+  });
 }
 
 void boot();

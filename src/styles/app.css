@@ -1194,3 +1194,57 @@ h1.folder-title .dot { width: 13px; height: 13px; }
   background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 12.5px; text-decoration: none; cursor: grab;
 }
 .bookmarklet:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* ---- UI polish: grouped list, meta priority, calmer drawer, desktop affordances ---- */
+/* One surface with hairline dividers instead of a stack of boxed cards: calmer,
+   and more rows per phone screen. Only when it holds rows (not empty states/plans). */
+.links:has(> .link-item) {
+  background: var(--paper-raised); border: 1px solid var(--line-soft);
+  border-radius: var(--radius-md); overflow: hidden;
+}
+.links > .link-item { border: 0; border-radius: 0; margin: 0; box-shadow: none; }
+.links > .link-item + .link-item { border-top: 1px solid var(--line-soft); }
+@media (hover: hover) { .links > .link-item:hover { border-color: var(--line-soft); transform: none; box-shadow: none; background: color-mix(in srgb, var(--mustard) 6%, var(--paper-raised)); } }
+.links > .link-item.selected { background: color-mix(in srgb, var(--focus) 9%, var(--paper-raised)); }
+.links > .link-item:focus-visible { outline-offset: -2px; }
+
+/* Every row the same height: icons and thumbnails share one box size. */
+.link-icon, .link-thumb { width: 44px; height: 44px; }
+
+/* Meta line: the folder path matters more than tags, so tags give way first
+   and fade out at the edge instead of the path being cut to "Job › Intervi…". */
+.link-meta { -webkit-mask-image: linear-gradient(to left, transparent, #000 18px); mask-image: linear-gradient(to left, transparent, #000 18px); }
+.link-meta .folder-badge { flex-shrink: 0; max-width: 62%; }
+
+/* No orphaned last words in short copy. */
+.brand-sub, .empty p, .settings-desc, .folder-title, .link-title { text-wrap: pretty; }
+
+/* One amber action per screen (Save): New folder becomes a quiet dashed row. */
+.new-folder-btn {
+  background: transparent; color: var(--ink-soft); font-weight: 500;
+  border: 1px dashed var(--line); justify-content: center;
+}
+.new-folder-btn:hover { background: var(--paper-sunk); color: var(--ink); border-color: var(--mustard); }
+
+/* Settings: the generic ".modal label/input" rules stretched this checkbox full width. */
+.modal .privacy-toggle { display: flex; margin: 16px 0 0; font-size: 12.5px; color: var(--ink-soft); }
+.modal .privacy-toggle input { width: 18px; height: 18px; padding: 0; margin: 1px 0 0; }
+
+/* Desktop: "/" focuses search (hint hidden on touch, while typing, or when Ask shows). */
+.search-kbd {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none;
+  min-width: 20px; height: 20px; padding: 0 5px; border-radius: 5px; border: 1px solid var(--line);
+  font: 600 11px/18px var(--font-sans); text-align: center; color: var(--ink-faint); background: var(--paper-sunk);
+}
+.search-field:focus-within .search-kbd, .search-field input:not(:placeholder-shown) ~ .search-kbd,
+.search-field .ask-btn:not([hidden]) ~ .search-kbd { display: none; }
+@media (hover: none) { .search-kbd { display: none; } }
+
+@media (min-width: 781px) {
+  .main { margin-inline: auto; } /* centered reading column on wide screens */
+}
+@media (max-width: 780px) {
+  .link-icon, .link-thumb { width: 40px; height: 40px; }
+  .link-item { padding: 7px 4px 7px 12px; }
+  .folder-count { margin-left: 56px; } /* line up under the title, not the menu button */
+}
