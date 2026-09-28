@@ -1,0 +1,56 @@
+name: Deploy to GitHub Pages
+
+# Settings -> Pages -> Source must be "GitHub Actions".
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Build
+        run: npm run build
+        env:
+          # Public by design (the anon key only works through RLS policies).
+          # Set them as repository variables; secrets work too.
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY || secrets.VITE_SUPABASE_ANON_KEY }}
+      - name: No Gemini key in the bundle
+        # Google API keys start with "AIza". The app never embeds one - the
+        # server key lives in Supabase secrets and BYOK keys stay on-device.
+        run: |
+          if grep -rE 'AIza[0-9A-Za-z_-]{35}' dist/; then
+            echo "::error::A Google API key was found in dist/"; exit 1
+          fi
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

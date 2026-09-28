@@ -1,0 +1,36 @@
+# Supabase CLI config for local development (`supabase start`).
+# Hosted-project settings (redirect URLs, Google provider, secrets) are set in
+# the dashboard.
+project_id = "backpocket"
+
+[api]
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+
+[db]
+port = 54322
+major_version = 17
+
+[studio]
+port = 54323
+
+[auth]
+site_url = "http://localhost:5173/Backpocket/"
+additional_redirect_urls = [
+  "http://localhost:5173/Backpocket/",
+  "http://localhost:4173/Backpocket/",
+  "https://mohammeddev07.github.io/Backpocket/",
+]
+
+[auth.external.google]
+enabled = true
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET)"
+skip_nonce_check = true
+
+[functions.ai]
+verify_jwt = true
+
+[functions.delete-account]
+verify_jwt = true

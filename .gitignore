@@ -1,0 +1,35 @@
+# Private working notes
+plan.md
+SETUP.md
+
+# Dependencies and build output
+node_modules/
+dist/
+dev-dist/
+coverage/
+.vite/
+*.tsbuildinfo
+
+# Local environment (the Gemini key never goes in the repo)
+.env
+.env.*
+!.env.example
+
+# Supabase CLI local state
+supabase/.temp/
+supabase/.branches/
+supabase/.env
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+
+# Deno lockfiles from local type-checks
+deno.lock
