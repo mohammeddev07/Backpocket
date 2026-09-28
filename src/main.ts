@@ -1,18 +1,24 @@
 import './styles/app.css';
+import { backfillThumbnails } from './actions';
 import { openLocalDb } from './data/localStore';
 import { migrateFromV1, upgradeLocalDb } from './data/migrate';
 import { storageErrorMessage, store } from './data/store';
 import { consumeSharePayload } from './share/extractSharedUrl';
 import { initBackupModal } from './ui/backupModal';
 import { byId } from './ui/dom';
-import { initFolderDialogs, rootFolderId } from './ui/folderDialogs';
+import { initFiltersSheet } from './ui/filtersSheet';
+import { initFolderDialogs } from './ui/folderDialogs';
+import { initFolderPicker } from './ui/folderPicker';
+import { initLinkEditor } from './ui/linkEditor';
 import { initList } from './ui/list';
 import { setupModalA11y } from './ui/modal';
-import { applySharedPayload, initSaveBox } from './ui/saveBox';
+import { applySharedPayload, initSaveBox, resetSaveTarget } from './ui/saveBox';
 import { initInstall, initSettings, initTheme } from './ui/settings';
 import { initSidebar } from './ui/sidebar';
 import { showToast } from './ui/toast';
-import { renderAll, scheduleRender, view } from './ui/view';
+import { go, onNavigate, renderAll, scheduleRender } from './ui/view';
+
+const MODALS = ['folderModal', 'pickerModal', 'filtersSheet', 'linkModal', 'backupModal', 'settingsModal'];
 
 async function boot(): Promise<void> {
   // Read the share params first, so they're cleared from the address bar
@@ -39,25 +45,25 @@ async function boot(): Promise<void> {
   // Ask the browser not to evict our IndexedDB under storage pressure.
   if (db.persistent && navigator.storage?.persist) navigator.storage.persist().catch(() => {});
 
-  const root = rootFolderId();
-  view.currentFolderId = root;
-  view.saveTargetFolderId = root;
-  view.expanded = new Set([root]);
-
   initTheme();
+  initFolderPicker();
   initSidebar();
   initFolderDialogs();
+  initFiltersSheet();
+  initLinkEditor();
   initList();
   initSaveBox();
   initSettings();
   initBackupModal();
   initInstall();
-  ['folderModal', 'moveModal', 'duplicateModal', 'backupModal', 'settingsModal']
-    .forEach((id) => setupModalA11y(byId(id)));
+  MODALS.forEach((id) => setupModalA11y(byId(id)));
+  onNavigate(resetSaveTarget);
 
+  go('all');
   renderAll();
   if (shared) applySharedPayload(shared);
   if (warning) showToast(warning, false, undefined, 6000);
+  setTimeout(() => void backfillThumbnails(), 1500);
 }
 
 void boot();

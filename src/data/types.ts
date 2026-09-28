@@ -39,6 +39,8 @@ export interface Link {
   platform: PlatformLabel;
   /** Display title. v1's "note" (shown as the card title) migrates here. */
   title: string | null;
+  /** Who set the title - AI never overwrites a 'user' title. */
+  titleSource: 'user' | 'oembed' | 'ai' | null;
   note: string | null;
   /** Caption/text the sharing app sent along with the link. */
   sharedText: string | null;

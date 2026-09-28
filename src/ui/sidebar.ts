@@ -1,40 +1,74 @@
-import { moveFolderUpDown, reorderFolder, updateFolder } from '../actions';
+import { inboxId, moveFolderUpDown, reorderFolder, updateFolder } from '../actions';
+import { APP_CONFIG } from '../config';
+import { COLORS } from '../data/migrate';
 import { store } from '../data/store';
 import { childrenOf, isDescendantOf } from '../data/tree';
 import type { Folder } from '../data/types';
-import { COLORS } from '../data/migrate';
+import { isRevisitCandidate } from '../search/filters';
 import { byId, svgIcon } from './dom';
+import { confirmDeleteFolder, openFolderModal, openMoveFolder } from './folderDialogs';
 import { openMenu, type MenuItem } from './menu';
-import { clearFilters, renderAll, renderTree, setRenderer, view } from './view';
-import { confirmDeleteFolder, openFolderModal, openMoveModal } from './folderDialogs';
+import { go, renderTree, setRenderer, view } from './view';
 
 let treeEl: HTMLElement;
 let draggedFolderId: string | null = null;
 
-function recursiveLinkCount(folderId: string): number {
-  const folders = store.liveFolders();
-  const ids = new Set([folderId]);
-  let grew = true;
-  while (grew) {
-    grew = false;
-    for (const f of folders) if (f.parentId && ids.has(f.parentId) && !ids.has(f.id)) { ids.add(f.id); grew = true; }
+/** Extra folder-menu items registered by later features (e.g. "Make a plan"). */
+const extraFolderItems: Array<(f: Folder) => MenuItem[]> = [];
+export function addFolderMenuItems(fn: (f: Folder) => MenuItem[]): void { extraFolderItems.push(fn); }
+
+function linkCounts(): { byFolder: Map<string, number>; total: number; revisit: number } {
+  const byFolder = new Map<string, number>();
+  const links = store.liveLinks();
+  const now = Date.now();
+  let revisit = 0;
+  for (const l of links) {
+    byFolder.set(l.folderId, (byFolder.get(l.folderId) || 0) + 1);
+    if (isRevisitCandidate(l, now, APP_CONFIG.revisitMinAgeDays)) revisit++;
   }
-  return store.liveLinks().filter((l) => ids.has(l.folderId)).length;
+  return { byFolder, total: links.length, revisit };
 }
 
-export function selectFolder(id: string): void {
-  view.currentFolderId = id;
-  view.saveTargetFolderId = id;
-  view.searchEverywhere = false;
-  clearFilters();
-  renderAll();
+function recursiveCount(folderId: string, counts: Map<string, number>, folders: Folder[]): number {
+  let n = counts.get(folderId) || 0;
+  for (const c of folders) if (c.parentId === folderId) n += recursiveCount(c.id, counts, folders);
+  return n;
 }
 
-function buildLevel(parentId: string | null): HTMLUListElement {
+// ---- LIBRARY views: All saves, Inbox, Revisit ----
+function renderViews(counts: ReturnType<typeof linkCounts>): void {
+  const nav = byId('viewNav');
+  nav.replaceChildren();
+  const inbox = inboxId();
+  const items: Array<{ label: string; icon: string; count: number; active: boolean; onClick: () => void }> = [
+    { label: 'All saves', icon: 'layers', count: counts.total, active: view.mode === 'all', onClick: () => go('all') },
+    { label: 'Inbox', icon: 'inbox', count: counts.byFolder.get(inbox) || 0, active: view.mode === 'folder' && view.folderId === inbox, onClick: () => go('folder', inbox) },
+    { label: 'Revisit', icon: 'clock', count: counts.revisit, active: view.mode === 'revisit', onClick: () => go('revisit') },
+  ];
+  for (const it of items) {
+    const li = document.createElement('li');
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'folder-row nav-row' + (it.active ? ' active' : '');
+    if (it.active) btn.setAttribute('aria-current', 'page');
+    const name = document.createElement('span');
+    name.className = 'folder-name';
+    name.textContent = it.label;
+    const count = document.createElement('span');
+    count.className = 'count';
+    count.textContent = it.count ? String(it.count) : '';
+    btn.append(svgIcon(it.icon), name, count);
+    btn.onclick = () => { it.onClick(); closeSidebarMobile(); };
+    li.appendChild(btn);
+    nav.appendChild(li);
+  }
+}
+
+function buildLevel(parentId: string | null, counts: Map<string, number>, folders: Folder[]): HTMLUListElement {
   const ul = document.createElement('ul');
   ul.setAttribute('role', 'group');
-  ul.style.margin = '0'; ul.style.padding = '0'; ul.style.borderLeft = 'none'; ul.style.listStyle = 'none';
-  childrenOf(store.liveFolders(), parentId).forEach((folder) => ul.appendChild(buildFolderLi(folder)));
+  ul.className = parentId ? 'tree-sub' : 'tree-root';
+  childrenOf(folders, parentId).filter((f) => !f.isSystem).forEach((folder) => ul.appendChild(buildFolderLi(folder, counts, folders)));
   return ul;
 }
 
@@ -52,66 +86,48 @@ function focusTreeItemById(id: string): void {
   if (el) focusTreeItem(el);
 }
 function handleTreeKeydown(e: KeyboardEvent, folder: Folder, li: HTMLElement, hasKids: boolean): void {
-  // Tree items nest, so a keydown bubbles through every ancestor treeitem's
-  // listener too; stop it so only the focused item handles the key.
+  if (e.target !== li) return;
+  // Tree items nest, so stop the key reaching ancestor treeitems' listeners.
   e.stopPropagation();
   const items = getVisibleTreeItems();
   const idx = items.indexOf(li);
-  if (e.key === 'ArrowDown') {
+  if (e.key === 'ArrowDown') { e.preventDefault(); if (items[idx + 1]) focusTreeItem(items[idx + 1]); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); if (items[idx - 1]) focusTreeItem(items[idx - 1]); }
+  else if (e.key === 'ArrowRight') {
     e.preventDefault();
-    if (items[idx + 1]) focusTreeItem(items[idx + 1]);
-  } else if (e.key === 'ArrowUp') {
-    e.preventDefault();
-    if (items[idx - 1]) focusTreeItem(items[idx - 1]);
-  } else if (e.key === 'ArrowRight') {
-    e.preventDefault();
-    if (hasKids && !view.expanded.has(folder.id)) {
-      view.expanded.add(folder.id);
-      renderTree();
-      focusTreeItemById(folder.id);
-    } else if (hasKids && items[idx + 1]) {
-      focusTreeItem(items[idx + 1]);
-    }
+    if (hasKids && !view.expanded.has(folder.id)) { view.expanded.add(folder.id); renderTree(); focusTreeItemById(folder.id); }
+    else if (hasKids && items[idx + 1]) focusTreeItem(items[idx + 1]);
   } else if (e.key === 'ArrowLeft') {
     e.preventDefault();
-    if (hasKids && view.expanded.has(folder.id)) {
-      view.expanded.delete(folder.id);
-      renderTree();
-      focusTreeItemById(folder.id);
-    } else if (folder.parentId) {
-      focusTreeItemById(folder.parentId);
-    }
-  } else if (e.key === 'Home') {
-    e.preventDefault();
-    if (items[0]) focusTreeItem(items[0]);
-  } else if (e.key === 'End') {
-    e.preventDefault();
-    if (items[items.length - 1]) focusTreeItem(items[items.length - 1]);
-  } else if (e.key === 'Enter' || e.key === ' ') {
-    e.preventDefault();
-    li.querySelector<HTMLElement>('.folder-row')!.click();
-  }
+    if (hasKids && view.expanded.has(folder.id)) { view.expanded.delete(folder.id); renderTree(); focusTreeItemById(folder.id); }
+    else if (folder.parentId) focusTreeItemById(folder.parentId);
+  } else if (e.key === 'Home') { e.preventDefault(); if (items[0]) focusTreeItem(items[0]); }
+  else if (e.key === 'End') { e.preventDefault(); if (items[items.length - 1]) focusTreeItem(items[items.length - 1]); }
+  else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); li.querySelector<HTMLElement>('.folder-row')!.click(); }
 }
 
-function buildFolderLi(folder: Folder): HTMLLIElement {
+function buildFolderLi(folder: Folder, counts: Map<string, number>, folders: Folder[]): HTMLLIElement {
   const li = document.createElement('li');
-  const kids = childrenOf(store.liveFolders(), folder.id);
-  const hasKids = kids.length > 0;
+  const hasKids = folders.some((f) => f.parentId === folder.id);
   const isOpen = view.expanded.has(folder.id);
-  const isActive = folder.id === view.currentFolderId && !view.searchEverywhere;
+  const isActive = view.mode === 'folder' && folder.id === view.folderId;
 
   li.setAttribute('role', 'treeitem');
   li.setAttribute('aria-selected', String(isActive));
+  li.setAttribute('aria-label', folder.name);
   if (hasKids) li.setAttribute('aria-expanded', String(isOpen));
-  li.setAttribute('data-folder-id', folder.id);
-  li.tabIndex = isActive ? 0 : -1;
+  li.dataset.folderId = folder.id;
+  li.tabIndex = -1;
   li.addEventListener('keydown', (e) => handleTreeKeydown(e, folder, li, hasKids));
 
   const row = document.createElement('div');
   row.className = 'folder-row' + (isActive ? ' active' : '');
 
-  const caret = document.createElement('span');
+  const caret = document.createElement('button');
+  caret.type = 'button';
+  caret.tabIndex = -1;
   caret.className = 'caret' + (isOpen ? ' rot' : '') + (!hasKids ? ' hidden' : '');
+  caret.setAttribute('aria-label', (isOpen ? 'Collapse ' : 'Expand ') + folder.name);
   caret.appendChild(svgIcon('chevron'));
   caret.onclick = (e) => {
     e.stopPropagation();
@@ -129,28 +145,25 @@ function buildFolderLi(folder: Folder): HTMLLIElement {
 
   const count = document.createElement('span');
   count.className = 'count';
-  count.textContent = String(recursiveLinkCount(folder.id) || '');
+  const n = recursiveCount(folder.id, counts, folders);
+  count.textContent = n ? String(n) : '';
 
   const kebab = document.createElement('button');
   kebab.type = 'button';
+  kebab.tabIndex = -1;
   kebab.className = 'folder-kebab';
   kebab.appendChild(svgIcon('dots'));
   kebab.setAttribute('aria-label', 'Folder actions for ' + folder.name);
-  kebab.onclick = (e) => {
-    e.stopPropagation();
-    openMenu(kebab, folderMenuItems(folder));
-  };
+  kebab.onclick = (e) => { e.stopPropagation(); openMenu(kebab, folderMenuItems(folder)); };
 
   row.append(caret, icon, name, count, kebab);
   row.onclick = () => {
     if (hasKids) view.expanded.add(folder.id);
-    selectFolder(folder.id);
+    go('folder', folder.id);
     closeSidebarMobile();
   };
 
-  // Drag-and-drop nesting/reorder. The system folder can't be dragged but can
-  // still be a drop target.
-  row.draggable = !folder.isSystem;
+  row.draggable = true;
   row.addEventListener('dragstart', (e) => {
     e.stopPropagation();
     draggedFolderId = folder.id;
@@ -170,41 +183,37 @@ function buildFolderLi(folder: Folder): HTMLLIElement {
     row.classList.remove('drop-before', 'drop-after', 'drop-inside');
     row.classList.add('drop-' + zone(e));
   });
-  row.addEventListener('dragleave', () => {
-    row.classList.remove('drop-before', 'drop-after', 'drop-inside');
-  });
+  row.addEventListener('dragleave', () => row.classList.remove('drop-before', 'drop-after', 'drop-inside'));
   row.addEventListener('drop', (e) => {
     e.preventDefault();
     row.classList.remove('drop-before', 'drop-after', 'drop-inside');
     const dragged = draggedFolderId;
     draggedFolderId = null;
-    if (!dragged || dragged === folder.id) return;
-    if (isDescendantOf(store.liveFolders(), folder.id, dragged)) return;
+    if (!dragged || dragged === folder.id || isDescendantOf(store.liveFolders(), folder.id, dragged)) return;
     const z = zone(e);
-    if (z === 'inside') {
-      updateFolder(dragged, { parentId: folder.id });
-      view.expanded.add(folder.id);
-    } else {
-      reorderFolder(dragged, folder.id, z);
-    }
+    if (z === 'inside') { updateFolder(dragged, { parentId: folder.id }); view.expanded.add(folder.id); }
+    else reorderFolder(dragged, folder.id, z);
   });
 
   li.appendChild(row);
-  if (hasKids && isOpen) li.appendChild(buildLevel(folder.id));
+  if (hasKids && isOpen) li.appendChild(buildLevel(folder.id, counts, folders));
   return li;
 }
 
 export function folderMenuItems(folder: Folder): MenuItem[] {
-  const siblings = childrenOf(store.liveFolders(), folder.parentId);
+  if (folder.isSystem) return extraFolderItems.flatMap((fn) => fn(folder));
+  const siblings = childrenOf(store.liveFolders(), folder.parentId).filter((f) => !f.isSystem);
   const idx = siblings.findIndex((s) => s.id === folder.id);
-  const items: MenuItem[] = [{ label: 'Edit folder', onClick: () => openFolderModal(folder.id) }];
+  const items: MenuItem[] = [
+    { label: 'Edit folder', onClick: () => openFolderModal(folder.id) },
+    { label: 'New subfolder', onClick: () => openFolderModal(undefined, { parentId: folder.id }) },
+  ];
+  items.push(...extraFolderItems.flatMap((fn) => fn(folder)));
   if (idx > 0) items.push({ label: 'Move up', onClick: () => moveFolderUpDown(folder.id, -1) });
   if (idx < siblings.length - 1) items.push({ label: 'Move down', onClick: () => moveFolderUpDown(folder.id, 1) });
-  if (!folder.isSystem) {
-    items.push({ label: 'Move to…', onClick: () => openMoveModal({ type: 'folder', ids: [folder.id] }) });
-    items.push({ separator: true });
-    items.push({ label: 'Delete folder', danger: true, onClick: () => confirmDeleteFolder(folder.id) });
-  }
+  items.push({ label: 'Move to…', onClick: () => openMoveFolder(folder.id) });
+  items.push({ separator: true });
+  items.push({ label: 'Delete folder', danger: true, onClick: () => confirmDeleteFolder(folder.id) });
   return items;
 }
 
@@ -212,15 +221,32 @@ export function folderMenuItems(folder: Folder): MenuItem[] {
 export function closeSidebarMobile(): void {
   byId('sidebar').classList.remove('open');
   byId('scrim').classList.remove('show');
+  byId('menuBtn').setAttribute('aria-expanded', 'false');
 }
 
 export function initSidebar(): void {
   treeEl = byId('tree');
-  setRenderer('tree', () => {
-    treeEl.replaceChildren(buildLevel(null));
+  setRenderer('nav', () => {
+    const counts = linkCounts();
+    renderViews(counts);
+    const folders = store.liveFolders();
+    treeEl.replaceChildren(...Array.from(buildLevel(null, counts.byFolder, folders).children));
+    byId('treeEmpty').hidden = folders.some((f) => !f.isSystem);
+    // Roving tabindex: exactly one tree item is tabbable.
+    const items = getVisibleTreeItems();
+    const active = items.find((it) => it.getAttribute('aria-selected') === 'true') || items[0];
+    if (active) active.tabIndex = 0;
   });
-  byId('menuBtn').onclick = () => { byId('sidebar').classList.add('open'); byId('scrim').classList.add('show'); };
-  byId('sidebarCloseBtn').onclick = closeSidebarMobile;
+  byId('menuBtn').onclick = () => {
+    byId('sidebar').classList.add('open');
+    byId('scrim').classList.add('show');
+    byId('menuBtn').setAttribute('aria-expanded', 'true');
+    setTimeout(() => byId('sidebarCloseBtn').focus(), 50);
+  };
+  byId('sidebarCloseBtn').onclick = () => { closeSidebarMobile(); byId('menuBtn').focus(); };
   byId('scrim').onclick = closeSidebarMobile;
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && byId('sidebar').classList.contains('open')) { closeSidebarMobile(); byId('menuBtn').focus(); }
+  });
   byId('newFolderTopBtn').onclick = () => openFolderModal();
 }

@@ -2,12 +2,13 @@ import {
   buildBackup, buildBookmarksHtml, detectImportFormat, mergeImport, parseBackupJson, parseBookmarksHtml,
   replaceImport, type ImportBundle, type ImportTarget,
 } from '../data/backup';
+import { inboxId } from '../actions';
 import { store } from '../data/store';
 import type { Kind } from '../data/types';
 import { byId, plural } from './dom';
 import { closeModal, onModalClose, openModal } from './modal';
 import { showToast } from './toast';
-import { renderAll, view } from './view';
+import { go, renderAll } from './view';
 
 let pendingImport: ImportBundle | null = null;
 
@@ -32,11 +33,9 @@ function exportBookmarks(): void {
   downloadFile('backpocket-bookmarks-' + today() + '.html', buildBookmarksHtml(store.snapshot()), 'text/html');
 }
 
-/** Where imports land: our system folder, and the parent for top-level folders. */
+/** Where imports land: loose links go to the Inbox, folders to the top level. */
 export function importTarget(): ImportTarget {
-  const system = store.liveFolders().find((f) => f.isSystem)!;
-  // v1 layout: every folder nests under "All saves" (id 'root'). v2 Inbox: top level.
-  return { systemId: system.id, topParentId: system.id === 'root' ? system.id : null };
+  return { systemId: inboxId(), topParentId: null };
 }
 
 function showImportError(msg: string): void {
@@ -121,12 +120,9 @@ export function initBackupModal(): void {
   byId('importReplaceBtn').onclick = () => {
     if (!pendingImport) return;
     if (!confirm('Replace your entire library with this backup? This cannot be undone.')) return;
-    const target = importTarget();
-    writeAll(replaceImport(store.snapshot(), pendingImport, target));
-    view.currentFolderId = target.systemId;
-    view.saveTargetFolderId = target.systemId;
+    writeAll(replaceImport(store.snapshot(), pendingImport, importTarget()));
     closeModal(backupModal);
-    renderAll();
+    go('all');
     showToast('Library replaced from backup', true);
   };
 }

@@ -1,39 +1,91 @@
-import { createLink, moveLinks } from '../actions';
+import { createLink, findDuplicate, inboxId } from '../actions';
 import { store } from '../data/store';
-import { flattenTree, pathLabel } from '../data/tree';
+import { pathLabel } from '../data/tree';
 import type { Link } from '../data/types';
-import { normalizeForCompare, normalizeUrlInput, parseTags } from '../data/urls';
+import { normalizeUrlInput } from '../data/urls';
+import { allTags } from '../search/filters';
 import { usableSharedTitle, type SharedPayload } from '../share/extractSharedUrl';
 import { byId } from './dom';
+import { pickFolder, setPickerButton } from './folderPicker';
 import { openLink } from './list';
-import { closeModal, onModalClose, openModal } from './modal';
+import { createTagInput, type TagInput } from './tagInput';
 import { showToast } from './toast';
-import { renderAll, setRenderer, view } from './view';
+import { setRenderer, view } from './view';
 
-interface PendingSave { url: string; title: string; tags: string[]; folderId: string; existing: Link }
-let pendingSave: PendingSave | null = null;
+export interface SavedEvent {
+  link: Link;
+  /** The user picked a folder other than the Inbox - AI must never move it. */
+  explicitFolder: boolean;
+}
+type SaveHook = (e: SavedEvent) => void;
+const saveHooks: SaveHook[] = [];
+/** Runs after a link is saved (AI sort-on-save). Saving never waits for these. */
+export function onLinkSaved(fn: SaveHook): void { saveHooks.push(fn); }
 
 let urlInput: HTMLInputElement;
+let titleInput: HTMLInputElement;
 let noteInput: HTMLInputElement;
-let tagsInput: HTMLInputElement;
-let noteToggle: HTMLButtonElement;
+let tagInput: TagInput;
 let urlErrorEl: HTMLElement;
+/** Caption that came with a share, saved as sharedText. */
+let pendingSharedText: string | null = null;
+/** The user chose the target folder themselves (vs. the default for the view). */
+let targetChosen = false;
+let dupFor: string | null = null;
 
-function showDetails(show: boolean, label = '− Hide details'): void {
-  noteInput.style.display = show ? 'block' : 'none';
-  tagsInput.style.display = show ? 'block' : 'none';
-  noteToggle.textContent = show ? label : '+ Add details';
+function showDetails(show: boolean): void {
+  byId('saveDetails').hidden = !show;
+  const toggle = byId('noteToggle');
+  toggle.textContent = show ? '− Hide details' : '+ Add details';
+  toggle.setAttribute('aria-expanded', String(show));
 }
 
-function resetSaveForm(): void {
-  urlInput.value = ''; noteInput.value = ''; tagsInput.value = '';
-  showDetails(false);
+function hideDup(): void {
+  byId('dupNotice').hidden = true;
+  dupFor = null;
+}
+
+function showError(msg: string): void {
+  urlErrorEl.textContent = msg;
+  urlErrorEl.hidden = false;
+  urlInput.setAttribute('aria-invalid', 'true');
+}
+function clearError(): void {
   urlErrorEl.hidden = true;
   urlInput.removeAttribute('aria-invalid');
 }
 
-function doSave(url: string, title: string, tags: string[], folderId: string): void {
-  createLink({ url, folderId, title, tags });
+function resetSaveForm(): void {
+  urlInput.value = ''; titleInput.value = ''; noteInput.value = '';
+  tagInput.set([]);
+  pendingSharedText = null;
+  showDetails(false);
+  clearError();
+  hideDup();
+}
+
+/** Default "To" folder: the folder being viewed, otherwise the Inbox. */
+function defaultTarget(): string {
+  if (view.mode === 'folder' && store.folder(view.folderId)) return view.folderId;
+  return inboxId();
+}
+
+function renderTarget(): void {
+  if (!targetChosen || !store.folder(view.saveTargetId)) view.saveTargetId = defaultTarget();
+  setPickerButton(byId('saveTargetBtn'), view.saveTargetId);
+  byId('saveTargetBtn').setAttribute('aria-label', 'Save to folder: ' + pathLabel(store.liveFolders(), view.saveTargetId));
+}
+
+function doSave(url: string): void {
+  const folderId = view.saveTargetId || inboxId();
+  const link = createLink({
+    url, folderId,
+    title: titleInput.value.trim() || null,
+    note: noteInput.value.trim() || null,
+    tags: tagInput.get(),
+    sharedText: pendingSharedText,
+  });
+  const explicitFolder = folderId !== inboxId();
   resetSaveForm();
 
   const saveBtn = byId('saveBtn');
@@ -41,76 +93,32 @@ function doSave(url: string, title: string, tags: string[], folderId: string): v
   saveBtn.textContent = 'Saved';
   saveBtn.classList.add('saved');
   saveBox.classList.add('success');
-  setTimeout(() => {
-    saveBtn.textContent = 'Save'; saveBtn.classList.remove('saved');
-    saveBox.classList.remove('success');
-  }, 1100);
+  setTimeout(() => { saveBtn.textContent = 'Save'; saveBtn.classList.remove('saved'); saveBox.classList.remove('success'); }, 1100);
 
-  renderAll();
-  showToast('Saved to ' + (store.folder(folderId)?.name || 'folder'), true);
+  showToast('Saved to ' + pathLabel(store.liveFolders(), link.folderId), true);
+  for (const h of saveHooks) {
+    try { h({ link, explicitFolder }); } catch (e) { console.error(e); }
+  }
+}
+
+function showDup(existing: Link, url: string): void {
+  dupFor = url;
+  byId('dupFolderName').textContent = pathLabel(store.liveFolders(), existing.folderId);
+  byId('dupNotice').hidden = false;
+  (byId('dupOpenBtn') as HTMLButtonElement).onclick = () => { openLink(existing); resetSaveForm(); };
+}
+
+function onSave(force = false): void {
+  const result = normalizeUrlInput(urlInput.value);
+  if (result.error !== undefined) { showError(result.error); urlInput.focus(); return; }
+  clearError();
+  const dup = findDuplicate(result.url);
+  if (dup && !force) { showDup(dup, result.url); return; }
+  doSave(result.url);
   urlInput.focus();
 }
 
-// ---- Duplicate-link detection ----
-function openDuplicateModal(pending: PendingSave): void {
-  pendingSave = pending;
-  const existing = pending.existing;
-  byId('dupFolderName').textContent = store.folder(existing.folderId)?.name || '';
-  const preview = byId('dupPreview');
-  preview.replaceChildren();
-  const title = document.createElement('div');
-  title.className = 'link-title';
-  title.textContent = existing.title || existing.url;
-  preview.appendChild(title);
-  if (existing.title) {
-    const urlLine = document.createElement('div');
-    urlLine.className = 'link-url-sub';
-    urlLine.textContent = existing.url;
-    preview.appendChild(urlLine);
-  }
-  openModal(byId('duplicateModal'));
-}
-
-function onSave(): void {
-  const result = normalizeUrlInput(urlInput.value);
-  if (result.error !== undefined) {
-    urlErrorEl.textContent = result.error;
-    urlErrorEl.hidden = false;
-    urlInput.setAttribute('aria-invalid', 'true');
-    urlInput.focus();
-    return;
-  }
-  urlErrorEl.hidden = true;
-  urlInput.removeAttribute('aria-invalid');
-
-  const title = noteInput.value.trim();
-  const tags = parseTags(tagsInput.value);
-  const folderId = view.saveTargetFolderId;
-
-  const dupKey = normalizeForCompare(result.url);
-  const dup = store.liveLinks().find((l) => normalizeForCompare(l.url) === dupKey);
-  if (dup) {
-    openDuplicateModal({ url: result.url, title, tags, folderId, existing: dup });
-    return;
-  }
-  doSave(result.url, title, tags, folderId);
-}
-
-function populateSaveTargetSelect(): void {
-  const select = byId<HTMLSelectElement>('saveTargetSelect');
-  select.replaceChildren();
-  const folders = store.liveFolders();
-  for (const { folder } of flattenTree(folders)) {
-    const opt = document.createElement('option');
-    opt.value = folder.id;
-    opt.textContent = pathLabel(folders, folder.id);
-    select.appendChild(opt);
-  }
-  if (!store.folder(view.saveTargetFolderId)) view.saveTargetFolderId = view.currentFolderId;
-  select.value = view.saveTargetFolderId;
-}
-
-/** Prefills the save form from a share - never saves by itself. */
+/** Prefills the save form from a share (Android share target, iOS Shortcut, bookmarklet). */
 export function applySharedPayload(payload: SharedPayload): void {
   if (!payload.url) {
     urlErrorEl.hidden = false;
@@ -122,54 +130,53 @@ export function applySharedPayload(payload: SharedPayload): void {
     return;
   }
   urlInput.value = payload.url;
-  showDetails(true, '− Hide note');
   const title = usableSharedTitle(payload.title);
-  if (title) noteInput.value = title;
+  if (title) titleInput.value = title;
+  // Keep the caption the app sent (minus a bare URL) for search and AI.
+  const caption = [payload.title, payload.text].filter((s) => s && s !== payload.url && !/^https?:\/\/\S+$/i.test(s)).join('\n').trim();
+  pendingSharedText = caption ? caption.slice(0, 2000) : null;
+  showDetails(true);
   byId('saveBox').scrollIntoView({ block: 'nearest' });
-  showToast('Link ready - pick a folder and tap Save', true);
+  const dup = findDuplicate(payload.url);
+  if (dup) showDup(dup, payload.url);
+  else showToast('Link ready - pick a folder and tap Save', true);
 }
 
 export function initSaveBox(): void {
   urlInput = byId<HTMLInputElement>('urlInput');
+  titleInput = byId<HTMLInputElement>('titleInput');
   noteInput = byId<HTMLInputElement>('noteInput');
-  tagsInput = byId<HTMLInputElement>('tagsInput');
-  noteToggle = byId<HTMLButtonElement>('noteToggle');
   urlErrorEl = byId('urlError');
-
-  setRenderer('saveTarget', populateSaveTargetSelect);
-  byId<HTMLSelectElement>('saveTargetSelect').addEventListener('change', (e) => {
-    view.saveTargetFolderId = (e.target as HTMLSelectElement).value;
+  tagInput = createTagInput(byId('tagsInput'), {
+    placeholder: 'Tags (optional)', label: 'Tags', suggestions: () => allTags(store.liveLinks()), onSubmit: () => onSave(),
   });
 
-  noteToggle.onclick = () => {
-    const showing = noteInput.style.display !== 'none';
-    if (showing) { noteInput.value = ''; tagsInput.value = ''; showDetails(false); }
-    else { showDetails(true); noteInput.focus(); }
+  setRenderer('saveTarget', renderTarget);
+  byId('saveTargetBtn').onclick = async () => {
+    const target = await pickFolder({ title: 'Save to', selectedId: view.saveTargetId });
+    if (!target) return;
+    view.saveTargetId = target;
+    targetChosen = target !== defaultTarget();
+    renderTarget();
   };
 
-  byId('saveBtn').onclick = onSave;
-  urlInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') onSave(); });
-  urlInput.addEventListener('input', () => { urlErrorEl.hidden = true; urlInput.removeAttribute('aria-invalid'); });
+  byId('noteToggle').onclick = () => {
+    const show = byId('saveDetails').hidden === true;
+    showDetails(show);
+    if (show) titleInput.focus();
+  };
+
+  byId('saveBtn').onclick = () => onSave();
+  urlInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); onSave(); } });
+  urlInput.addEventListener('input', () => { clearError(); if (dupFor) hideDup(); });
+  titleInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') onSave(); });
   noteInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') onSave(); });
-  tagsInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') onSave(); });
 
-  const dupModal = byId('duplicateModal');
-  onModalClose(dupModal, () => { pendingSave = null; });
-  byId('dupSaveAnywayBtn').onclick = () => {
-    const p = pendingSave;
-    closeModal(dupModal);
-    if (p) doSave(p.url, p.title, p.tags, p.folderId);
-  };
-  byId('dupOpenBtn').onclick = () => {
-    if (pendingSave) openLink(pendingSave.existing);
-    closeModal(dupModal);
-  };
-  byId('dupMoveBtn').onclick = () => {
-    const p = pendingSave;
-    closeModal(dupModal);
-    if (p) {
-      moveLinks([p.existing.id], p.folderId);
-      showToast('Moved existing link here', true);
-    }
-  };
+  byId('dupSaveAnywayBtn').onclick = () => onSave(true);
+  byId('dupDismissBtn').onclick = hideDup;
+}
+
+/** Called on navigation: the default target follows the view unless the user picked one. */
+export function resetSaveTarget(): void {
+  targetChosen = false;
 }

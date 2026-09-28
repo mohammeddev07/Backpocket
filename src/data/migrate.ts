@@ -1,5 +1,6 @@
 import { detectPlatform } from '../platform';
 import type { LocalDb } from './localStore';
+import { isUuid, uid } from './ids';
 import { DEFAULT_SETTINGS, type Folder, type Link, type Settings, type Snapshot } from './types';
 
 // ---- v1 (single-file app, localStorage) ----
@@ -20,8 +21,17 @@ export interface V1Link {
 }
 export interface V1Data { folders: V1Folder[]; links: V1Link[]; schemaVersion?: number }
 
-/** Local IndexedDB data version. Bump and add a step to upgradeSnapshot for each change. */
-export const LOCAL_SCHEMA_VERSION = 2;
+/**
+ * Local IndexedDB data version. Bump and add a step to upgradeSnapshot for each change.
+ *  2: v1 data copied into IndexedDB as-is (root "All saves" folder holds links).
+ *  3: "All saves" becomes a view; root-level links move to a real Inbox folder;
+ *     every id is a UUID (they double as Supabase primary keys).
+ */
+export const LOCAL_SCHEMA_VERSION = 3;
+/** The version convertV1/freshSnapshot produce; upgradeSnapshot takes it from there. */
+const V1_CONVERTED_VERSION = 2;
+export const INBOX_NAME = 'Inbox';
+export const INBOX_COLOR = '#c9cdd6';
 
 export function isV1Data(x: unknown): x is V1Data {
   return !!x && typeof x === 'object' &&
@@ -71,6 +81,7 @@ export function convertV1(v1: V1Data, now = Date.now()): Snapshot {
         url: l.url,
         platform: (l.platform as Link['platform']) || detectPlatform(l.url),
         title: l.note || null,
+        titleSource: l.note ? 'user' : null,
         note: null,
         sharedText: null,
         thumbnailUrl: null,
@@ -87,10 +98,71 @@ export function convertV1(v1: V1Data, now = Date.now()): Snapshot {
   return { folders, links, plans: [] };
 }
 
-/** Upgrades local data written by an older v2 build. */
-export function upgradeSnapshot(s: Snapshot, from: number, _now = Date.now()): Snapshot {
-  void from;
-  return s;
+/** Upgrades local data written by an older build, one version step at a time. */
+export function upgradeSnapshot(s: Snapshot, from: number, now = Date.now()): Snapshot {
+  let out = s;
+  if (from < 3) out = toInboxLayout(out, now);
+  return out;
+}
+
+/**
+ * v2 -> v3: the root "All saves" folder becomes the Inbox system folder (links
+ * saved at the root stay there), its subfolders become top-level folders, and
+ * any non-UUID id (v1's 'root' and its non-secure-context 'id-…' fallback)
+ * gets a fresh UUID with every reference remapped. Links pointing at a
+ * missing folder are repaired into the Inbox.
+ */
+function toInboxLayout(s: Snapshot, now: number): Snapshot {
+  const folderIds = new Map<string, string>();
+  const fid = (id: string) => {
+    if (!folderIds.has(id)) folderIds.set(id, isUuid(id) ? id : uid());
+    return folderIds.get(id)!;
+  };
+  let system = s.folders.find((f) => f.isSystem && f.deletedAt == null) || s.folders.find((f) => f.id === V1_ROOT_ID);
+  const folders: Folder[] = s.folders.map((f) => ({ ...f, id: fid(f.id) }));
+  if (!system) {
+    const inbox: Folder = {
+      id: uid(), parentId: null, name: INBOX_NAME, color: INBOX_COLOR, isSystem: true,
+      position: 0, createdAt: now, updatedAt: now, deletedAt: null,
+    };
+    folders.unshift(inbox);
+    system = inbox;
+  }
+  const oldSystemId = system.id;
+  const inboxId = fid(oldSystemId);
+  const live = new Set<string>();
+  for (const f of folders) {
+    if (f.id === inboxId) {
+      Object.assign(f, { name: INBOX_NAME, parentId: null, isSystem: true, color: INBOX_COLOR, position: 0, updatedAt: now, deletedAt: null });
+    } else {
+      f.isSystem = false;
+      if (f.parentId === oldSystemId || f.parentId == null) f.parentId = null;
+      else f.parentId = fid(f.parentId);
+      f.updatedAt = now;
+    }
+    if (f.deletedAt == null) live.add(f.id);
+  }
+  // Parents that no longer exist: lift the folder to the top level.
+  for (const f of folders) if (f.parentId && !live.has(f.parentId)) f.parentId = null;
+
+  const linkIds = new Map<string, string>();
+  const links: Link[] = s.links.map((l) => {
+    const id = isUuid(l.id) ? l.id : uid();
+    linkIds.set(l.id, id);
+    const folderId = folderIds.has(l.folderId) ? folderIds.get(l.folderId)! : l.folderId;
+    return {
+      ...l, id,
+      folderId: live.has(folderId) ? folderId : inboxId,
+      titleSource: l.titleSource ?? (l.title ? 'user' : null),
+      updatedAt: now,
+    };
+  });
+  const plans = s.plans.map((p) => ({
+    ...p,
+    folderId: folderIds.get(p.folderId) || p.folderId,
+    items: p.items.map((it) => ({ ...it, linkIds: it.linkIds.map((x) => linkIds.get(x) || x) })),
+  }));
+  return { folders, links, plans };
 }
 
 /** Applies upgradeSnapshot to the stored data if it was written by an older build. */
@@ -126,7 +198,7 @@ export async function migrateFromV1(ls: Storage | null, db: LocalDb, now = Date.
   let raw: string | null = null;
   try { raw = ls ? ls.getItem(V1_KEY) : null; } catch { raw = null; }
   const settings = ls ? readSettingsFromLocalStorage(ls) : { ...DEFAULT_SETTINGS };
-  const meta: Record<string, unknown> = { v1MigratedAt: now, schemaVersion: LOCAL_SCHEMA_VERSION, settings };
+  const meta: Record<string, unknown> = { v1MigratedAt: now, schemaVersion: V1_CONVERTED_VERSION, settings };
 
   if (raw === null) {
     await db.replaceSnapshot(freshSnapshot(now), meta);

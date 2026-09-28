@@ -3,7 +3,7 @@ import { isUuid, uid } from './ids';
 import { COLORS, convertV1, isV1Data, V1_ROOT_ID } from './migrate';
 import { childrenOf } from './tree';
 import type { Folder, Link, Plan, Snapshot } from './types';
-import { normalizeForCompare } from './urls';
+import { normalizeUrl } from './normalizeUrl';
 
 // Backup & import: JSON backups (v2, plus v1 files from the old app) and the
 // Netscape bookmarks HTML format every browser can export/import.
@@ -119,7 +119,7 @@ function mkFolder(id: string, name: string, parentId: string | null, isSystem: b
 
 function mkLink(p: { url: string; folderId: string; title: string | null; createdAt: number }, now: number): Link {
   return {
-    id: uid(), folderId: p.folderId, url: p.url, platform: detectPlatform(p.url), title: p.title, note: null,
+    id: uid(), folderId: p.folderId, url: p.url, platform: detectPlatform(p.url), title: p.title, titleSource: p.title ? 'user' : null, note: null,
     sharedText: null, thumbnailUrl: null, tags: [], status: 'unread', openedAt: null, aiMeta: null,
     createdAt: p.createdAt || now, updatedAt: now, deletedAt: null,
   };
@@ -168,7 +168,7 @@ export function parseBackupJson(text: string, now = Date.now()): { bundle: Impor
     const systemId = system.id;
     const links = (o.links as Link[]).filter((l) => l.deletedAt == null).map((l) => ({
       ...mkLink({ url: l.url, folderId: l.folderId || systemId, title: l.title ?? null, createdAt: l.createdAt || now }, now),
-      id: l.id, note: l.note ?? null, sharedText: l.sharedText ?? null, thumbnailUrl: l.thumbnailUrl ?? null,
+      id: l.id, titleSource: l.titleSource ?? (l.title ? 'user' as const : null), note: l.note ?? null, sharedText: l.sharedText ?? null, thumbnailUrl: l.thumbnailUrl ?? null,
       tags: Array.isArray(l.tags) ? l.tags : [], status: l.status === 'done' ? 'done' as const : 'unread' as const,
       openedAt: l.openedAt ?? null, platform: l.platform || detectPlatform(l.url),
     }));
@@ -228,10 +228,10 @@ export function mergeImport(current: Snapshot, incoming: ImportBundle, target: I
   let addedLinks = 0, skippedDup = 0;
   const newLinks: Link[] = [];
   const linkIdMap = new Map<string, string>();
-  const existingByKey = new Map(current.links.map((l) => [l.folderId + '\n' + normalizeForCompare(l.url), l.id]));
+  const existingByKey = new Map(current.links.map((l) => [l.folderId + '\n' + normalizeUrl(l.url), l.id]));
   for (const l of incoming.links) {
     const folderId = idMap.get(l.folderId) || target.systemId;
-    const key = folderId + '\n' + normalizeForCompare(l.url);
+    const key = folderId + '\n' + normalizeUrl(l.url);
     const existing = existingByKey.get(key);
     if (existing) { skippedDup++; linkIdMap.set(l.id, existing); continue; }
     const id = uid();

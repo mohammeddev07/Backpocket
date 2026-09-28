@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Backpocket - save what you find</title>
 <link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="/icons/favicon-16.png" sizes="16x16" type="image/png">
@@ -33,20 +33,29 @@
   <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6 6 6M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></symbol>
   <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a4.5 4.5 0 0 0 6.4.4l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.6 1.6"/><path d="M14 11a4.5 4.5 0 0 0-6.4-.4l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.6-1.6"/></symbol>
   <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
   <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.8" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.8" fill="currentColor" stroke="none"/></symbol>
   <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3.5 6.5a2 2 0 0 1 2-2h4l2 2.2h7a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></symbol>
+  <symbol id="i-select" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><path d="m5.5 7 1.3 1.3L9 6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><path d="M14 7h6.5M14 17h6.5"/></symbol>
+  <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></symbol>
+  <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M3.5 13.5 6 5.5a2 2 0 0 1 1.9-1.4h8.2A2 2 0 0 1 18 5.5l2.5 8"/><path d="M3.5 13.5V18a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-4.5h-5l-1.5 2.5h-4L8.5 13.5z"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
 </svg>
 
 <div class="scrim" id="scrim"></div>
 
 <div class="app">
-  <aside class="sidebar" id="sidebar">
+  <aside class="sidebar" id="sidebar" aria-label="Library">
     <div class="sidebar-header">
       <div class="brand-row">
         <img class="brand-mark" src="/icons/icon-192.png" alt="" width="28" height="28">
         <p class="brand">Backpocket</p>
-        <button class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Close folders">
+        <button class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Close menu">
           <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
         </button>
       </div>
@@ -54,41 +63,45 @@
     </div>
 
     <div class="sidebar-scroll">
-      <p class="tree-label">FOLDERS</p>
-      <ul class="tree" id="tree" role="tree" aria-label="Folders"></ul>
+      <p class="tree-label" id="viewsLabel">LIBRARY</p>
+      <ul class="nav-list" id="viewNav" aria-labelledby="viewsLabel"></ul>
+      <p class="tree-label" id="foldersLabel">FOLDERS</p>
+      <ul class="tree" id="tree" role="tree" aria-labelledby="foldersLabel"></ul>
+      <p class="tree-empty" id="treeEmpty" hidden>No folders yet. Links without a folder go to your Inbox.</p>
     </div>
 
     <div class="sidebar-footer">
       <button class="new-folder-btn" id="newFolderTopBtn">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>
         New folder
       </button>
       <div class="footer-links">
         <button class="footer-link-btn" id="installBtn" hidden>
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M12 8v6m0 0-2.2-2.2M12 14l2.2-2.2"/></svg>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M12 8v6m0 0-2.2-2.2M12 14l2.2-2.2"/></svg>
           Install app
         </button>
         <p class="install-hint" id="installHint" hidden></p>
         <button class="footer-link-btn" id="backupBtn">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6M6 11l6-6 6 6M5 21h14"/></svg>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V6M6 11l6-6 6 6M5 21h14"/></svg>
           Backup &amp; import
         </button>
         <button class="footer-link-btn" id="settingsBtn">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           Settings
         </button>
       </div>
-      <p class="storage-note" aria-label="Stored only on this device's browser, in local storage. No account, no sync yet.">Stored on this browser</p>
+      <p class="storage-note" id="storageNote">Stored on this browser</p>
     </div>
   </aside>
 
-  <main class="main">
+  <main class="main" id="main">
     <div class="topbar">
-      <button class="menu-btn" id="menuBtn" aria-label="Open folders"><svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg></button>
+      <button class="menu-btn" id="menuBtn" aria-label="Open menu" aria-controls="sidebar"><svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg></button>
       <div class="topbar-text">
         <p class="crumb" id="crumb"></p>
         <h1 class="folder-title" id="folderTitle"></h1>
       </div>
+      <div class="header-actions" id="headerActions"></div>
     </div>
     <p class="folder-count" id="folderCount"></p>
 
@@ -96,52 +109,48 @@
       <div class="save-row">
         <div class="url-field">
           <span class="url-field-icon"><svg class="icon" aria-hidden="true"><use href="#i-link"/></svg></span>
-          <input type="text" id="urlInput" placeholder="Paste a link here…" aria-describedby="urlError" />
+          <input type="url" inputmode="url" id="urlInput" placeholder="Paste a link here…" aria-label="Link to save" aria-describedby="urlError" autocomplete="off" />
         </div>
-        <button id="saveBtn">Save</button>
+        <button id="saveBtn" type="button">Save</button>
       </div>
       <p class="field-error" id="urlError" role="alert" hidden></p>
-      <input type="text" id="noteInput" class="note-input" placeholder="Add a note - what's this for? (optional)" style="display:none" />
-      <input type="text" id="tagsInput" class="note-input" placeholder="Tags - comma separated (optional)" style="display:none" />
+      <div class="dup-notice" id="dupNotice" role="status" hidden>
+        <span class="dup-text">Already saved in <strong id="dupFolderName"></strong></span>
+        <button type="button" class="text-btn" id="dupOpenBtn">Open</button>
+        <span aria-hidden="true">·</span>
+        <button type="button" class="text-btn" id="dupSaveAnywayBtn">Save anyway</button>
+        <button type="button" class="icon-btn small" id="dupDismissBtn" aria-label="Dismiss"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+      </div>
+      <div class="save-details" id="saveDetails" hidden>
+        <input type="text" id="titleInput" class="note-input" placeholder="Title (optional)" aria-label="Title" />
+        <input type="text" id="noteInput" class="note-input" placeholder="Note - what's this for? (optional)" aria-label="Note" />
+        <div class="tag-input note-input" id="tagsInput"></div>
+      </div>
       <div class="save-hint-row">
-        <p class="save-hint">To <select id="saveTargetSelect" class="inline-folder-select" aria-label="Folder to save into"></select></p>
-        <button type="button" class="note-toggle" id="noteToggle">+ Add details</button>
+        <p class="save-hint">To <button type="button" class="picker-btn" id="saveTargetBtn" aria-haspopup="dialog"></button></p>
+        <button type="button" class="note-toggle" id="noteToggle" aria-expanded="false" aria-controls="saveDetails">+ Add details</button>
       </div>
     </div>
 
     <div class="list-toolbar" id="listToolbar">
       <div class="search-field">
         <span class="search-icon"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg></span>
-        <input type="text" id="searchInput" placeholder="Search…" />
+        <input type="search" id="searchInput" placeholder="Search your saves…" aria-label="Search" enterkeyhint="search" autocomplete="off" />
       </div>
-      <select id="searchScopeSelect" aria-label="Search scope">
-        <option value="folder">This folder</option>
-        <option value="all">All folders</option>
-      </select>
-      <select id="sortSelect">
-        <option value="newest">Newest first</option>
-        <option value="oldest">Oldest first</option>
-        <option value="platform">By platform</option>
-      </select>
-      <button type="button" class="filter-toggle-btn" id="filterToggleBtn" aria-expanded="false" aria-controls="filterPanel">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
-        Filters
+      <button type="button" class="icon-btn" id="filterBtn" aria-label="Filters" aria-haspopup="dialog">
+        <svg class="icon" aria-hidden="true"><use href="#i-filter"/></svg>
+        <span class="badge" id="filterBadge" hidden></span>
       </button>
-      <button type="button" class="select-toggle-btn" id="selectToggleBtn" aria-pressed="false">Select</button>
+      <button type="button" class="icon-btn" id="selectToggleBtn" aria-label="Select links" aria-pressed="false">
+        <svg class="icon" aria-hidden="true"><use href="#i-select"/></svg>
+      </button>
     </div>
-    <div class="filter-panel" id="filterPanel" hidden>
-      <div class="date-range">
-        <input type="date" id="dateStart" aria-label="From date" />
-        <span>–</span>
-        <input type="date" id="dateEnd" aria-label="To date" />
-        <button type="button" class="clear-date-btn" id="clearDateBtn" title="Clear date filter" aria-label="Clear date filter"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
-      </div>
-    </div>
-    <div class="chip-row" id="platformChips"></div>
-    <p class="result-count" id="resultCount" style="display:none" aria-live="polite"></p>
+    <div class="chip-row active-filters" id="activeFilters" aria-label="Active filters"></div>
+    <p class="result-count" id="resultCount" hidden aria-live="polite"></p>
     <div class="bulk-bar" id="bulkBar" hidden>
       <span id="bulkCount"></span>
       <button type="button" id="bulkMoveBtn">Move to…</button>
+      <button type="button" id="bulkDoneBtn">Mark done</button>
       <button type="button" id="bulkDeleteBtn" class="danger">Delete</button>
       <button type="button" id="bulkCancelBtn">Cancel</button>
     </div>
@@ -154,11 +163,11 @@
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="folderModalTitle">
     <h2 id="folderModalTitle">New folder</h2>
     <label for="folderName">Name</label>
-    <input type="text" id="folderName" placeholder="e.g. Exercise" />
-    <label>Color</label>
-    <div class="color-picker" id="colorPicker"></div>
-    <label for="folderParent" id="folderParentLabel">Nested under</label>
-    <select id="folderParent"></select>
+    <input type="text" id="folderName" placeholder="e.g. Exercise" autocomplete="off" />
+    <p class="field-label" id="colorLabel">Color</p>
+    <div class="color-picker" id="colorPicker" role="group" aria-labelledby="colorLabel"></div>
+    <p class="field-label" id="folderParentLabel">Inside</p>
+    <button type="button" class="picker-btn block" id="folderParentBtn" aria-labelledby="folderParentLabel folderParentBtn" aria-haspopup="dialog"></button>
     <div class="modal-actions">
       <button class="btn-ghost danger" id="deleteFolderBtn" hidden>Delete</button>
       <button class="btn-ghost" id="cancelFolderBtn">Cancel</button>
@@ -167,27 +176,87 @@
   </div>
 </div>
 
-<div class="modal-backdrop" id="moveModal">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="moveModalTitle">
-    <h2 id="moveModalTitle">Move</h2>
-    <label for="moveTargetSelect">Destination folder</label>
-    <select id="moveTargetSelect"></select>
+<div class="modal-backdrop sheet-backdrop picker-backdrop" id="pickerModal">
+  <div class="modal sheet" role="dialog" aria-modal="true" aria-labelledby="pickerTitle">
+    <div class="sheet-handle" aria-hidden="true"></div>
+    <h2 id="pickerTitle">Choose a folder</h2>
+    <div class="search-field picker-search">
+      <span class="search-icon"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg></span>
+      <input type="search" id="pickerSearch" placeholder="Search folders…" aria-label="Search folders" aria-controls="pickerList" autocomplete="off" />
+    </div>
+    <ul class="picker-list" id="pickerList" role="listbox" aria-labelledby="pickerTitle"></ul>
     <div class="modal-actions">
-      <button class="btn-ghost" id="cancelMoveBtn">Cancel</button>
-      <button class="btn-primary" id="confirmMoveBtn">Move</button>
+      <button class="btn-ghost" id="pickerNewBtn" style="margin-right:auto">+ New folder</button>
+      <button class="btn-ghost" id="pickerCancelBtn">Cancel</button>
     </div>
   </div>
 </div>
 
-<div class="modal-backdrop" id="duplicateModal">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="dupModalTitle">
-    <h2 id="dupModalTitle">Already saved</h2>
-    <p class="save-hint" style="margin-bottom:12px;">This link is already in <strong id="dupFolderName"></strong>.</p>
-    <div class="dup-preview" id="dupPreview"></div>
+<div class="modal-backdrop sheet-backdrop" id="filtersSheet">
+  <div class="modal sheet" role="dialog" aria-modal="true" aria-labelledby="filtersTitle">
+    <div class="sheet-handle" aria-hidden="true"></div>
+    <h2 id="filtersTitle">Filters</h2>
+    <div class="filter-group" id="scopeGroup">
+      <p class="field-label" id="scopeLabel">Search in</p>
+      <div class="segmented" role="radiogroup" aria-labelledby="scopeLabel" id="scopeSeg"></div>
+    </div>
+    <div class="filter-group">
+      <label class="field-label" for="sortSelect">Sort</label>
+      <select id="sortSelect">
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+        <option value="title">Title A–Z</option>
+        <option value="platform">By platform</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <p class="field-label" id="statusLabel">Status</p>
+      <div class="segmented" role="radiogroup" aria-labelledby="statusLabel" id="statusSeg"></div>
+    </div>
+    <div class="filter-group">
+      <p class="field-label" id="platformLabel">Platform</p>
+      <div class="chip-row wrap" id="platformChips" role="group" aria-labelledby="platformLabel"></div>
+    </div>
+    <div class="filter-group" id="tagGroup">
+      <p class="field-label" id="tagLabel">Tags</p>
+      <div class="chip-row wrap" id="tagChips" role="group" aria-labelledby="tagLabel"></div>
+    </div>
+    <div class="filter-group">
+      <p class="field-label" id="dateLabel">Saved between</p>
+      <div class="date-range" role="group" aria-labelledby="dateLabel">
+        <input type="date" id="dateStart" aria-label="From date" />
+        <span aria-hidden="true">–</span>
+        <input type="date" id="dateEnd" aria-label="To date" />
+      </div>
+    </div>
     <div class="modal-actions">
-      <button class="btn-ghost" id="dupOpenBtn">Open existing</button>
-      <button class="btn-ghost" id="dupMoveBtn">Move here</button>
-      <button class="btn-primary" id="dupSaveAnywayBtn">Save anyway</button>
+      <button class="btn-ghost" id="filtersResetBtn" style="margin-right:auto">Reset</button>
+      <button class="btn-primary" id="filtersDoneBtn">Show <span id="filtersResultCount"></span></button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="linkModal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="linkModalTitle">
+    <h2 id="linkModalTitle">Edit link</h2>
+    <p class="link-url-sub" id="editUrl"></p>
+    <label for="editTitle">Title</label>
+    <input type="text" id="editTitle" placeholder="Add a title…" autocomplete="off" />
+    <label for="editNote">Note</label>
+    <textarea id="editNote" rows="3" placeholder="What's this for?"></textarea>
+    <p class="field-label" id="editTagsLabel">Tags</p>
+    <div class="tag-input" id="editTags" aria-labelledby="editTagsLabel"></div>
+    <p class="field-label" id="editFolderLabel">Folder</p>
+    <button type="button" class="picker-btn block" id="editFolderBtn" aria-labelledby="editFolderLabel editFolderBtn" aria-haspopup="dialog"></button>
+    <label class="privacy-toggle check-row"><input type="checkbox" id="editDone" /> <span>Done - I've watched/read this</span></label>
+    <details class="caption-details" id="editCaptionWrap" hidden>
+      <summary>Shared caption</summary>
+      <p id="editCaption"></p>
+    </details>
+    <div class="modal-actions">
+      <button class="btn-ghost danger" id="editDeleteBtn">Delete</button>
+      <button class="btn-ghost" id="editCancelBtn">Cancel</button>
+      <button class="btn-primary" id="editSaveBtn">Save</button>
     </div>
   </div>
 </div>
@@ -204,7 +273,7 @@
     </div>
     <label class="privacy-toggle" style="margin-top:20px;">
       <input type="checkbox" id="faviconPrivacyToggle" />
-      <span>Use local icons only - skip Google's favicon lookups, so the domains you save are never sent there.</span>
+      <span>Use local icons only - skip favicon, thumbnail and title lookups, so the links you save are never sent to Google, YouTube or TikTok.</span>
     </label>
     <div class="modal-actions" style="margin-top:22px;">
       <button class="btn-primary" id="closeSettingsBtn">Done</button>
@@ -243,6 +312,5 @@
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
-
 </body>
 </html>

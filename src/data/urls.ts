@@ -17,17 +17,3 @@ export function normalizeUrlInput(raw: string): UrlInputResult {
     return { error: "That doesn't look like a valid URL." };
   }
 }
-
-/** v1 duplicate key: host without www + path without trailing slash + query. */
-export function normalizeForCompare(url: string): string {
-  try {
-    const u = new URL(url);
-    return u.hostname.toLowerCase().replace(/^www\./, '') + u.pathname.replace(/\/$/, '') + u.search;
-  } catch {
-    return url.trim().toLowerCase();
-  }
-}
-
-export function parseTags(raw: string): string[] {
-  return raw.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
-}

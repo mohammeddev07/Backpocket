@@ -1,3 +1,4 @@
+import { backfillThumbnails } from '../actions';
 import { THEME_KEY } from '../data/migrate';
 import { store } from '../data/store';
 import { byId, svgIcon } from './dom';
@@ -47,6 +48,7 @@ export function initSettings(): void {
   toggle.addEventListener('change', () => {
     store.setSettings({ localIconsOnly: toggle.checked });
     renderMain();
+    if (!toggle.checked) void backfillThumbnails();
   });
 }
 
