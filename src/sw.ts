@@ -25,6 +25,56 @@ function hashString(s: string): string {
 const CACHE_NAME = 'backpocket-shell-v5-' + hashString(JSON.stringify(BUILD_FILES));
 const APP_SHELL = ['./', ...BUILD_FILES.map((e) => './' + e.url)];
 
+// Long-lived runtime caches that survive app updates (not tied to a build).
+const FONT_CACHE = 'backpocket-fonts-v1';
+const THUMB_CACHE = 'backpocket-thumbs-v1';
+const RUNTIME_CACHES = [FONT_CACHE, THUMB_CACHE];
+const MAX_THUMBS = 400;
+
+const isFontCss = (u: URL) => u.hostname === 'fonts.googleapis.com';
+const isFontFile = (u: URL) => u.hostname === 'fonts.gstatic.com';
+// YouTube and TikTok thumbnail CDNs (both send CORS headers). TikTok's URLs
+// are signed and expire, so a cached copy keeps old cards looking right.
+const isThumb = (u: URL) => u.hostname === 'i.ytimg.com' || /(^|\.)tiktokcdn(-[a-z]+)?\.com$/.test(u.hostname);
+
+/** Keeps a runtime cache bounded (oldest entries first). */
+async function trimCache(name: string, max: number): Promise<void> {
+  const cache = await caches.open(name);
+  const keys = await cache.keys();
+  for (let i = 0; i < keys.length - max; i++) await cache.delete(keys[i]);
+}
+
+/**
+ * Cross-origin assets are cached only when the response is a real CORS
+ * response (the page requests them with crossorigin="anonymous"). Opaque
+ * responses are skipped: they can't be checked for errors and browsers pad
+ * their storage cost by megabytes each.
+ */
+function cacheableCors(res: Response): boolean {
+  return res.ok && res.type === 'cors';
+}
+
+function cacheFirst(req: Request, cacheName: string, onStore?: () => void): Promise<Response> {
+  return caches.open(cacheName).then(async (cache) => {
+    const hit = await cache.match(req);
+    if (hit) return hit;
+    const res = await fetch(req);
+    if (cacheableCors(res)) { void cache.put(req, res.clone()).then(onStore); }
+    return res;
+  });
+}
+
+function staleWhileRevalidate(req: Request, cacheName: string): Promise<Response> {
+  return caches.open(cacheName).then(async (cache) => {
+    const hit = await cache.match(req);
+    const network = fetch(req).then((res) => {
+      if (cacheableCors(res)) void cache.put(req, res.clone());
+      return res;
+    }).catch(() => hit || Response.error());
+    return hit || network;
+  });
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) =>
@@ -47,7 +97,7 @@ self.addEventListener('activate', (event) => {
     // Later versions already link manifest.webmanifest, so their windows are
     // left alone (a reload there could drop a shared link mid-edit).
     const upgradingFromV1 = names.includes('backpocket-shell-v1');
-    await Promise.all(names.filter((n) => n !== CACHE_NAME).map((n) => caches.delete(n)));
+    await Promise.all(names.filter((n) => n !== CACHE_NAME && !RUNTIME_CACHES.includes(n)).map((n) => caches.delete(n)));
     await self.clients.claim();
     return upgradingFromV1;
   })();
@@ -67,9 +117,16 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) {
-    // Let cross-origin requests (Google Fonts, favicon lookups, Supabase,
-    // Gemini) go straight to the network - caching opaque cross-origin
-    // responses here would risk serving stale data indefinitely.
+    // Web fonts: the CSS may change (stale-while-revalidate); font files are
+    // versioned and immutable (cache-first). Thumbnails: cache-first, bounded.
+    if (req.mode === 'cors' && isFontCss(url)) { event.respondWith(staleWhileRevalidate(req, FONT_CACHE)); return; }
+    if (req.mode === 'cors' && isFontFile(url)) { event.respondWith(cacheFirst(req, FONT_CACHE)); return; }
+    if (req.mode === 'cors' && isThumb(url)) {
+      event.respondWith(cacheFirst(req, THUMB_CACHE, () => void trimCache(THUMB_CACHE, MAX_THUMBS)));
+      return;
+    }
+    // Everything else cross-origin (favicons, Supabase, Gemini, oEmbed) goes
+    // straight to the network: API data must never be served stale from here.
     return;
   }
 

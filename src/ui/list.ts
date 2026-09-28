@@ -122,6 +122,8 @@ function linkVisual(link: Link): HTMLElement {
     img.loading = 'lazy';
     img.decoding = 'async';
     img.referrerPolicy = 'no-referrer';
+    // CORS request so the service worker can cache it (see src/sw.ts).
+    img.crossOrigin = 'anonymous';
     img.src = link.thumbnailUrl;
     img.onerror = () => { wrap.className = 'link-icon'; wrap.innerHTML = platformIconSvg(link.platform); };
     wrap.appendChild(img);
