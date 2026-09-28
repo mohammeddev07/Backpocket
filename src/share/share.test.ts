@@ -85,6 +85,29 @@ describe('parseSharePayload', () => {
   });
 });
 
+describe('iOS Shortcut and bookmarklet links (?url=<encoded>)', () => {
+  it('a Shortcut that passes the URL', () => {
+    const p = parseSharePayload('?url=' + encodeURIComponent('https://www.instagram.com/reel/C9xyz/?igsh=abc'));
+    expect(p).toMatchObject({ url: 'https://www.instagram.com/reel/C9xyz/?igsh=abc', cleanedSearch: '' });
+  });
+
+  it('a Shortcut that fell back to the shared text (caption with a link inside)', () => {
+    const caption = 'Watch this 🔥 https://vm.tiktok.com/ZMabc/ #fyp';
+    expect(parseSharePayload('?url=' + encodeURIComponent(caption))?.url).toBe('https://vm.tiktok.com/ZMabc/');
+  });
+
+  it('url + text, as documented in the help screen', () => {
+    const p = parseSharePayload('?url=' + encodeURIComponent('https://youtu.be/abc') + '&text=' + encodeURIComponent('Great talk'));
+    expect(p).toMatchObject({ url: 'https://youtu.be/abc', text: 'Great talk' });
+  });
+
+  it('the bookmarklet (url + page title)', () => {
+    const p = parseSharePayload('?url=' + encodeURIComponent('https://example.com/post') + '&title=' + encodeURIComponent('A post'));
+    expect(p?.url).toBe('https://example.com/post');
+    expect(usableSharedTitle(p!.title)).toBe('A post');
+  });
+});
+
 describe('consumeSharePayload', () => {
   it('clears share params with history.replaceState, keeping path, other params and hash', () => {
     window.history.replaceState(null, '', '/Backpocket/index.html?text=' +

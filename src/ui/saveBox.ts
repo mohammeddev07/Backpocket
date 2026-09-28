@@ -133,7 +133,8 @@ export function applySharedPayload(payload: SharedPayload): void {
   const title = usableSharedTitle(payload.title);
   if (title) titleInput.value = title;
   // Keep the caption the app sent (minus a bare URL) for search and AI.
-  const caption = [payload.title, payload.text].filter((s) => s && s !== payload.url && !/^https?:\/\/\S+$/i.test(s)).join('\n').trim();
+  const caption = [payload.title, payload.text, payload.urlParam]
+    .filter((s) => s && s !== payload.url && !/^https?:\/\/\S+$/i.test(s)).join('\n').trim();
   pendingSharedText = caption ? caption.slice(0, 2000) : null;
   showDetails(true);
   byId('saveBox').scrollIntoView({ block: 'nearest' });

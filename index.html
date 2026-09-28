@@ -288,6 +288,17 @@
       <p class="settings-desc" id="settingsAccountDesc"></p>
       <div class="settings-actions" id="settingsAccountActions"></div>
     </section>
+    <section class="settings-section" aria-labelledby="settingsShareTitle">
+      <p class="settings-label" id="settingsShareTitle">Save from other apps</p>
+      <p class="settings-desc">Android: install the app from Chrome and use the share sheet. iPhone: add a Shortcut. Computer: use the bookmarklet.</p>
+      <div class="settings-actions">
+        <button type="button" class="btn-ghost" id="iosHelpBtn">Add to iPhone share sheet</button>
+      </div>
+      <p class="settings-desc bookmarklet-row">Drag this to your bookmarks bar, then click it on any page:
+        <a class="bookmarklet" id="bookmarkletLink" href="#">Save to Backpocket</a>
+        <button type="button" class="text-btn" id="bookmarkletCopyBtn">Copy code</button>
+      </p>
+    </section>
     <section class="settings-section" id="settingsAi" hidden aria-labelledby="settingsAiTitle">
       <p class="settings-label" id="settingsAiTitle">AI</p>
       <p class="settings-desc" id="aiStatusText"></p>
@@ -360,6 +371,27 @@
     <div class="modal-actions">
       <button class="btn-ghost" id="uploadLaterBtn">Not now</button>
       <button class="btn-primary" id="uploadConfirmBtn">Upload</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="iosHelpModal">
+  <div class="modal help-modal" role="dialog" aria-modal="true" aria-labelledby="iosHelpTitle">
+    <h2 id="iosHelpTitle">Add Backpocket to the iPhone share sheet</h2>
+    <p class="save-hint">iPhone doesn't let web apps join the share sheet directly, so a free Apple Shortcut does it. Set it up once, then tap Share → Backpocket in Instagram, TikTok, YouTube or anywhere else.</p>
+    <p class="install-hint" id="iosShortcutReady" hidden>Quickest: <a id="iosShortcutLink" href="#" target="_blank" rel="noopener noreferrer">get the ready-made Shortcut</a>, tap “Add Shortcut”, and you're done.</p>
+    <p class="field-label" id="iosStepsLabel">Or build it yourself (about 2 minutes):</p>
+    <ol class="steps" aria-labelledby="iosStepsLabel">
+      <li>Open the <strong>Shortcuts</strong> app → <strong>+</strong> (New Shortcut). Tap the <strong>ⓘ</strong> details button and turn on <strong>Show in Share Sheet</strong>. Set it to receive <strong>URLs</strong> and <strong>Text</strong>.</li>
+      <li>Add the action <strong>Get URLs from Input</strong>. Then add <strong>If</strong> “URLs” <em>does not have any value</em> → <strong>Text</strong> with the <em>Shortcut Input</em> (the shared text itself); <strong>Otherwise</strong> → the URLs; <strong>End If</strong>.</li>
+      <li>Add <strong>URL Encode</strong> and pass it the result of the If.</li>
+      <li>Add <strong>Open URLs</strong> with: <code id="iosOpenUrl"></code><strong>[URL Encoded Text]</strong></li>
+      <li>Name it <strong>Backpocket</strong> and pick an icon.</li>
+    </ol>
+    <p class="install-hint"><strong>Good to know:</strong> the Shortcut opens Backpocket in <strong>Safari</strong>. iPhone keeps a home-screen app's storage separate from Safari's, so sign in to Backpocket in Safari too - then links saved from the share sheet sync to the same account as your home-screen app.</p>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="iosCopyUrlBtn">Copy the link for step 4</button>
+      <button class="btn-primary" id="iosHelpCloseBtn">Done</button>
     </div>
   </div>
 </div>

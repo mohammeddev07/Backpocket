@@ -1180,3 +1180,17 @@ h1.folder-title .dot { width: 13px; height: 13px; }
 .steps a, .install-hint a { color: var(--mustard-text); }
 #aiRecheckBtn { font-size: 12px; margin-top: 6px; }
 @media (pointer: coarse) { .plan-link-chip { min-height: 40px; } .header-tabs button { min-height: 44px; } }
+
+/* ---- Sharing help (iPhone Shortcut, bookmarklet) ---- */
+.help-modal { max-width: 480px; }
+.steps li { margin-bottom: 8px; }
+.steps code, .help-modal code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; overflow-wrap: anywhere;
+  padding: 1px 5px; border-radius: 5px; background: var(--paper-sunk); color: var(--ink);
+}
+.bookmarklet-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 10px; }
+.bookmarklet {
+  display: inline-flex; align-items: center; min-height: 34px; padding: 4px 12px; border-radius: 999px;
+  background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 12.5px; text-decoration: none; cursor: grab;
+}
+.bookmarklet:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }

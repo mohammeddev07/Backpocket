@@ -15,12 +15,13 @@ import { initLinkEditor } from './ui/linkEditor';
 import { initList } from './ui/list';
 import { setupModalA11y } from './ui/modal';
 import { applySharedPayload, initSaveBox, resetSaveTarget } from './ui/saveBox';
+import { initIosHelp } from './ui/iosHelp';
 import { initInstall, initSettings, initTheme } from './ui/settings';
 import { initSidebar } from './ui/sidebar';
 import { showToast } from './ui/toast';
 import { go, onNavigate, renderAll, scheduleRender } from './ui/view';
 
-const MODALS = ['folderModal', 'pickerModal', 'filtersSheet', 'linkModal', 'backupModal', 'settingsModal', 'accountModal', 'uploadModal', 'byokModal'];
+const MODALS = ['folderModal', 'pickerModal', 'filtersSheet', 'linkModal', 'backupModal', 'settingsModal', 'accountModal', 'uploadModal', 'byokModal', 'iosHelpModal'];
 
 async function boot(): Promise<void> {
   // Read the share params first, so they're cleared from the address bar
@@ -58,6 +59,7 @@ async function boot(): Promise<void> {
   initSettings();
   initBackupModal();
   initInstall();
+  initIosHelp(!!shared);
   MODALS.forEach((id) => setupModalA11y(byId(id)));
   onNavigate(resetSaveTarget);
 

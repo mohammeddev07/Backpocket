@@ -47,6 +47,8 @@ export interface SharedPayload {
   title: string;
   /** The shared `text`, trimmed (often a caption wrapping the link). */
   text: string;
+  /** The raw `url` param, trimmed (the iOS Shortcut may put a whole caption there). */
+  urlParam: string;
   /** location.search with only the share params removed ('' or '?a=b'). */
   cleanedSearch: string;
 }
@@ -58,12 +60,13 @@ export function parseSharePayload(search: string): SharedPayload | null {
 
   const title = (params.get('title') || '').trim();
   const text = (params.get('text') || '').trim();
+  const urlParam = (params.get('url') || '').trim();
   const url = firstSharedUrl(SHARE_PARAMS.map((k) => params.get(k)));
 
   // Drop the share params so reload/back doesn't re-apply them; keep anything else.
   SHARE_PARAMS.forEach((k) => params.delete(k));
   const qs = params.toString();
-  return { url, title, text, cleanedSearch: qs ? '?' + qs : '' };
+  return { url, title, text, urlParam, cleanedSearch: qs ? '?' + qs : '' };
 }
 
 /**

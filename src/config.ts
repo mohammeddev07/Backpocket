@@ -13,3 +13,10 @@ export const APP_CONFIG = {
 export const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim() || '';
 export const SUPABASE_ANON_KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined)?.trim() || '';
 export const CLOUD_CONFIGURED = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
+
+/**
+ * iCloud link to a ready-made "Backpocket" Shortcut for the iPhone share sheet.
+ * Paste it here once created (Shortcuts app -> ⋯ on the shortcut -> Share ->
+ * Copy iCloud Link). While empty, the help screen shows the manual steps only.
+ */
+export const IOS_SHORTCUT_URL = '';
