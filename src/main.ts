@@ -4,6 +4,7 @@ import { openLocalDb } from './data/localStore';
 import { migrateFromV1, upgradeLocalDb } from './data/migrate';
 import { storageErrorMessage, store } from './data/store';
 import { consumeSharePayload } from './share/extractSharedUrl';
+import { initAi } from './ai';
 import { initAccount } from './ui/account';
 import { initBackupModal } from './ui/backupModal';
 import { byId } from './ui/dom';
@@ -19,7 +20,7 @@ import { initSidebar } from './ui/sidebar';
 import { showToast } from './ui/toast';
 import { go, onNavigate, renderAll, scheduleRender } from './ui/view';
 
-const MODALS = ['folderModal', 'pickerModal', 'filtersSheet', 'linkModal', 'backupModal', 'settingsModal', 'accountModal', 'uploadModal'];
+const MODALS = ['folderModal', 'pickerModal', 'filtersSheet', 'linkModal', 'backupModal', 'settingsModal', 'accountModal', 'uploadModal', 'byokModal'];
 
 async function boot(): Promise<void> {
   // Read the share params first, so they're cleared from the address bar
@@ -65,7 +66,8 @@ async function boot(): Promise<void> {
   if (shared) applySharedPayload(shared);
   if (warning) showToast(warning, false, undefined, 6000);
   setTimeout(() => void backfillThumbnails(), 1500);
-  // Account + sync load after the first render: guests never wait on them.
+  // AI + account + sync load after the first render: guests never wait on them.
+  initAi();
   void initAccount();
 }
 

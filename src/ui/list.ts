@@ -350,7 +350,8 @@ function render(): void {
   const filtered = !!view.query.trim() || links.length !== inView.length;
   const resultCount = byId('resultCount');
   resultCount.hidden = !filtered;
-  resultCount.textContent = filtered ? plural(links.length, 'result') : '';
+  const semantic = !!extraResults && extraResults.query === view.query.trim();
+  resultCount.textContent = filtered ? plural(links.length, 'result') + (semantic ? ' · including AI matches' : '') : '';
 
   if (links.length === 0) {
     if (!filtered && view.mode === 'folder') {

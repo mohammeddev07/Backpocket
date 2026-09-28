@@ -1112,3 +1112,71 @@ h1.folder-title .dot { width: 13px; height: 13px; }
 .settings-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .settings-actions .btn-ghost.danger { margin-right: 0; }
 .modal .install-hint { margin: 0 0 12px; font-size: 12.5px; }
+
+/* ---- AI: Ask button, suggestions, plans, settings ---- */
+.search-field .ask-btn {
+  position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  display: inline-flex; align-items: center; gap: 5px; height: 32px; padding: 0 10px;
+  border: none; border-radius: 7px; background: var(--accent); color: var(--accent-ink);
+  font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer;
+}
+.search-field .ask-btn .icon { width: 14px; height: 14px; }
+.search-field .ask-btn.loading { opacity: .7; cursor: progress; }
+.search-field .ask-btn.loading .icon { animation: spin 1s linear infinite; }
+.search-field .ask-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.search-field:has(.ask-btn:not([hidden])) input { padding-right: 76px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.ai-suggest {
+  display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; padding: 2px 2px 2px 10px; max-width: 100%;
+  border-radius: 999px; font-size: 12px; color: var(--ink);
+  background: color-mix(in srgb, var(--accent) 18%, var(--paper-raised));
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+}
+.ai-suggest-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.ai-suggest-btn {
+  flex-shrink: 0; width: 30px; height: 26px; border: none; border-radius: 999px; background: none;
+  color: var(--ink); cursor: pointer; font-size: 14px; font-weight: 700;
+}
+.ai-suggest-btn:hover { background: var(--paper-raised); }
+.ai-suggest-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+@media (pointer: coarse) { .ai-suggest-btn { width: 40px; height: 36px; } }
+
+.header-tabs { flex: 0 0 auto; }
+.header-tabs button { padding: 0 12px; min-height: 34px; }
+
+.plan { padding: 4px 2px 20px; }
+.plan-title { font-family: var(--font-serif); font-size: 22px; margin: 4px 0 6px; }
+.plan-summary { margin: 0 0 12px; color: var(--ink-soft); font-size: 14px; line-height: 1.5; }
+.plan-progress { margin: 0 0 6px; font-size: 12px; color: var(--ink-faint); }
+.plan-meter { height: 6px; border-radius: 999px; background: var(--paper-sunk); overflow: hidden; margin-bottom: 16px; }
+.plan-meter span { display: block; height: 100%; background: var(--sage); transition: width .25s ease; }
+.plan-items { list-style: none; margin: 0 0 18px; padding: 0; counter-reset: step; }
+.plan-item {
+  padding: 10px 12px; margin-bottom: 6px; border-radius: var(--radius-sm);
+  background: var(--paper-raised); border: 1px solid var(--line-soft);
+}
+.plan-item label { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 14.5px; line-height: 1.4; }
+.plan-item input { width: 20px; height: 20px; margin: 1px 0 0; flex-shrink: 0; accent-color: var(--sage); }
+.plan-item.done label span { color: var(--ink-faint); text-decoration: line-through; }
+.plan-links { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0 30px; }
+.plan-link-chip {
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  padding: 4px 10px; min-height: 30px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--paper-sunk); color: var(--ink-soft); font: inherit; font-size: 12px; cursor: pointer;
+}
+.plan-link-chip:hover { border-color: var(--mustard); color: var(--ink); }
+.plan-link-chip:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.plan-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.plan-actions .btn-ghost.danger { margin-right: 0; }
+.skeleton-bar {
+  height: 44px; margin-bottom: 8px; border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--paper-sunk) 25%, var(--paper-raised) 50%, var(--paper-sunk) 75%);
+  background-size: 200% 100%; animation: shimmer 1.3s ease-in-out infinite;
+}
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+.steps { margin: 0 0 14px; padding-left: 20px; font-size: 13.5px; line-height: 1.6; color: var(--ink-soft); }
+.steps a, .install-hint a { color: var(--mustard-text); }
+#aiRecheckBtn { font-size: 12px; margin-top: 6px; }
+@media (pointer: coarse) { .plan-link-chip { min-height: 40px; } .header-tabs button { min-height: 44px; } }
