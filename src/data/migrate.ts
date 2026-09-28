@@ -49,6 +49,18 @@ export function freshSnapshot(now = Date.now()): Snapshot {
   };
 }
 
+/** Empty library in the current layout: just an Inbox. */
+export function freshInboxSnapshot(now = Date.now(), inboxId = uid()): Snapshot {
+  return {
+    folders: [{
+      id: inboxId, parentId: null, name: INBOX_NAME, color: INBOX_COLOR, isSystem: true,
+      position: 0, createdAt: now, updatedAt: now, deletedAt: null,
+    }],
+    links: [],
+    plans: [],
+  };
+}
+
 /**
  * v1 -> v2 rows. Applies v1's own load-time repairs first (root folder,
  * default colours, savedAt, platform) so the result matches what v1 showed.
