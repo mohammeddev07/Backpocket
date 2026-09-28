@@ -125,7 +125,7 @@ npm run preview          # serve dist/ with the service worker on
 npm run check:functions  # type-check the Edge Functions with Deno
 ```
 
-Setting up Supabase, Google sign-in, Gemini, the allowlist and GitHub Pages is covered step by step in **[SETUP.md](SETUP.md)**. Pushing to `develop` runs `.github/workflows/deploy.yml`, which tests, builds and publishes `dist/` to GitHub Pages.
+Pushing to `develop` runs `.github/workflows/deploy.yml`, which tests, builds and publishes `dist/` to GitHub Pages.
 
 ```
 src/

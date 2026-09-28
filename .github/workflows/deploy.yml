@@ -1,6 +1,6 @@
 name: Deploy to GitHub Pages
 
-# Settings -> Pages -> Source must be "GitHub Actions" (see SETUP.md).
+# Settings -> Pages -> Source must be "GitHub Actions".
 on:
   push:
     branches: [develop]

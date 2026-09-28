@@ -1,6 +1,6 @@
 # Supabase CLI config for local development (`supabase start`).
 # Hosted-project settings (redirect URLs, Google provider, secrets) are set in
-# the dashboard - see SETUP.md.
+# the dashboard.
 project_id = "backpocket"
 
 [api]

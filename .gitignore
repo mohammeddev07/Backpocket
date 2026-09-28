@@ -1,5 +1,6 @@
 # Private working notes
 plan.md
+SETUP.md
 
 # Dependencies and build output
 node_modules/
@@ -9,7 +10,7 @@ coverage/
 .vite/
 *.tsbuildinfo
 
-# Local environment (the Gemini key never goes in the repo; see SETUP.md)
+# Local environment (the Gemini key never goes in the repo)
 .env
 .env.*
 !.env.example
