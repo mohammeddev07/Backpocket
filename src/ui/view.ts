@@ -17,10 +17,13 @@ export const view = {
   shownLinkIds: new Set<string>(),
   /** A modal/inline edit is open that a background re-render would disturb. */
   editing: false,
+  /** "More like this": the list shows these saves (nearest first) instead of the view. */
+  related: null as null | { id: string; title: string; ids: string[] },
 };
 
 /** Clears search and filters (sort is kept, like v1 kept it across folders). */
 export function clearFilters(): void {
+  view.related = null;
   view.query = '';
   view.filters = { ...DEFAULT_FILTERS, sort: view.filters.sort };
 }

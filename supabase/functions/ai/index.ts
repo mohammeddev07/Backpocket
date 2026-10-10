@@ -2,20 +2,22 @@
 // key (GEMINI_API_KEY, set with `supabase secrets set`), after checking the
 // caller's JWT, the allowlist and the rate limits.
 //
-// POST { action: 'status' | 'classify' | 'search' | 'plan' | 'embed', ... }
+// POST { action: 'status' | 'classify' | 'search' | 'plan' | 'embed' | 'nudge' | 'recap', ... }
 // 401 unauthorized · 403 { code: 'not_allowlisted' } · 429 + Retry-After
 
 import { createSupabaseContext, type SupabaseContext } from 'npm:@supabase/server@1';
 import { AI_CONFIG, type AiAction, type CostedAction } from '../_shared/config.ts';
 import { embedTexts, GeminiError, generateJson, toVectorLiteral } from '../_shared/gemini.ts';
-import { CLASSIFY_SYSTEM, classifyPrompt, embedQueryText, PLAN_SYSTEM, planPrompt, textHash } from '../_shared/prompts.ts';
 import {
-  CLASSIFY_SCHEMA, PLAN_SCHEMA, validateClassify, validateEmbedItems, validateFilters, validatePlan,
-  type ClassifyInput, type FolderContext, type PlanInput, type SearchHit,
+  CLASSIFY_SYSTEM, classifyPrompt, embedQueryText, NUDGE_SYSTEM, nudgePrompt, PLAN_SYSTEM, planPrompt, RECAP_SYSTEM, recapPrompt, textHash,
+} from '../_shared/prompts.ts';
+import {
+  CLASSIFY_SCHEMA, NUDGE_SCHEMA, PLAN_SCHEMA, RECAP_SCHEMA, validateClassify, validateEmbedItems, validateFilters, validateNudge,
+  validatePlan, validateRecap, type ClassifyInput, type FolderContext, type NudgeInput, type PlanInput, type RecapInput, type SearchHit,
 } from '../_shared/schemas.ts';
 import { HttpError, json, preflight, readJson } from '../_server/http.ts';
 
-const ACTIONS: AiAction[] = ['status', 'classify', 'search', 'plan', 'embed'];
+const ACTIONS: AiAction[] = ['status', 'classify', 'search', 'plan', 'embed', 'nudge', 'recap'];
 
 function geminiKey(): string {
   const key = Deno.env.get('GEMINI_API_KEY');
@@ -53,6 +55,27 @@ function parsePlanInput(raw: unknown): PlanInput {
     }));
   if (links.length < 2) throw new HttpError(400, 'bad_input', 'A plan needs at least 2 links.');
   return { folder: s(o.folder, 200) || 'Folder', links };
+}
+
+export function parseNudgeInput(raw: unknown): NudgeInput {
+  const o = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+  const title = s(o.title, 300);
+  if (!title) throw new HttpError(400, 'bad_input', 'Missing title.');
+  const days = typeof o.days === 'number' && Number.isFinite(o.days) ? Math.min(Math.max(o.days, 1), 3650) : 7;
+  return { title, platform: s(o.platform, 20) || 'Link', days, folder: s(o.folder, 200), domain: s(o.domain, 200) };
+}
+
+export function parseRecapInput(raw: unknown): RecapInput {
+  const o = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+  const links = (Array.isArray(o.links) ? o.links : []).slice(0, AI_CONFIG.maxRecapLinks)
+    .filter((l): l is Record<string, unknown> => !!l && typeof l === 'object' && typeof (l as Record<string, unknown>).id === 'string')
+    .map((l) => ({
+      id: String(l.id).slice(0, 64), title: s(l.title, 300) || '', platform: s(l.platform, 20) || 'Link',
+      folder: s(l.folder, 200) || 'Inbox', opened: l.opened === true,
+    }));
+  if (!links.length) throw new HttpError(400, 'bad_input', 'A recap needs at least one link.');
+  const count = typeof o.count === 'number' && Number.isFinite(o.count) ? Math.min(Math.max(Math.round(o.count), links.length), 10_000) : links.length;
+  return { count, links };
 }
 
 async function admit(ctx: SupabaseContext, userId: string, action: CostedAction): Promise<void> {
@@ -136,6 +159,25 @@ export default {
           timeoutMs: AI_CONFIG.timeoutsMs.plan, maxOutputTokens: 4096,
         });
         return json(req, { plan: validatePlan(raw, new Set(input.links.map((l) => l.id))), model: AI_CONFIG.model });
+      }
+
+      if (action === 'nudge') {
+        const input = parseNudgeInput(body.input);
+        const raw = await generateJson({
+          apiKey, system: NUDGE_SYSTEM, prompt: nudgePrompt(input), schema: NUDGE_SCHEMA,
+          timeoutMs: AI_CONFIG.timeoutsMs.nudge, maxOutputTokens: 256,
+        });
+        return json(req, { nudge: validateNudge(raw), model: AI_CONFIG.model });
+      }
+
+      if (action === 'recap') {
+        const input = parseRecapInput(body.input);
+        const raw = await generateJson({
+          apiKey, system: RECAP_SYSTEM, prompt: recapPrompt(input), schema: RECAP_SCHEMA,
+          timeoutMs: AI_CONFIG.timeoutsMs.recap, maxOutputTokens: 512,
+        });
+        const unopened = new Set(input.links.filter((l) => !l.opened).map((l) => l.id));
+        return json(req, { recap: validateRecap(raw, unopened), model: AI_CONFIG.model });
       }
 
       if (action === 'embed') {

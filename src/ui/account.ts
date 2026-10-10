@@ -59,6 +59,7 @@ function renderStatus(s: SyncState = syncState()): void {
 }
 
 // ---- Drawer + settings account UI ----
+const LOCAL_NOTICE = 'Backpocket doesn\'t keep a copy of your saves. Everything is stored locally in this browser on this device, so clearing site data or uninstalling removes it. Use Backup & import to keep a copy. Optional lookups (site icons, thumbnails, AI) are explained below.';
 function renderAccount(u: AuthUser | null): void {
   const btn = byId('accountBtn');
   btn.hidden = !CLOUD_CONFIGURED;
@@ -88,6 +89,11 @@ function renderAccount(u: AuthUser | null): void {
     b.onclick = fn;
     actions.appendChild(b);
   };
+  // Settings "your data" notice: only claim local-only storage when it's true.
+  byId('dataNoticeTitle').textContent = u ? 'Where your data lives' : 'Your data stays on your device';
+  byId('dataNoticeText').textContent = u
+    ? 'Your saves are kept in this browser and, because you\'re signed in, synced to your Backpocket account so they show up on your other devices. You can sign out and remove them from this device, or delete your account and its cloud copy, below.'
+    : LOCAL_NOTICE;
   if (u) {
     desc.textContent = 'Signed in as ' + (u.email || u.name) + '. Your saves sync across devices.';
     add('Sign out', () => void doSignOut(false));

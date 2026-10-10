@@ -125,3 +125,57 @@ export function validateFilters(raw: unknown): SearchFilters {
   }
   return out;
 }
+
+// ---- Reminder nudge (one playful notification about one forgotten save) ----
+export interface NudgeInput { title: string; platform: string; days: number; folder?: string | null; domain?: string | null }
+export interface NudgeOutput { title: string; body: string }
+
+export const NUDGE_SCHEMA = {
+  type: 'object',
+  properties: {
+    title: { type: 'string', description: 'notification title, max 40 characters' },
+    body: { type: 'string', description: 'notification body, max 120 characters' },
+  },
+  required: ['title', 'body'],
+  additionalProperties: false,
+  propertyOrdering: ['title', 'body'],
+};
+
+/** Em/en dashes become commas or hyphens (house style), and lengths are capped. */
+const tidy = (v: unknown, max: number) => str(v, max * 2)
+  .replace(/\s*[\u2014]\s*/g, ', ').replace(/\u2013/g, '-').replace(/\s+/g, ' ').trim().slice(0, max);
+
+/** Returns null when the model's text is unusable, so callers fall back to a template. */
+export function validateNudge(raw: unknown): NudgeOutput | null {
+  const o = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+  const title = tidy(o.title, 48);
+  const body = tidy(o.body, 140);
+  return title && body ? { title, body } : null;
+}
+
+// ---- Weekly recap ----
+export interface RecapLinkInput { id: string; title: string; platform: string; folder: string; opened: boolean }
+export interface RecapInput { count: number; links: RecapLinkInput[] }
+export interface RecapOutput { headline: string; summary: string; pick_ids: string[] }
+
+export const RECAP_SCHEMA = {
+  type: 'object',
+  properties: {
+    headline: { type: 'string', description: 'short headline, max 60 characters' },
+    summary: { type: 'string', description: 'two or three sentences, max 240 characters' },
+    pick_ids: { type: 'array', items: { type: 'string' }, maxItems: 3, description: 'ids of up to 3 unopened links worth opening first' },
+  },
+  required: ['headline', 'summary', 'pick_ids'],
+  additionalProperties: false,
+  propertyOrdering: ['headline', 'summary', 'pick_ids'],
+};
+
+/** Keeps only picks that were in the input and still unopened. Null when unusable. */
+export function validateRecap(raw: unknown, unopenedIds: ReadonlySet<string>): RecapOutput | null {
+  const o = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+  const headline = tidy(o.headline, 70);
+  const summary = tidy(o.summary, 300);
+  if (!headline || !summary) return null;
+  const ids = Array.isArray(o.pick_ids) ? o.pick_ids.filter((x): x is string => typeof x === 'string' && unopenedIds.has(x)) : [];
+  return { headline, summary, pick_ids: [...new Set(ids)].slice(0, 3) };
+}

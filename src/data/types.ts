@@ -90,6 +90,8 @@ export interface Settings {
   aiEnabled: boolean;
   aiNoticeSeen: boolean;
   iosHelpShown: boolean;
+  /** Opt-in "forgotten save" nudges (in-app, plus system notifications where supported). */
+  remindersEnabled: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -98,4 +100,5 @@ export const DEFAULT_SETTINGS: Settings = {
   aiEnabled: true,
   aiNoticeSeen: false,
   iosHelpShown: false,
+  remindersEnabled: false,
 };

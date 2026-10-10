@@ -13,6 +13,8 @@ function currentTheme(): 'light' | 'dark' {
 
 export function applyTheme(theme: 'light' | 'dark'): void {
   document.documentElement.setAttribute('data-theme', theme);
+  // Browser/status-bar colour follows the in-app theme, not just the OS one.
+  document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute('content', theme === 'dark' ? '#08080c' : '#f5f6f8'));
   byId('themeToggle').replaceChildren(svgIcon(theme === 'dark' ? 'sun' : 'moon'));
 }
 

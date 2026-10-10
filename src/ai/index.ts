@@ -3,6 +3,7 @@ import { initAiUi } from '../ui/aiUi';
 import { initPlans } from '../ui/planView';
 import { refreshAiAccess } from './access';
 import { initEmbeddings } from './embeddings';
+import { initRelated } from './related';
 import { clearSemanticCache, initSemanticSearch } from './semantic';
 import { initSortOnSave } from './sortOnSave';
 
@@ -13,6 +14,7 @@ export function initAi(): void {
   initSemanticSearch();
   initEmbeddings();
   initPlans();
+  initRelated();
   onAccountChange((user) => {
     clearSemanticCache();
     void refreshAiAccess(user);

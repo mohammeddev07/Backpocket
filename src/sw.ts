@@ -7,7 +7,14 @@
 // v1 worker had, so existing registrations update in place. The plugin only
 // fills in self.__WB_MANIFEST with the build's files; no Workbox runtime.
 
-export {};
+import {
+  NUDGE_GAP_MS, NUDGE_HISTORY_KEY, NUDGE_META_KEY, NUDGE_NEXT_KEY, NUDGE_SYNC_TAG, nudgeCopy, pickForgotten, pushNudgeHistory,
+  recentlyNudged, usablePrepared, type NudgeHistoryEntry, type PreparedNudge,
+} from './data/nudge';
+import { RECAP_EVERY_MS, RECAP_META_KEY, RECAP_MIN_LINKS, RECAP_NOTIFIED_KEY, recapDue, statsRecap, weekStats, type StoredRecap } from './data/recap';
+import type { Folder, Link } from './data/types';
+import { REVISIT_MIN_AGE_DAYS } from './search/filters';
+
 declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<{ url: string; revision: string | null }>;
 };
@@ -169,4 +176,93 @@ self.addEventListener('fetch', (event) => {
       return cached || network;
     }),
   );
+});
+
+// ---- "Forgotten save" reminders (opt-in, see src/ui/reminders.ts) ----
+// Chromium wakes an installed app about once a day for this tag. The worker
+// reads IndexedDB directly and only writes reminder bookkeeping (timestamps,
+// history, the used-up prepared nudge): the page owns all link edits and sync.
+// It prefers the nudge the page prepared (smart pick + AI text); once a week
+// it sends the stats recap instead.
+
+interface PeriodicSyncEvent extends ExtendableEvent { readonly tag: string }
+
+function openExistingDb(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('backpocket');
+    // Never create the app's database from here: an empty v1 DB would make
+    // the page skip its own upgrade and lose its object stores.
+    req.onupgradeneeded = () => req.transaction?.abort();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+const read = <T>(r: IDBRequest<T>) => new Promise<T>((resolve, reject) => { r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error); });
+
+async function nudgeInBackground(): Promise<void> {
+  const db = await openExistingDb();
+  try {
+    const tx = db.transaction(['links', 'folders', 'meta']);
+    const meta = tx.objectStore('meta');
+    const [links, folders, settings, last, prepared, history, recap, recapNotified] = await Promise.all([
+      read(tx.objectStore('links').getAll() as IDBRequest<Link[]>),
+      read(tx.objectStore('folders').getAll() as IDBRequest<Folder[]>),
+      read(meta.get('settings') as IDBRequest<{ remindersEnabled?: boolean } | undefined>),
+      read(meta.get(NUDGE_META_KEY) as IDBRequest<number | undefined>),
+      read(meta.get(NUDGE_NEXT_KEY) as IDBRequest<PreparedNudge | undefined>),
+      read(meta.get(NUDGE_HISTORY_KEY) as IDBRequest<NudgeHistoryEntry[] | undefined>),
+      read(meta.get(RECAP_META_KEY) as IDBRequest<StoredRecap | undefined>),
+      read(meta.get(RECAP_NOTIFIED_KEY) as IDBRequest<number | undefined>),
+    ]);
+    const now = Date.now();
+    if (!settings?.remindersEnabled || now - (last || 0) < NUDGE_GAP_MS) return;
+    // Someone has the app open: the page shows its own in-app nudge instead.
+    const windows = await self.clients.matchAll({ type: 'window' });
+    if (windows.some((w) => w.visibilityState === 'visible')) return;
+
+    // Weekly: the stats recap stands in for the day's nudge. The page shows
+    // the full card (AI-written when AI is on) next time it's opened.
+    if (recapDue(recap, now) && now - (recapNotified || 0) >= RECAP_EVERY_MS) {
+      const stats = weekStats(links, folders.filter((f) => !f.deletedAt), now);
+      if (stats.count >= RECAP_MIN_LINKS) {
+        const { headline, summary } = statsRecap(stats);
+        await self.registration.showNotification(headline, { body: summary, tag: NUDGE_SYNC_TAG, icon: 'icons/icon-192.png', data: {} });
+        const w = db.transaction('meta', 'readwrite').objectStore('meta');
+        w.put(now, NUDGE_META_KEY);
+        w.put(now, RECAP_NOTIFIED_KEY);
+        return;
+      }
+    }
+
+    let link: Link | undefined;
+    let copy: { title: string; body: string };
+    if (usablePrepared(prepared, links, now, REVISIT_MIN_AGE_DAYS)) {
+      link = links.find((l) => l.id === prepared.linkId)!;
+      copy = prepared;
+    } else {
+      link = pickForgotten(links, now, REVISIT_MIN_AGE_DAYS, recentlyNudged(history, now)) ?? undefined;
+      if (!link) return;
+      copy = nudgeCopy(link, now);
+    }
+    await self.registration.showNotification(copy.title, { body: copy.body, tag: NUDGE_SYNC_TAG, icon: 'icons/icon-192.png', data: { url: link.url } });
+    const w = db.transaction('meta', 'readwrite').objectStore('meta');
+    w.put(now, NUDGE_META_KEY);
+    w.put(pushNudgeHistory(history, link.id, now), NUDGE_HISTORY_KEY);
+    w.put(null, NUDGE_NEXT_KEY);
+  } finally {
+    db.close(); // waits for the pending write to finish
+  }
+}
+
+self.addEventListener('periodicsync', (event) => {
+  const e = event as PeriodicSyncEvent;
+  if (e.tag === NUDGE_SYNC_TAG) e.waitUntil(nudgeInBackground().catch(() => {}));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = (event.notification.data as { url?: string } | null)?.url;
+  // ponytail: opens the saved link directly but doesn't mark it opened (the page
+  // owns writes + sync), so it can be picked again; message open clients if that matters.
+  event.waitUntil(self.clients.openWindow(url && /^https?:\/\//i.test(url) ? url : './'));
 });

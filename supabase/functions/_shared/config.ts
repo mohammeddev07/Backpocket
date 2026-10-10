@@ -17,7 +17,14 @@ export const AI_CONFIG = {
   minSimilarity: 0.3,
   searchResults: 30,
 
-  timeoutsMs: { classify: 4000, search: 6000, plan: 30000, embed: 15000, status: 5000 },
+  /** "More like this": hide neighbours below this similarity. */
+  relatedMinSimilarity: 0.5,
+  /** Near-duplicate warning after save: only at or above this similarity. */
+  duplicateSimilarity: 0.93,
+  /** Weekly recap: at most this many of the week's links go to the model. */
+  maxRecapLinks: 40,
+
+  timeoutsMs: { classify: 4000, search: 6000, plan: 30000, embed: 15000, status: 5000, nudge: 6000, recap: 15000 },
 
   /** Token buckets. user: burst 5, then 1 per 6 s => never more than ~15 in any 60 s. */
   limits: {
@@ -30,7 +37,7 @@ export const AI_CONFIG = {
     dailyPerUser: 150,
     dailyGlobal: 600,
   },
-  costs: { classify: 1, search: 1, plan: 3, embed: 1 },
+  costs: { classify: 1, search: 1, plan: 3, embed: 1, nudge: 1, recap: 2 },
 
   // Request-size guards.
   maxBodyBytes: 200_000,
@@ -42,5 +49,5 @@ export const AI_CONFIG = {
   maxQueryChars: 300,
 } as const;
 
-export type AiAction = 'status' | 'classify' | 'search' | 'plan' | 'embed';
+export type AiAction = 'status' | 'classify' | 'search' | 'plan' | 'embed' | 'nudge' | 'recap';
 export type CostedAction = keyof typeof AI_CONFIG.costs;

@@ -1,5 +1,5 @@
 import { createFolder, deleteFolderRecursive, inboxId, moveFolder, moveLinks, updateFolder } from '../actions';
-import { COLORS } from '../data/migrate';
+import { FOLDER_COLORS as COLORS } from '../data/migrate';
 import { store } from '../data/store';
 import { descendantIds } from '../data/tree';
 import { byId, plural } from './dom';

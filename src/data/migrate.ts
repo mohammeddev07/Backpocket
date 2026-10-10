@@ -13,6 +13,8 @@ export const V1_ROOT_ID = 'root';
 
 // Soft, pastel folder-tag palette - decorative dots/swatches only.
 export const COLORS = ['#f2b8c6', '#bcd9b0', '#c7c6ee', '#f7d59c', '#a9d8d1', '#e3b8dd'];
+/** Palette offered for new folders. COLORS stays as the v1/backup fallback so migrations are unchanged. */
+export const FOLDER_COLORS = ['#10B981', '#3B82F6', '#8B5CF6', '#EF4444', '#F5AF19', '#64748B'];
 
 export interface V1Folder { id: string; name: string; parentId?: string | null; color?: string }
 export interface V1Link {

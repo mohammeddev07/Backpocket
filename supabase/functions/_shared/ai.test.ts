@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { AI_CONFIG } from './config.ts';
 import { embedTexts, GeminiError, generateJson, toVectorLiteral } from './gemini.ts';
 import { classifyPrompt, embedDocumentText, embedQueryText, textHash } from './prompts.ts';
-import { CLASSIFY_SCHEMA, validateClassify, validatePlan } from './schemas.ts';
+import { CLASSIFY_SCHEMA, validateClassify, validateNudge, validatePlan, validateRecap } from './schemas.ts';
 import { take, type Bucket } from './tokenBucket.ts';
 
 const USER = AI_CONFIG.limits.user;
@@ -142,5 +142,21 @@ describe('gemini client', () => {
     const body = JSON.parse(String(fetchImpl.mock.calls[0][1]!.body));
     expect(body.requests[0]).toEqual({ model: 'models/gemini-embedding-2', content: { parts: [{ text: 'a' }] }, embedContentConfig: { outputDimensionality: 768 } });
     expect(toVectorLiteral([0.1234567, 1])).toBe('[0.123457,1]');
+  });
+});
+
+describe('nudge and recap validation', () => {
+  it('keeps nudge text short and swaps dashes for house style', () => {
+    expect(validateNudge({ title: 'Order up \u2014 still warm', body: 'Your recipe waited 9 days \u2013 come get it' }))
+      .toEqual({ title: 'Order up, still warm', body: 'Your recipe waited 9 days - come get it' });
+    expect(validateNudge({ title: 'x'.repeat(100), body: 'y'.repeat(300) })).toEqual({ title: 'x'.repeat(48), body: 'y'.repeat(140) });
+    expect(validateNudge({ title: '', body: 'b' })).toBeNull();
+    expect(validateNudge(null)).toBeNull();
+  });
+
+  it('keeps only real, unopened recap picks', () => {
+    const r = validateRecap({ headline: 'Pasta week', summary: 'Lots of pasta.', pick_ids: ['a', 'zzz', 'a', 'opened', 'b', 'c', 'd'] }, new Set(['a', 'b', 'c', 'd']));
+    expect(r).toEqual({ headline: 'Pasta week', summary: 'Lots of pasta.', pick_ids: ['a', 'b', 'c'] });
+    expect(validateRecap({ headline: 'x', summary: '' }, new Set())).toBeNull();
   });
 });
