@@ -38,7 +38,7 @@ export function setPickerButton(btn: HTMLElement, id: string | null): void {
   const f = id ? store.folder(id) : undefined;
   btn.replaceChildren();
   const dot = document.createElement('span');
-  dot.className = 'folder-icon';
+  dot.className = 'dot';
   dot.style.background = f ? (f.color || COLORS[0]) : 'var(--line)';
   const label = document.createElement('span');
   label.className = 'picker-btn-label';
@@ -80,7 +80,7 @@ function renderList(): void {
     li.dataset.id = id ?? '';
     li.style.setProperty('--depth', String(depth));
     const dot = document.createElement('span');
-    dot.className = 'folder-icon';
+    dot.className = 'dot';
     dot.style.background = color;
     const label = document.createElement('span');
     label.className = 'picker-name';

@@ -19,6 +19,16 @@ let mode: AiMode = CLOUD_CONFIGURED ? 'guest' : 'unavailable';
 let userId: string | null = null;
 const listeners = new Set<(m: AiMode) => void>();
 
+// Everyone starts as 'guest' until sign-in resolves, so features that pick
+// between AI and non-AI paths at startup wait for the first access check.
+let settle!: () => void;
+const settled = new Promise<void>((resolve) => { settle = resolve; });
+if (!CLOUD_CONFIGURED) settle();
+/** Resolves once the first access check has finished (or after 10 s). */
+export function aiSettled(): Promise<void> {
+  return Promise.race([settled, new Promise<void>((resolve) => setTimeout(resolve, 10_000))]);
+}
+
 export function aiMode(): AiMode { return mode; }
 export function onAiModeChange(fn: (m: AiMode) => void): () => void {
   listeners.add(fn);
@@ -51,6 +61,10 @@ function fromAllowlist(listed: boolean): AiMode {
 
 /** Re-evaluates access for the signed-in user (cached for 12 h). */
 export async function refreshAiAccess(user: AuthUser | null, force = false): Promise<void> {
+  try { await checkAccess(user, force); } finally { settle(); }
+}
+
+async function checkAccess(user: AuthUser | null, force: boolean): Promise<void> {
   if (!CLOUD_CONFIGURED) { set('unavailable'); return; }
   userId = user?.id ?? null;
   if (!user) { set('guest'); return; }

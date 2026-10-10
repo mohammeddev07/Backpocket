@@ -1,7 +1,12 @@
 import { AI_CONFIG, type AiAction } from '@shared/config.ts';
 import { embedTexts, GeminiError, generateJson, toVectorLiteral } from '@shared/gemini.ts';
-import { CLASSIFY_SYSTEM, classifyPrompt, embedQueryText, PLAN_SYSTEM, planPrompt, textHash } from '@shared/prompts.ts';
-import { CLASSIFY_SCHEMA, PLAN_SCHEMA, validateClassify, validateFilters, validatePlan, type SearchHit } from '@shared/schemas.ts';
+import {
+  CLASSIFY_SYSTEM, classifyPrompt, embedQueryText, NUDGE_SYSTEM, nudgePrompt, PLAN_SYSTEM, planPrompt, RECAP_SYSTEM, recapPrompt, textHash,
+} from '@shared/prompts.ts';
+import {
+  CLASSIFY_SCHEMA, NUDGE_SCHEMA, PLAN_SCHEMA, RECAP_SCHEMA, validateClassify, validateFilters, validateNudge, validatePlan, validateRecap,
+  type SearchHit,
+} from '@shared/schemas.ts';
 import { take, type Bucket } from '@shared/tokenBucket.ts';
 import { currentUser } from '../cloud/auth';
 import { getSupabase } from '../cloud/supabase';
@@ -79,6 +84,20 @@ export async function byokCall<A extends Exclude<AiAction, 'status'>>(action: A,
       admitLocally(AI_CONFIG.costs.plan);
       const raw = await generateJson({ apiKey, system: PLAN_SYSTEM, prompt: planPrompt(input), schema: PLAN_SCHEMA, timeoutMs: AI_CONFIG.timeoutsMs.plan, maxOutputTokens: 4096 });
       return { plan: validatePlan(raw, new Set(input.links.map((l) => l.id))), model: AI_CONFIG.model } as ActionIO[A]['out'];
+    }
+
+    if (action === 'nudge') {
+      const { input } = payload as ActionIO['nudge']['in'];
+      admitLocally(AI_CONFIG.costs.nudge);
+      const raw = await generateJson({ apiKey, system: NUDGE_SYSTEM, prompt: nudgePrompt(input), schema: NUDGE_SCHEMA, timeoutMs: AI_CONFIG.timeoutsMs.nudge, maxOutputTokens: 256 });
+      return { nudge: validateNudge(raw), model: AI_CONFIG.model } as ActionIO[A]['out'];
+    }
+    if (action === 'recap') {
+      const { input } = payload as ActionIO['recap']['in'];
+      admitLocally(AI_CONFIG.costs.recap);
+      const raw = await generateJson({ apiKey, system: RECAP_SYSTEM, prompt: recapPrompt(input), schema: RECAP_SCHEMA, timeoutMs: AI_CONFIG.timeoutsMs.recap, maxOutputTokens: 512 });
+      const unopened = new Set(input.links.filter((l) => !l.opened).map((l) => l.id));
+      return { recap: validateRecap(raw, unopened), model: AI_CONFIG.model } as ActionIO[A]['out'];
     }
 
     // Semantic search and embeddings need the account's rows in Supabase.

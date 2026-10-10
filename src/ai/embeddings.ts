@@ -9,6 +9,7 @@ import type { Folder, Link } from '../data/types';
 import { domainOf } from '../platform';
 import { aiReady, onAiModeChange } from './access';
 import { AiError, aiCall } from './client';
+import { checkNewForDuplicates } from './related';
 
 // Keeps link embeddings current for semantic search: embeds title + note +
 // caption + folder path + tags whenever that text changes, in batches of 20,
@@ -74,6 +75,8 @@ async function run(): Promise<void> {
       const items = todo.splice(0, AI_CONFIG.embedBatchMax);
       const { updated } = await aiCall('embed', { items });
       for (const it of items) serverHashes.set(it.id, textHash(it.text));
+      // Fresh saves now have a vector: a cheap lookup for near-duplicates.
+      void checkNewForDuplicates(items.map((it) => it.id));
       // Some rows weren't there after all: re-read the server's view next run.
       if (updated < items.length) serverHashes = null;
       if (!serverHashes) break;

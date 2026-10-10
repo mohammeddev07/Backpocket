@@ -16,6 +16,8 @@ import { initList } from './ui/list';
 import { setupModalA11y } from './ui/modal';
 import { applySharedPayload, initSaveBox, resetSaveTarget } from './ui/saveBox';
 import { initIosHelp } from './ui/iosHelp';
+import { initRecap } from './ui/recap';
+import { initReminders, maybeNudge } from './ui/reminders';
 import { initInstall, initSettings, initTheme } from './ui/settings';
 import { initSidebar } from './ui/sidebar';
 import { showToast } from './ui/toast';
@@ -58,6 +60,8 @@ async function boot(): Promise<void> {
   initSaveBox();
   initSettings();
   initBackupModal();
+  initReminders();
+  initRecap();
   initInstall();
   initIosHelp(!!shared);
   MODALS.forEach((id) => setupModalA11y(byId(id)));
@@ -69,6 +73,8 @@ async function boot(): Promise<void> {
   if (shared) applySharedPayload(shared);
   if (warning) showToast(warning, false, undefined, 6000);
   setTimeout(() => void backfillThumbnails(), 1500);
+  // After any share/warning toast has had its moment.
+  setTimeout(() => void maybeNudge(), shared || warning ? 7000 : 2500);
   // AI + account + sync load after the first render: guests never wait on them.
   initAi();
   void initAccount();
@@ -102,6 +108,10 @@ function initDesktopShortcuts(): void {
     input.focus();
   });
 }
+
+// The opening animation fades itself out (CSS); drop the node once it has.
+const splash = document.getElementById('splash');
+splash?.addEventListener('animationend', (e) => { if (e.target === splash) splash.remove(); });
 
 void boot();
 

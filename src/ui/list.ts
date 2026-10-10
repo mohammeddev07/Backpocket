@@ -24,6 +24,14 @@ type CardDecorator = (link: Link, main: HTMLElement) => void;
 const cardDecorators: CardDecorator[] = [];
 export function addCardDecorator(fn: CardDecorator): void { cardDecorators.push(fn); }
 
+/** Extra card-menu items (e.g. "More like this"), shown before Delete. */
+const linkMenuExtras: Array<(link: Link) => MenuItem[]> = [];
+export function addLinkMenuItems(fn: (link: Link) => MenuItem[]): void { linkMenuExtras.push(fn); }
+
+/** Runs after every list render (e.g. the weekly recap card). */
+const renderHooks: Array<() => void> = [];
+export function addRenderHook(fn: () => void): void { renderHooks.push(fn); }
+
 type HeaderExtra = (container: HTMLElement) => void;
 const headerExtras: HeaderExtra[] = [];
 export function addHeaderExtra(fn: HeaderExtra): void { headerExtras.push(fn); }
@@ -50,6 +58,7 @@ export function currentQuery(): ListQuery {
 }
 
 export function visibleLinks(): Link[] {
+  if (view.related) return view.related.ids.map((id) => store.link(id)).filter((l): l is Link => !!l && !l.deletedAt);
   const links = store.liveLinks();
   const out = selectLinks(links, store.liveFolders(), currentQuery());
   if (extraResults && extraResults.query === view.query.trim()) {
@@ -107,34 +116,68 @@ function linkMenu(link: Link): MenuItem[] {
     { label: link.status === 'done' ? 'Mark as unread' : 'Mark as done', onClick: () => setStatus([link.id], link.status === 'done' ? 'unread' : 'done') },
     { label: 'Copy link', onClick: () => copyLinkUrl(link) },
     { label: 'Move to…', onClick: () => void openMoveLinks([link.id]) },
+    ...linkMenuExtras.flatMap((fn) => fn(link)),
     { separator: true },
     { label: 'Delete', danger: true, onClick: () => deleteLinksWithUndo([link.id]) },
   ];
 }
 
-function linkVisual(link: Link): HTMLElement {
-  const wrap = document.createElement('div');
-  const privacy = store.settings.localIconsOnly;
-  if (link.thumbnailUrl && !privacy) {
-    wrap.className = 'link-thumb';
-    const img = document.createElement('img');
-    img.alt = '';
-    img.loading = 'lazy';
-    img.decoding = 'async';
-    img.referrerPolicy = 'no-referrer';
-    // CORS request so the service worker can cache it (see src/sw.ts).
-    img.crossOrigin = 'anonymous';
-    img.src = link.thumbnailUrl;
-    img.onerror = () => { wrap.className = 'link-icon'; wrap.innerHTML = platformIconSvg(link.platform); };
-    wrap.appendChild(img);
-    return wrap;
+// Sites that get the code-grid tile instead of a hue-from-URL pattern.
+const CODE_HOSTS = /(^|\.)(github\.com|gitlab\.com|bitbucket\.org|stackoverflow\.com|stackexchange\.com|npmjs\.com|codepen\.io|dev\.to|developer\.mozilla\.org|huggingface\.co|vercel\.app|netlify\.app)$/;
+
+function hashStr(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+  return h >>> 0;
+}
+
+/**
+ * Local stand-in when there's no real thumbnail: a gradient tile in the
+ * platform's colours with the title's first letter and a small platform icon.
+ * Deterministic per link, drawn with CSS only - nothing is fetched or invented.
+ */
+export function fallbackTile(link: Link): HTMLElement {
+  const tile = document.createElement('div');
+  tile.className = 'link-visual tile';
+  const host = domainOf(link.url);
+  const kind = link.platform !== 'Link' ? link.platform.toLowerCase() : CODE_HOSTS.test(host) ? 'code' : 'link';
+  tile.dataset.kind = kind;
+  if (kind === 'link') {
+    const h = hashStr(host);
+    tile.style.setProperty('--tile-h', String(h % 360));
+    tile.style.setProperty('--tile-a', (100 + (h >>> 9) % 120) + 'deg');
+    tile.style.setProperty('--tile-x', (15 + (h >>> 3) % 70) + '%');
+    tile.style.setProperty('--tile-y', (10 + (h >>> 6) % 40) + '%');
   }
-  wrap.className = 'link-icon';
+  const initial = document.createElement('span');
+  initial.className = 'tile-initial';
+  initial.setAttribute('aria-hidden', 'true');
+  initial.textContent = ((link.title || host).match(/[\p{L}\p{N}]/u)?.[0] || '#').toUpperCase();
+  const badge = document.createElement('span');
+  badge.className = 'tile-badge';
   // Privacy mode never contacts Google's favicon service; known platforms use
   // their own icon anyway (clearer than a favicon at this size).
-  if (privacy || link.platform !== 'Link') wrap.innerHTML = platformIconSvg(link.platform);
-  else wrap.appendChild(faviconFor(link.id, link.url, link.platform));
-  wrap.dataset.platform = link.platform;
+  if (store.settings.localIconsOnly || link.platform !== 'Link') badge.innerHTML = platformIconSvg(link.platform);
+  else badge.appendChild(faviconFor(link.id, link.url, link.platform));
+  tile.append(initial, badge);
+  return tile;
+}
+
+function linkVisual(link: Link): HTMLElement {
+  if (!link.thumbnailUrl || store.settings.localIconsOnly) return fallbackTile(link);
+  const wrap = document.createElement('div');
+  wrap.className = 'link-visual';
+  const img = document.createElement('img');
+  img.alt = '';
+  img.loading = 'lazy';
+  img.decoding = 'async';
+  img.referrerPolicy = 'no-referrer';
+  // CORS request so the service worker can cache it (see src/sw.ts).
+  img.crossOrigin = 'anonymous';
+  img.src = link.thumbnailUrl;
+  // Never a broken-image icon: swap in the tile, same box.
+  img.onerror = () => wrap.replaceWith(fallbackTile(link));
+  wrap.appendChild(img);
   return wrap;
 }
 
@@ -191,8 +234,11 @@ function buildLinkRow(link: Link, opts: { showFolder: boolean; folders: Folder[]
       const crumb = document.createElement('button');
       crumb.type = 'button';
       crumb.className = 'folder-badge';
-      crumb.textContent = pathLabel(opts.folders, f.id);
-      crumb.setAttribute('aria-label', 'Go to folder ' + crumb.textContent);
+      const label = document.createElement('span');
+      label.textContent = pathLabel(opts.folders, f.id);
+      crumb.style.setProperty('--folder-color', f.isSystem ? 'var(--ink-faint)' : (f.color || COLORS[0]));
+      crumb.append(svgIcon(f.isSystem ? 'inbox' : 'folder'), label);
+      crumb.setAttribute('aria-label', 'Go to folder ' + label.textContent);
       crumb.onclick = (e) => { e.stopPropagation(); pathOf(opts.folders, f.id).forEach((p) => view.expanded.add(p.id)); go('folder', f.id); };
       bits.push(crumb);
     }
@@ -218,13 +264,18 @@ function buildLinkRow(link: Link, opts: { showFolder: boolean; folders: Folder[]
     if (i > 0) { const sep = document.createElement('span'); sep.className = 'meta-sep'; sep.textContent = '·'; sep.setAttribute('aria-hidden', 'true'); meta.appendChild(sep); }
     meta.appendChild(b);
   });
-  for (const t of link.tags) {
-    const chip = document.createElement('span');
-    chip.className = 'tag-chip';
-    chip.textContent = '#' + t;
-    meta.appendChild(chip);
-  }
   main.appendChild(meta);
+  if (link.tags.length) {
+    const tags = document.createElement('div');
+    tags.className = 'link-tags';
+    for (const t of link.tags) {
+      const chip = document.createElement('span');
+      chip.className = 'tag-chip';
+      chip.textContent = '#' + t;
+      tags.appendChild(chip);
+    }
+    main.appendChild(tags);
+  }
   for (const d of cardDecorators) d(link, main);
 
   const kebab = document.createElement('button');
@@ -317,10 +368,22 @@ function render(): void {
   renderHeader(folders);
   const searchInput = byId<HTMLInputElement>('searchInput');
   if (document.activeElement !== searchInput) searchInput.value = view.query;
+  byId<HTMLSelectElement>('sortSelect').value = view.filters.sort;
   const selectBtn = byId('selectToggleBtn');
   selectBtn.setAttribute('aria-pressed', String(view.selectMode));
   selectBtn.setAttribute('aria-label', view.selectMode ? 'Done selecting' : 'Select links');
   renderActiveFilters();
+  if (view.related) {
+    const row = byId('activeFilters');
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'chip active-filter';
+    chip.setAttribute('aria-label', 'Stop showing saves similar to ' + view.related.title);
+    chip.append(document.createTextNode('Similar to \u201C' + view.related.title + '\u201D'), svgIcon('x'));
+    chip.onclick = () => { view.related = null; renderMain(); };
+    row.prepend(chip);
+    row.hidden = false;
+  }
 
   const q = currentQuery();
   const inView = viewLinks(store.liveLinks(), q);
@@ -330,7 +393,7 @@ function render(): void {
     : plural(inView.length, 'saved link');
 
   const listEl = byId('linksList');
-  if (listOverride && listOverride(listEl)) { byId('listToolbar').hidden = true; byId('resultCount').hidden = true; updateBulkBar(); return; }
+  if (listOverride && listOverride(listEl)) { byId('listToolbar').hidden = true; byId('resultCount').hidden = true; updateBulkBar(); runRenderHooks(); return; }
   byId('listToolbar').hidden = false;
   listEl.replaceChildren();
   const previouslyShown = view.shownLinkIds;
@@ -343,18 +406,23 @@ function render(): void {
       ? emptyState(EMPTY_ILLUSTRATION, 'Nothing to revisit', 'Links you haven\'t opened for ' + APP_CONFIG.revisitMinAgeDays + ' days show up here.')
       : emptyState(EMPTY_ILLUSTRATION, 'Your next good find belongs here', 'Save your first link and it\'ll show up here, searchable across every folder.', cta));
     updateBulkBar();
+    runRenderHooks();
     return;
   }
 
   const links = visibleLinks();
-  const filtered = !!view.query.trim() || links.length !== inView.length;
+  const filtered = !!view.query.trim() || links.length !== inView.length || !!view.related;
   const resultCount = byId('resultCount');
   resultCount.hidden = !filtered;
   const semantic = !!extraResults && extraResults.query === view.query.trim();
-  resultCount.textContent = filtered ? plural(links.length, 'result') + (semantic ? ' · including AI matches' : '') : '';
+  resultCount.textContent = view.related ? plural(links.length, 'similar save')
+    : filtered ? plural(links.length, 'result') + (semantic ? ' · including AI matches' : '') : '';
 
   if (links.length === 0) {
-    if (!filtered && view.mode === 'folder') {
+    if (view.related) {
+      listEl.appendChild(emptyState(NO_MATCH_ILLUSTRATION, 'Nothing similar yet', 'New saves take a minute to be analysed, and some just don\'t have a twin yet.',
+        ghostButton('Back to all saves', () => { view.related = null; renderMain(); })));
+    } else if (!filtered && view.mode === 'folder') {
       const isInbox = view.folderId === inboxId();
       listEl.appendChild(emptyState(EMPTY_ILLUSTRATION, isInbox ? 'Inbox zero' : 'Nothing here yet',
         isInbox ? 'Links saved without a folder land here.' : 'Paste a link above to save it into this folder.'));
@@ -363,6 +431,7 @@ function render(): void {
         ghostButton('Clear search and filters', () => { clearFilters(); renderMain(); })));
     }
     updateBulkBar();
+    runRenderHooks();
     return;
   }
 
@@ -380,6 +449,11 @@ function render(): void {
   }
   listEl.appendChild(frag);
   updateBulkBar();
+  runRenderHooks();
+}
+
+function runRenderHooks(): void {
+  for (const fn of renderHooks) fn();
 }
 
 export function initList(): void {

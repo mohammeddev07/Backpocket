@@ -135,9 +135,9 @@ function buildFolderLi(folder: Folder, counts: Map<string, number>, folders: Fol
     renderTree();
   };
 
-  const icon = document.createElement('span');
-  icon.className = 'folder-icon';
-  icon.style.background = folder.color || COLORS[0];
+  const icon = svgIcon('folder');
+  icon.classList.add('folder-glyph');
+  icon.style.color = folder.color || COLORS[0];
 
   const name = document.createElement('span');
   name.className = 'folder-name';

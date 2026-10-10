@@ -8,10 +8,6 @@ import { renderMain, view } from './view';
 // The Filters bottom sheet (scope, sort, status, platform, tags, dates) and the
 // dismissible chips under the search field that show what's active.
 
-const SORT_LABELS: Record<SortMode, string> = {
-  newest: 'Newest first', oldest: 'Oldest first', title: 'Title A–Z', platform: 'By platform',
-};
-
 let countFn: () => number = () => 0;
 /** list.ts provides the live result count for the "Show N" button. */
 export function setResultCounter(fn: () => number): void { countFn = fn; }
@@ -102,10 +98,10 @@ export function renderActiveFilters(): void {
   if (f.platform) chip(f.platform, { platform: null });
   for (const t of f.tags) chip('#' + t, { tags: f.tags.filter((x) => x !== t) });
   if (f.dateStart || f.dateEnd) chip((f.dateStart || '…') + ' – ' + (f.dateEnd || '…'), { dateStart: '', dateEnd: '' });
-  if (f.sort !== 'newest') chip(SORT_LABELS[f.sort], { sort: 'newest' });
   row.hidden = row.children.length === 0;
 
-  const n = activeFilterCount(f) - (view.mode !== 'folder' && f.scope === 'all' ? 1 : 0);
+  // Sort has its own visible control in the toolbar, so it doesn't count here.
+  const n = activeFilterCount(f) - (view.mode !== 'folder' && f.scope === 'all' ? 1 : 0) - (f.sort !== 'newest' ? 1 : 0);
   const badge = byId('filterBadge');
   badge.hidden = n === 0;
   badge.textContent = String(n);

@@ -1,5 +1,7 @@
 import { AI_CONFIG, type AiAction } from '@shared/config.ts';
-import type { ClassifyInput, ClassifyOutput, PlanInput, PlanOutput, SearchFilters, SearchHit, EmbedItem } from '@shared/schemas.ts';
+import type {
+  ClassifyInput, ClassifyOutput, EmbedItem, NudgeInput, NudgeOutput, PlanInput, PlanOutput, RecapInput, RecapOutput, SearchFilters, SearchHit,
+} from '@shared/schemas.ts';
 import { accessToken } from '../cloud/auth';
 import { functionUrl } from '../cloud/supabase';
 import { SUPABASE_ANON_KEY } from '../config';
@@ -24,6 +26,9 @@ export interface ActionIO {
   plan: { in: { input: PlanInput }; out: { plan: PlanOutput; model: string } };
   search: { in: { q: string; filters: SearchFilters }; out: { hits: SearchHit[] } };
   embed: { in: { items: EmbedItem[] }; out: { updated: number } };
+  /** null when the model's text was unusable (callers fall back to a template). */
+  nudge: { in: { input: NudgeInput }; out: { nudge: NudgeOutput | null; model: string } };
+  recap: { in: { input: RecapInput }; out: { recap: RecapOutput | null; model: string } };
 }
 
 /** Calls the Edge Function (no mode check - used for the access probe too). */

@@ -39,6 +39,9 @@ export function activeFilterCount(f: ListFilters): number {
     f.tags.length + (f.status !== 'any' ? 1 : 0) + (f.dateStart || f.dateEnd ? 1 : 0);
 }
 
+/** Revisit / reminders: unopened links at least this many days old. */
+export const REVISIT_MIN_AGE_DAYS = 7;
+
 export function isRevisitCandidate(l: Link, now: number, minAgeDays: number): boolean {
   return l.openedAt == null && l.status !== 'done' && now - l.createdAt >= minAgeDays * 86_400_000;
 }

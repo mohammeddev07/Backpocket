@@ -1,6 +1,6 @@
 import { APP_CONFIG } from './config';
 import { uid } from './data/ids';
-import { COLORS, INBOX_COLOR, INBOX_NAME } from './data/migrate';
+import { FOLDER_COLORS as COLORS, INBOX_COLOR, INBOX_NAME } from './data/migrate';
 import { normalizeUrl } from './data/normalizeUrl';
 import { fetchOembed, supportsOembed } from './data/oembed';
 import { store } from './data/store';

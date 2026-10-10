@@ -1,9 +1,11 @@
+import { REVISIT_MIN_AGE_DAYS } from './search/filters';
+
 // Client configuration. AI limits and model ids live in
 // supabase/functions/_shared/config.ts (shared with the Edge Function).
 
 export const APP_CONFIG = {
   /** "Revisit" shows unopened links saved at least this long ago. */
-  revisitMinAgeDays: 7,
+  revisitMinAgeDays: REVISIT_MIN_AGE_DAYS,
   oembedTimeoutMs: 4000,
   /** Existing YouTube/TikTok links to backfill thumbnails for per app load. */
   oembedBackfillPerLoad: 30,

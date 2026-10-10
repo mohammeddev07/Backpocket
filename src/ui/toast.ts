@@ -15,6 +15,7 @@ export function hideToast(): void {
 export function showToast(msg: string, ok: boolean, actions?: (() => void) | ToastAction[], ms?: number): void {
   const toastEl = byId('toast');
   toastEl.replaceChildren();
+  toastEl.classList.remove('nudge');
   if (ok) {
     const check = document.createElement('span');
     check.className = 'check';
