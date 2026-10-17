@@ -4,7 +4,7 @@ import type { Folder, Link } from '../data/types';
 // Which links the list shows: view (All saves / a folder / Revisit), keyword
 // search and the Filters sheet. Pure, so it's unit-tested.
 
-export type ViewMode = 'all' | 'folder' | 'revisit' | 'favorites';
+export type ViewMode = 'all' | 'folder' | 'revisit' | 'favorites' | 'queue';
 export type SortMode = 'newest' | 'oldest' | 'platform' | 'title';
 export type StatusFilter = 'any' | 'unread' | 'done';
 

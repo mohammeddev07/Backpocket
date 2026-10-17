@@ -592,6 +592,94 @@ h1.folder-title {
 .folder-card.is-new .folder-card-btn:hover { color: var(--ink); border-color: color-mix(in srgb, var(--accent) 60%, transparent); }
 .folder-card.is-new .icon { width: 16px; height: 16px; margin: 0; }
 
+/* ---------- Daily Queue ---------- */
+.queue { min-width: 0; } /* grid item: let the Up next strip scroll instead of widening the page */
+.streak-pill { display: inline-flex; align-items: center; gap: 6px; color: var(--accent-text); font-weight: 600; }
+.streak-pill .icon { width: 16px; height: 16px; }
+.queue-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.queue-progress { margin: 0; font-size: 12.5px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+.queue .section-title + .queue-next { margin-top: 0; }
+.queue-focus {
+  margin: 0 0 24px; overflow: hidden; border-radius: var(--radius-lg); background: var(--paper-raised);
+  border: 1px solid color-mix(in srgb, var(--accent) 50%, var(--line));
+  box-shadow: var(--shadow-soft), 0 18px 50px -24px var(--glow);
+  animation: rise .35s var(--spring) both;
+}
+.queue-media { position: relative; }
+.queue-media .link-visual { --thumb: 200px; width: 100%; height: auto; aspect-ratio: 16 / 10; border-radius: 0; }
+.queue-media .tile-initial { opacity: .35; }
+.queue-overlay {
+  position: absolute; inset: 0 0 auto; padding: 16px 16px 40px; pointer-events: none;
+  background: linear-gradient(to bottom, rgba(6, 7, 9, .78), transparent); /* over the image in both themes */
+}
+.queue-title {
+  margin: 0; color: #fff; font: 700 21px/1.25 var(--font-sans); letter-spacing: -.015em; text-wrap: balance;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; line-clamp: 3; overflow: hidden;
+}
+.queue-play {
+  position: absolute; left: 50%; top: 55%; transform: translate(-50%, -50%);
+  width: 64px; height: 64px; padding: 0; border: none; border-radius: 50%; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255, 255, 255, .92); color: #0B0C0F; box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+  transition: transform .35s var(--spring);
+}
+.queue-play .icon { width: 28px; height: 28px; margin-left: 3px; }
+.queue-play:active { transform: translate(-50%, -50%) scale(.9); }
+.queue-body { padding: 14px 16px 16px; }
+.queue-desc {
+  margin: 0 0 6px; font-size: 14px; line-height: 1.5; color: var(--ink-soft);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-clamp: 2; overflow: hidden;
+}
+.queue-meta { margin: 0; font-size: 12.5px; color: var(--ink-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.queue-actions { display: flex; gap: 10px; margin-top: 14px; }
+.queue-start {
+  flex: 1; min-height: 48px; border: none; border-radius: var(--radius-md); cursor: pointer;
+  background: var(--accent-grad); color: var(--accent-ink); font: 700 15px var(--font-sans);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .35) inset, 0 10px 24px -10px color-mix(in srgb, var(--accent) 80%, transparent);
+  transition: filter .15s ease, transform .35s var(--spring);
+}
+.queue-start:hover { filter: brightness(1.06); }
+.queue-start:active, .queue-done:active { transform: scale(.96); }
+.queue-start:focus-visible { outline-color: var(--ink); }
+.queue-done { min-height: 48px; padding: 0 18px; font-size: 15px; transition: transform .35s var(--spring); }
+.queue-done .icon { width: 17px; height: 17px; stroke-width: 2.2; }
+
+/* Up next: a sideways strip that snaps card by card. */
+.queue-next {
+  list-style: none; display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--gutter); scrollbar-width: none;
+  margin: 0 calc(-1 * var(--gutter)); padding: 2px var(--gutter) 8px;
+}
+.queue-next::-webkit-scrollbar { display: none; }
+.queue-card {
+  position: relative; flex: 0 0 64%; scroll-snap-align: start;
+  border-radius: var(--radius-lg); background: var(--paper-raised); border: 1px solid var(--line-soft); box-shadow: var(--shadow-card);
+  animation: rise .3s var(--ease) both;
+}
+.queue-card-open {
+  display: flex; flex-direction: column; gap: 6px; width: 100%; padding: 8px 8px 12px; border: none; background: none;
+  color: var(--ink); font: inherit; text-align: left; cursor: pointer;
+}
+.queue-card-open .link-visual { --thumb: 110px; width: 100%; height: auto; aspect-ratio: 16 / 10; border-radius: var(--radius-md); margin-bottom: 4px; }
+.queue-card-title {
+  padding: 0 4px; font-weight: 600; font-size: 14px; line-height: 1.35;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-clamp: 2; overflow: hidden;
+}
+.queue-card-open .queue-meta { padding: 0 4px; }
+.queue-card-done {
+  position: absolute; top: 14px; right: 14px; width: 36px; height: 36px; padding: 0; border: none; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  background: rgba(8, 9, 12, .5); color: #fff; /* sits on the photo/tile */
+  transition: transform .35s var(--spring), background .15s ease;
+}
+.queue-card-done .icon { width: 18px; height: 18px; stroke-width: 2.4; }
+.queue-card-done:hover { background: var(--success); }
+.queue-card-done:active { transform: scale(.88); }
+
+/* Done: a springy exit before the next one takes the spot. */
+.queue-focus.is-leaving, .queue-card.is-leaving { animation: queue-out .26s var(--spring) forwards; pointer-events: none; }
+@keyframes queue-out { to { opacity: 0; transform: translateX(28px) scale(.94); } }
+.queue-rest .empty-illustration .icon { width: 100%; height: 100%; }
+
 /* Weekly recap card (top of All saves) */
 .recap-card {
   position: relative; isolation: isolate; margin-bottom: 12px; padding: 16px;
@@ -874,7 +962,7 @@ h1.folder-title {
 .tabbar {
   position: fixed; left: 50%; bottom: 0; z-index: 15; transform: translateX(-50%);
   width: 100%; max-width: var(--column);
-  display: grid; grid-template-columns: repeat(4, 1fr); align-items: center;
+  display: grid; grid-template-columns: repeat(5, 1fr); align-items: center;
   min-height: var(--tabbar-h); padding: 4px 8px env(safe-area-inset-bottom);
   background: color-mix(in srgb, var(--paper-raised) 90%, transparent);
   border-top: 1px solid var(--line-soft);
@@ -938,7 +1026,7 @@ h1.folder-title {
 
 /* ---------- Touch: 44px targets, no hover-only controls ---------- */
 @media (pointer: coarse) {
-  .link-kebab, .folder-card-kebab, .links.is-grid .link-kebab { width: 44px; height: 44px; }
+  .link-kebab, .folder-card-kebab, .links.is-grid .link-kebab, .queue-card-done { width: 44px; height: 44px; }
   .icon-btn.small { width: 44px; height: 44px; }
   .picker-btn, .text-btn, .footer-link-btn, .btn-primary, .btn-ghost { min-height: 44px; }
   .text-btn { padding: 0 6px; }

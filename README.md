@@ -19,6 +19,7 @@ Free, private by default, and it installs like an app in a few seconds: **<https
 **You'll actually come back to it.** This is the part other bookmark apps forget:
 - **Cheeky reminders.** Opt in and Backpocket nudges you about saves you never opened, food-delivery style: *"Order up! "One-pan lemon orzo" has been ready for 9 days. Come and get it."* With AI on, each nudge is written for that link and picks the forgotten save that matches what you're into lately.
 - **A weekly recap.** Once a week you get a short summary of what you saved and the three things most worth opening first.
+- **Daily Queue.** Five saves a day to actually get through: one to focus on, four up next. Mark them done to keep your catch streak going.
 - **Revisit.** One tap shows everything you saved over a week ago and never opened, with a shuffle button for when you can't decide.
 
 **Find anything in seconds.** Instant search across titles, notes, captions, tags and folders. With AI, search by meaning ("that chess opening video", "tiktok from last week"). On any save, **More like this** finds its closest matches, and you get a heads-up when you save something very similar to what you already have.

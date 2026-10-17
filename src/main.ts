@@ -14,6 +14,7 @@ import { initFolderPicker } from './ui/folderPicker';
 import { initLinkEditor } from './ui/linkEditor';
 import { initLibrary } from './ui/library';
 import { initList } from './ui/list';
+import { initQueue } from './ui/queue';
 import { setupModalA11y } from './ui/modal';
 import { applySharedPayload, initSaveBox, openSaveSheet, resetSaveTarget } from './ui/saveBox';
 import { initIosHelp } from './ui/iosHelp';
@@ -59,6 +60,7 @@ async function boot(): Promise<void> {
   initLinkEditor();
   initList();
   initLibrary();
+  initQueue();
   initSaveBox();
   initSettings();
   initBackupModal();

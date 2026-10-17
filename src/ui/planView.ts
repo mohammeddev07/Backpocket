@@ -7,7 +7,7 @@ import type { Folder, Link, Plan } from '../data/types';
 import { domainOf } from '../platform';
 import { requireAi } from './aiUi';
 import { plural } from './dom';
-import { addHeaderExtra, fallbackCopy, openLink, setListOverride } from './list';
+import { addHeaderExtra, addListOverride, fallbackCopy, openLink } from './list';
 import { addFolderMenuItems } from './nav';
 import { showToast } from './toast';
 import { go, renderMain, view } from './view';
@@ -257,7 +257,7 @@ export function initPlans(): void {
     }];
   });
   addHeaderExtra(tabs);
-  setListOverride((listEl) => {
+  addListOverride((listEl) => {
     if (view.mode !== 'folder' || planTabFor !== view.folderId) return false;
     const folder = store.folder(view.folderId);
     if (!folder) return false;

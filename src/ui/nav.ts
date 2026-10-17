@@ -35,8 +35,8 @@ export function folderMenuItems(folder: Folder): MenuItem[] {
 function renderTabbar(): void {
   const inbox = inboxId();
   const inInbox = view.mode === 'folder' && view.folderId === inbox;
-  const active = inInbox ? 'tabInbox' : view.mode === 'revisit' ? 'tabRevisit' : 'tabLibrary';
-  for (const id of ['tabInbox', 'tabLibrary', 'tabRevisit']) {
+  const active = inInbox ? 'tabInbox' : view.mode === 'revisit' ? 'tabRevisit' : view.mode === 'queue' ? 'tabQueue' : 'tabLibrary';
+  for (const id of ['tabInbox', 'tabQueue', 'tabLibrary', 'tabRevisit']) {
     if (id === active) byId(id).setAttribute('aria-current', 'page');
     else byId(id).removeAttribute('aria-current');
   }
@@ -50,6 +50,7 @@ function renderTabbar(): void {
 export function initNav(): void {
   setRenderer('nav', renderTabbar);
   byId('tabInbox').onclick = () => go('folder', inboxId());
+  byId('tabQueue').onclick = () => go('queue');
   byId('tabLibrary').onclick = () => go('all');
   byId('tabRevisit').onclick = () => go('revisit');
 

@@ -35,7 +35,7 @@ Deploy: pushing to `develop` publishes the frontend (`.github/workflows/deploy.y
 ## Gotchas
 
 - Base path is `/Backpocket/`. Manifest and share target use relative paths; keep them relative.
-- Reminders and the recap store state in IndexedDB `meta` (`nudgeAt`, `nudgeNext`, `nudgeHistory`, `recap`, `recapNotifiedAt`), shared between page and worker. Keep keys in `nudge.ts` / `recap.ts`.
+- Reminders, the recap and the Daily Queue store state in IndexedDB `meta` (`nudgeAt`, `nudgeNext`, `nudgeHistory`, `recap`, `recapNotifiedAt`, `queue`, `queueStreak`). Keep keys in `nudge.ts` / `recap.ts` / `queue.ts`.
 - Embedding features (More like this, duplicate warnings, smart reminder picks) only work signed in with AI on; they call SQL functions (`related_links`, `revisit_picks`) and must degrade silently when those fail.
 - AI budget is tight (free tier, ~600 calls/day across all users). New AI features should reuse embeddings or cost about one call per user per day; set costs in `_shared/config.ts`.
 - Migrations: `search_path` is empty in functions, so qualify pgvector bits (`operator(extensions.<=>)`, `extensions.avg`). Functions are `security invoker` and filter on `auth.uid()`.

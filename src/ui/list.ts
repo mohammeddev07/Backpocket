@@ -36,10 +36,10 @@ type HeaderExtra = (container: HTMLElement) => void;
 const headerExtras: HeaderExtra[] = [];
 export function addHeaderExtra(fn: HeaderExtra): void { headerExtras.push(fn); }
 
-/** Replaces the card list (e.g. a folder's Plan tab). Returns true if it rendered. */
+/** Replaces the card list (a folder's Plan tab, the Daily Queue). Returns true if it rendered. */
 type ListOverride = (listEl: HTMLElement) => boolean;
-let listOverride: ListOverride | null = null;
-export function setListOverride(fn: ListOverride | null): void { listOverride = fn; }
+const listOverrides: ListOverride[] = [];
+export function addListOverride(fn: ListOverride): void { listOverrides.push(fn); }
 
 /** Extra ranked results (semantic search) merged ahead of keyword matches. */
 let extraResults: { query: string; ids: string[] } | null = null;
@@ -164,7 +164,7 @@ export function fallbackTile(link: Link): HTMLElement {
   return tile;
 }
 
-function linkVisual(link: Link): HTMLElement {
+export function linkVisual(link: Link): HTMLElement {
   if (!link.thumbnailUrl || store.settings.localIconsOnly) return fallbackTile(link);
   const wrap = document.createElement('div');
   wrap.className = 'link-visual';
@@ -409,7 +409,7 @@ function render(): void {
     : plural(inView.length, 'saved link');
 
   const listEl = byId('linksList');
-  if (listOverride && listOverride(listEl)) { byId('listToolbar').hidden = true; byId('resultCount').hidden = true; updateBulkBar(); runRenderHooks(); return; }
+  if (listOverrides.some((fn) => fn(listEl))) { byId('listToolbar').hidden = true; byId('resultCount').hidden = true; updateBulkBar(); runRenderHooks(); return; }
   byId('listToolbar').hidden = false;
   listEl.replaceChildren();
   const previouslyShown = view.shownLinkIds;

@@ -20,7 +20,7 @@ function renderChips(): void {
   const inbox = inboxId();
   const inInbox = view.mode === 'folder' && view.folderId === inbox;
   // Inside a user folder the crumb leads back instead.
-  row.hidden = view.mode === 'folder' && !inInbox;
+  row.hidden = (view.mode === 'folder' && !inInbox) || view.mode === 'queue';
   if (row.hidden) return;
   const links = store.liveLinks();
   const now = Date.now();
@@ -103,7 +103,8 @@ function renderFolders(): void {
 function renderLayoutToggle(): void {
   const grid = store.settings.libraryLayout === 'grid';
   byId('layoutToggleBtn').setAttribute('aria-pressed', String(grid));
-  byId('linksList').classList.toggle('is-grid', grid);
+  // Plan and Daily Queue replace the list with their own layout.
+  byId('linksList').classList.toggle('is-grid', grid && !byId('listToolbar').hidden);
 }
 
 export function initLibrary(): void {
