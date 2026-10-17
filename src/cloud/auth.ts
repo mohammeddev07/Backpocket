@@ -4,7 +4,7 @@ import { getSupabase, hasStoredSession } from './supabase';
 
 // Google sign-in (redirect flow, PKCE) and the current user.
 
-export interface AuthUser { id: string; email: string | null; name: string | null }
+export interface AuthUser { id: string; email: string | null; name: string | null; avatarUrl: string | null }
 
 type Listener = (u: AuthUser | null) => void;
 let user: AuthUser | null = null;
@@ -31,7 +31,11 @@ export function onAuthChange(fn: Listener): () => void {
 function toAuthUser(u: User | null | undefined): AuthUser | null {
   if (!u) return null;
   const meta = (u.user_metadata || {}) as Record<string, unknown>;
-  return { id: u.id, email: u.email ?? null, name: (meta.full_name as string) || (meta.name as string) || null };
+  const pic = (meta.avatar_url as string) || (meta.picture as string) || '';
+  return {
+    id: u.id, email: u.email ?? null, name: (meta.full_name as string) || (meta.name as string) || null,
+    avatarUrl: pic.startsWith('https://') ? pic : null,
+  };
 }
 
 function setUser(next: AuthUser | null): void {
