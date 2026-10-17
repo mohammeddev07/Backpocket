@@ -698,7 +698,7 @@ h1.folder-title {
 .recap-title { font: 600 18px/1.3 var(--font-sans); letter-spacing: -.015em; margin: 0 0 6px; text-wrap: balance; }
 .recap-summary { margin: 0; font-size: 14px; line-height: 1.55; color: var(--ink-soft); text-wrap: pretty; max-width: 65ch; }
 .recap-label { margin: 14px 0 8px; font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
-.recap-picks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.recap-picks { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
 .recap-pick {
   --thumb: 40px;
   display: flex; align-items: center; gap: 12px; width: 100%; min-height: 52px; padding: 6px 10px 6px 6px;
@@ -709,7 +709,7 @@ h1.folder-title {
 .recap-pick:hover { border-color: var(--line); background: var(--hover); }
 .recap-pick .link-visual { border-radius: 10px; }
 .recap-pick .tile-badge { display: none; }
-.recap-pick-text { display: flex; flex-direction: column; min-width: 0; }
+.recap-pick-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .recap-pick-title { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .recap-pick-folder { font-size: 12.5px; color: var(--ink-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
