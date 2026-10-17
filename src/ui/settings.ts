@@ -3,7 +3,7 @@ import { THEME_KEY } from '../data/migrate';
 import { store } from '../data/store';
 import { byId } from './dom';
 import { closeModal, onModalClose, openModal } from './modal';
-import { renderMain } from './view';
+import { renderMain, renderNav } from './view';
 
 // ---- Theme ----
 function currentTheme(): 'light' | 'dark' {
@@ -40,6 +40,7 @@ export function openSettings(): void {
   if (page.classList.contains('show')) return;
   openModal(page);
   history.pushState({ bpSettings: true }, '');
+  renderNav();
 }
 
 export function initSettings(): void {
@@ -47,7 +48,10 @@ export function initSettings(): void {
   byId('meBtn').onclick = openSettings;
   byId('tabSettings').onclick = openSettings;
   byId('closeSettingsBtn').onclick = () => closeModal(settingsModal);
-  onModalClose(settingsModal, () => { if (history.state?.bpSettings) history.back(); });
+  onModalClose(settingsModal, () => {
+    renderNav();
+    if (history.state?.bpSettings) history.back();
+  });
   window.addEventListener('popstate', () => closeModal(settingsModal));
   // Rows that open another dialog (Backup & import) step out of Settings first.
   settingsModal.addEventListener('click', (e) => {

@@ -32,6 +32,7 @@ const renderers: Record<'nav' | 'main' | 'saveTarget', Renderer> = {
   nav: () => {}, main: () => {}, saveTarget: () => {},
 };
 export function setRenderer(name: keyof typeof renderers, fn: Renderer): void { renderers[name] = fn; }
+export function renderNav(): void { renderers.nav(); }
 export function renderMain(): void { renderers.main(); }
 export function renderAll(): void { renderers.nav(); renderers.main(); renderers.saveTarget(); }
 

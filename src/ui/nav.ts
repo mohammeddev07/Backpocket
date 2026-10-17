@@ -5,6 +5,7 @@ import type { Folder } from '../data/types';
 import { byId, plural } from './dom';
 import { confirmDeleteFolder, openFolderModal, openMoveFolder } from './folderDialogs';
 import { type MenuItem } from './menu';
+import { closeModal } from './modal';
 import { go, setRenderer, view } from './view';
 
 // App navigation: the tab bar (bottom on phones, sidebar on desktop). Also the
@@ -34,8 +35,9 @@ export function folderMenuItems(folder: Folder): MenuItem[] {
 function renderTabbar(): void {
   const inbox = inboxId();
   const inInbox = view.mode === 'folder' && view.folderId === inbox;
-  const active = inInbox ? 'tabInbox' : view.mode === 'revisit' ? 'tabRevisit' : view.mode === 'queue' ? 'tabQueue' : 'tabLibrary';
-  for (const id of ['tabInbox', 'tabQueue', 'tabLibrary', 'tabRevisit']) {
+  const active = byId('settingsModal').classList.contains('show') ? 'tabSettings'
+    : inInbox ? 'tabInbox' : view.mode === 'revisit' ? 'tabRevisit' : view.mode === 'queue' ? 'tabQueue' : 'tabLibrary';
+  for (const id of ['tabInbox', 'tabQueue', 'tabLibrary', 'tabRevisit', 'tabSettings']) {
     if (id === active) byId(id).setAttribute('aria-current', 'page');
     else byId(id).removeAttribute('aria-current');
   }
@@ -52,4 +54,8 @@ export function initNav(): void {
   byId('tabQueue').onclick = () => go('queue');
   byId('tabLibrary').onclick = () => go('all');
   byId('tabRevisit').onclick = () => go('revisit');
+  // On desktop the sidebar stays usable beside Settings: any other button steps out of it first.
+  document.querySelector('.tabbar')!.addEventListener('click', (e) => {
+    if (!(e.target as Element).closest('#tabSettings')) closeModal(byId('settingsModal'));
+  }, true);
 }
