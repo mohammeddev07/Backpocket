@@ -29,6 +29,19 @@ function initials(u: AuthUser): string {
   return src.split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join('');
 }
 
+/** Google profile photo, falling back to initials if it can't load (offline, revoked). */
+function fillAvatar(el: HTMLElement, u: AuthUser): void {
+  const text = initials(u);
+  el.textContent = text;
+  if (!u.avatarUrl) return;
+  const img = document.createElement('img');
+  img.alt = '';
+  img.referrerPolicy = 'no-referrer'; // Google's photo host can refuse requests that carry a referrer
+  // Only swap if nothing re-rendered the avatar meanwhile (e.g. signed out while loading).
+  img.onload = () => { if (el.textContent === text) el.replaceChildren(img); };
+  img.src = u.avatarUrl;
+}
+
 // ---- Status line ("Synced · 2 min ago") ----
 function renderStatus(s: SyncState = syncState()): void {
   const el = byId('storageNote');
@@ -66,11 +79,11 @@ function renderAccount(u: AuthUser | null): void {
   const avatar = byId('accountAvatar');
   for (const id of ['meAvatar', 'sideAvatar']) {
     const a = byId(id);
-    if (u) a.textContent = initials(u); else a.replaceChildren(svgIcon('user'));
+    if (u) fillAvatar(a, u); else a.replaceChildren(svgIcon('user'));
   }
   byId('meBtn').setAttribute('aria-label', u ? 'Settings, signed in as ' + (u.email || u.name) : 'Settings');
   if (u) {
-    avatar.textContent = initials(u);
+    fillAvatar(avatar, u);
     byId('accountName').textContent = u.name || u.email || 'Signed in';
     byId('accountSub').textContent = u.email && u.name ? u.email : 'Account & sync';
     btn.setAttribute('aria-label', 'Account: ' + (u.email || u.name || 'signed in'));
