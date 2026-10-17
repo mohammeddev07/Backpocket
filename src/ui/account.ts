@@ -10,14 +10,14 @@ import {
 } from '../data/sync';
 import { isIos, isStandalone } from '../platform';
 import { openBackupModal } from './backupModal';
-import { byId, plural } from './dom';
+import { byId, plural, svgIcon } from './dom';
 import { relativeTime } from './format';
 import { closeModal, onModalClose, openModal } from './modal';
 import { showToast } from './toast';
 import { go } from './view';
 
 // Account: Google sign-in, first-sign-in upload of guest data, sign out,
-// account deletion, and the sync status line in the drawer footer.
+// account deletion, and the sync status line in the avatar sheet.
 
 type AccountListener = (u: AuthUser | null) => void;
 const accountListeners: AccountListener[] = [];
@@ -58,12 +58,15 @@ function renderStatus(s: SyncState = syncState()): void {
   if (s.message && s.status === 'error') el.title = s.message; else el.removeAttribute('title');
 }
 
-// ---- Drawer + settings account UI ----
+// ---- Avatar sheet + settings account UI ----
 const LOCAL_NOTICE = 'Backpocket doesn\'t keep a copy of your saves. Everything is stored locally in this browser on this device, so clearing site data or uninstalling removes it. Use Backup & import to keep a copy. Optional lookups (site icons, thumbnails, AI) are explained below.';
 function renderAccount(u: AuthUser | null): void {
   const btn = byId('accountBtn');
   btn.hidden = !CLOUD_CONFIGURED;
   const avatar = byId('accountAvatar');
+  const meAvatar = byId('meAvatar');
+  if (u) meAvatar.textContent = initials(u); else meAvatar.replaceChildren(svgIcon('user'));
+  byId('meBtn').setAttribute('aria-label', u ? 'Account and settings, signed in as ' + (u.email || u.name) : 'Account and settings');
   if (u) {
     avatar.textContent = initials(u);
     byId('accountName').textContent = u.name || u.email || 'Signed in';

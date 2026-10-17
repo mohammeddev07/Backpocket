@@ -8,7 +8,7 @@ import { domainOf } from '../platform';
 import { requireAi } from './aiUi';
 import { plural } from './dom';
 import { addHeaderExtra, fallbackCopy, openLink, setListOverride } from './list';
-import { addFolderMenuItems } from './sidebar';
+import { addFolderMenuItems } from './nav';
 import { showToast } from './toast';
 import { go, renderMain, view } from './view';
 

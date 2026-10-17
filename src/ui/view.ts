@@ -6,7 +6,6 @@ export const view = {
   /** 'all' = All saves, 'folder' = one folder (the Inbox is a folder), 'revisit'. */
   mode: 'all' as ViewMode,
   folderId: '',
-  expanded: new Set<string>(),
   query: '',
   filters: { ...DEFAULT_FILTERS } as ListFilters,
   shuffleSeed: 0,
@@ -33,7 +32,6 @@ const renderers: Record<'nav' | 'main' | 'saveTarget', Renderer> = {
   nav: () => {}, main: () => {}, saveTarget: () => {},
 };
 export function setRenderer(name: keyof typeof renderers, fn: Renderer): void { renderers[name] = fn; }
-export function renderTree(): void { renderers.nav(); }
 export function renderMain(): void { renderers.main(); }
 export function renderAll(): void { renderers.nav(); renderers.main(); renderers.saveTarget(); }
 

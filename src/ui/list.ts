@@ -9,10 +9,11 @@ import { selectLinks, viewLinks, type ListQuery } from '../search/filters';
 import { byId, plural, svgIcon } from './dom';
 import { renderActiveFilters, setResultCounter } from './filtersSheet';
 import { openMoveLinks } from './folderDialogs';
+import { pickFolder } from './folderPicker';
 import { relativeTime, fullDate } from './format';
 import { openLinkEditor, setEditorDeleteHandler } from './linkEditor';
 import { openMenu, type MenuItem } from './menu';
-import { closeSidebarMobile, folderMenuItems } from './sidebar';
+import { folderMenuItems } from './nav';
 import { showToast } from './toast';
 import { clearFilters, go, renderMain, setRenderer, view } from './view';
 
@@ -239,7 +240,7 @@ function buildLinkRow(link: Link, opts: { showFolder: boolean; folders: Folder[]
       crumb.style.setProperty('--folder-color', f.isSystem ? 'var(--ink-faint)' : (f.color || COLORS[0]));
       crumb.append(svgIcon(f.isSystem ? 'inbox' : 'folder'), label);
       crumb.setAttribute('aria-label', 'Go to folder ' + label.textContent);
-      crumb.onclick = (e) => { e.stopPropagation(); pathOf(opts.folders, f.id).forEach((p) => view.expanded.add(p.id)); go('folder', f.id); };
+      crumb.onclick = (e) => { e.stopPropagation(); go('folder', f.id); };
       bits.push(crumb);
     }
   } else if (link.title) {
@@ -359,6 +360,16 @@ function renderHeader(folders: Folder[]): void {
     actions.appendChild(shuffleBtn);
   } else {
     titleEl.textContent = 'All saves';
+    const foldersBtn = document.createElement('button');
+    foldersBtn.type = 'button';
+    foldersBtn.className = 'btn-ghost with-icon';
+    foldersBtn.setAttribute('aria-haspopup', 'dialog');
+    foldersBtn.append(svgIcon('folder'), document.createTextNode('Folders'));
+    foldersBtn.onclick = async () => {
+      const id = await pickFolder({ title: 'Open a folder' });
+      if (id) go('folder', id);
+    };
+    actions.appendChild(foldersBtn);
   }
   for (const extra of headerExtras) extra(actions);
 }
@@ -401,7 +412,7 @@ function render(): void {
 
   if (store.liveLinks().length === 0 || (inView.length === 0 && !view.query && view.mode !== 'folder')) {
     byId('resultCount').hidden = true;
-    const cta = ghostButton('Save your first link', () => { closeSidebarMobile(); byId('urlInput').focus(); });
+    const cta = ghostButton('Save your first link', () => { byId('urlInput').focus(); });
     listEl.appendChild(view.mode === 'revisit'
       ? emptyState(EMPTY_ILLUSTRATION, 'Nothing to revisit', 'Links you haven\'t opened for ' + APP_CONFIG.revisitMinAgeDays + ' days show up here.')
       : emptyState(EMPTY_ILLUSTRATION, 'Your next good find belongs here', 'Save your first link and it\'ll show up here, searchable across every folder.', cta));

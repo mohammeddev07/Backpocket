@@ -19,11 +19,11 @@ import { initIosHelp } from './ui/iosHelp';
 import { initRecap } from './ui/recap';
 import { initReminders, maybeNudge } from './ui/reminders';
 import { initInstall, initSettings, initTheme } from './ui/settings';
-import { initSidebar } from './ui/sidebar';
+import { initNav } from './ui/nav';
 import { showToast } from './ui/toast';
 import { go, onNavigate, renderAll, scheduleRender } from './ui/view';
 
-const MODALS = ['folderModal', 'pickerModal', 'filtersSheet', 'linkModal', 'backupModal', 'settingsModal', 'accountModal', 'uploadModal', 'byokModal', 'iosHelpModal'];
+const MODALS = ['folderModal', 'pickerModal', 'filtersSheet', 'linkModal', 'backupModal', 'settingsModal', 'accountModal', 'uploadModal', 'byokModal', 'iosHelpModal', 'meSheet'];
 
 async function boot(): Promise<void> {
   // Read the share params first, so they're cleared from the address bar
@@ -52,7 +52,7 @@ async function boot(): Promise<void> {
 
   initTheme();
   initFolderPicker();
-  initSidebar();
+  initNav();
   initFolderDialogs();
   initFiltersSheet();
   initLinkEditor();

@@ -3,7 +3,6 @@ import { THEME_KEY } from '../data/migrate';
 import { store } from '../data/store';
 import { byId, svgIcon } from './dom';
 import { closeModal, openModal } from './modal';
-import { closeSidebarMobile } from './sidebar';
 import { renderMain } from './view';
 
 // ---- Theme ----
@@ -14,7 +13,7 @@ function currentTheme(): 'light' | 'dark' {
 export function applyTheme(theme: 'light' | 'dark'): void {
   document.documentElement.setAttribute('data-theme', theme);
   // Browser/status-bar colour follows the in-app theme, not just the OS one.
-  document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute('content', theme === 'dark' ? '#08080c' : '#f5f6f8'));
+  document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute('content', theme === 'dark' ? '#090a0c' : '#f6f5f3'));
   byId('themeToggle').replaceChildren(svgIcon(theme === 'dark' ? 'sun' : 'moon'));
 }
 
@@ -36,7 +35,6 @@ export function initTheme(): void {
 // ---- Settings modal ----
 export function openSettings(): void {
   openModal(byId('settingsModal'));
-  closeSidebarMobile();
 }
 
 export function initSettings(): void {
