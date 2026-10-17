@@ -115,3 +115,40 @@ export async function pullSince<K extends Kind>(
   }
   return newest;
 }
+
+const KINDS: Kind[] = ['folders', 'links', 'plans'];
+
+/** The account's last-change marker: one primary-key read, so an idle poll is cheap. Null if no row yet. */
+export async function readChangedAt(sb: SupabaseClient): Promise<string | null> {
+  const { data, error } = await sb.from('sync_state').select('changed_at').maybeSingle();
+  if (error) throw error;
+  return (data?.changed_at as string | undefined) ?? null;
+}
+
+/**
+ * Like pullSince for all kinds at once: one RPC returns the first page of each,
+ * and only a kind that came back full is paged further. Returns the next cursors.
+ */
+export async function pullAllSince(
+  sb: SupabaseClient, since: Record<Kind, string | null>,
+  onRows: <K extends Kind>(kind: K, rows: RowByKind[K][]) => void,
+): Promise<Record<Kind, string | null>> {
+  const PAGE = 500;
+  const { data, error } = await sb.rpc('pull_changes', { p_folders: since.folders, p_links: since.links, p_plans: since.plans, p_limit: PAGE });
+  if (error) throw error;
+  const out = { ...since };
+  for (const kind of KINDS) {
+    const rows = ((data as Record<Kind, ServerRow[]> | null)?.[kind] ?? []);
+    if (!rows.length) continue;
+    onRows(kind, rows.map((r) => fromServer(kind, r)));
+    out[kind] = rows[rows.length - 1].synced_at as string;
+    if (rows.length >= PAGE) out[kind] = await pullSince(sb, kind, out[kind], (more) => onRows(kind, more));
+  }
+  return out;
+}
+
+/** True when the error means the migration adding sync_state / pull_changes has not been applied. */
+export function isMissingBackend(e: unknown): boolean {
+  const code = (e as { code?: string } | null)?.code;
+  return code === 'PGRST202' || code === 'PGRST205' || code === '42883' || code === '42P01';
+}

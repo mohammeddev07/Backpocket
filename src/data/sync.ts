@@ -3,7 +3,7 @@ import type { MergeOutcome } from './accountMerge';
 import type { OutboxEntry } from './localStore';
 import { INBOX_COLOR, INBOX_NAME } from './migrate';
 import { store } from './store';
-import { msFromIso, pullSince, upsertRows } from './supabaseStore';
+import { isMissingBackend, msFromIso, pullAllSince, pullSince, readChangedAt, upsertRows } from './supabaseStore';
 import type { Kind, RowByKind, Snapshot } from './types';
 
 // Offline-first sync. The UI only ever reads/writes the local store; this
@@ -15,8 +15,24 @@ const KINDS: Kind[] = ['folders', 'links', 'plans'];
 /** Re-read this much before the cursor, in case a slow transaction committed late. */
 const OVERLAP_MS = 30_000;
 const PERIODIC_MS = 90_000;
+const PERIODIC_MAX_MS = 600_000;
+const BACKOFF_BASE_MS = 15_000;
+const BACKOFF_MAX_MS = 300_000;
 const META_LINKED = 'linkedUserId';
 const cursorKey = (uid: string, kind: Kind) => `syncCursor:${uid}:${kind}`;
+const changedKey = (uid: string) => `syncChangedAt:${uid}`;
+
+/** Retry delay after `failures` in a row: 15 s doubling to 5 min, spread so devices don't retry in step. */
+export function backoffDelay(failures: number, rand = Math.random): number {
+  const cap = Math.min(BACKOFF_MAX_MS, BACKOFF_BASE_MS * 2 ** (failures - 1));
+  return Math.round(cap / 2 + rand() * (cap / 2));
+}
+
+/** Time to the next background poll: 90 s while things change, stretching to 10 min when idle, always +-20%. */
+export function pollDelay(idleStreak: number, rand = Math.random): number {
+  const base = Math.min(PERIODIC_MAX_MS, PERIODIC_MS * 1.5 ** idleStreak);
+  return Math.round(base * (0.8 + rand() * 0.4));
+}
 
 export type SyncStatus = 'local' | 'signed-out' | 'pending-link' | 'syncing' | 'synced' | 'offline' | 'error';
 export interface SyncState { status: SyncStatus; lastSyncedAt: number | null; message?: string }
@@ -37,6 +53,12 @@ let activeUser: string | null = null;
 let timer: ReturnType<typeof setTimeout> | undefined;
 let queued = false;
 let failures = 0;
+/** Consecutive syncs that found nothing new; stretches the background poll. */
+let idleStreak = 0;
+/** Pull everything regardless of the change marker (first sync after linking). */
+let forcePull = false;
+/** Set once the server answers that sync_state / pull_changes don't exist (migration not applied). */
+let fastUnavailable = false;
 
 export async function linkedUserId(): Promise<string | null> {
   return (await store.db.getMeta<string | null>(META_LINKED)) ?? null;
@@ -87,7 +109,10 @@ export async function adoptAccount(userId: string, account: AccountData, merge?:
 export async function unlinkAccount(): Promise<void> {
   const uid = await linkedUserId();
   await store.db.setMeta(META_LINKED, null);
-  if (uid) for (const kind of KINDS) await store.db.setMeta(cursorKey(uid, kind), null);
+  if (uid) {
+    for (const kind of KINDS) await store.db.setMeta(cursorKey(uid, kind), null);
+    await store.db.setMeta(changedKey(uid), null);
+  }
   await store.db.outboxClear();
   store.trackOutbox = false;
 }
@@ -96,6 +121,8 @@ export function startSync(userId: string): void {
   activeUser = userId;
   store.trackOutbox = true;
   failures = 0;
+  idleStreak = 0;
+  forcePull = true;
   requestSync(0);
 }
 
@@ -134,23 +161,24 @@ async function runOnce(): Promise<void> {
   if (!navigator.onLine) { setSyncState({ status: 'offline', message: undefined }); return; }
   setSyncState({ status: 'syncing', message: undefined });
   try {
-    await push();
-    await pull();
+    const pushed = await push();
+    const changed = await pull();
+    idleStreak = pushed || changed ? 0 : idleStreak + 1;
     failures = 0;
     setSyncState({ status: 'synced', lastSyncedAt: Date.now(), message: undefined });
   } catch (e) {
     failures++;
     const offline = !navigator.onLine || (e instanceof TypeError && /fetch|network/i.test(e.message));
     setSyncState({ status: offline ? 'offline' : 'error', message: offline ? undefined : (e as Error)?.message });
-    // Back off: 15s, 30s, 60s … capped at 5 min.
-    if (activeUser) timer = setTimeout(() => void run(), Math.min(300_000, 15_000 * 2 ** (failures - 1)));
+    // Back off: 15s, 30s, 60s … capped at 5 min, with jitter.
+    if (activeUser) timer = setTimeout(() => void run(), backoffDelay(failures));
   }
 }
 
-async function push(): Promise<void> {
+async function push(): Promise<boolean> {
   const uid = activeUser!;
   const entries = await store.db.outboxAll();
-  if (!entries.length) return;
+  if (!entries.length) return false;
   const sb = await getSupabase();
   for (const kind of KINDS) {
     const mine = entries.filter((e) => e.kind === kind);
@@ -160,23 +188,61 @@ async function push(): Promise<void> {
     await upsertRows(sb, kind, rows as never, uid);
     await store.db.outboxRemove(mine);
   }
+  return true;
 }
 
-async function pull(): Promise<void> {
+/** Pulls what changed on the server. Returns true if anything new was applied. */
+async function pull(): Promise<boolean> {
   const uid = activeUser!;
   const sb = await getSupabase();
-  const pending = new Set((await store.db.outboxAll()).map((e) => e.key));
-  for (const kind of KINDS) {
-    const cursor = await store.db.getMeta<string | null>(cursorKey(uid, kind));
-    const cursorMs = msFromIso(cursor);
-    const since = cursorMs != null ? new Date(cursorMs - OVERLAP_MS).toISOString() : null;
-    const newest = await pullSince(sb, kind, since, (rows) => applyIncoming(kind, rows, pending));
-    if (newest && newest !== cursor) await store.db.setMeta(cursorKey(uid, kind), newest);
-    if (activeUser !== uid) return; // signed out mid-sync
+  // An idle poll is one primary-key read: if the account's marker is what we saw
+  // last time, nothing changed. Missing backend or any error here just means a full pull.
+  let marker: string | null = null;
+  if (!fastUnavailable) {
+    try {
+      marker = await readChangedAt(sb);
+      if (!forcePull && marker && marker === await store.db.getMeta<string | null>(changedKey(uid))) return false;
+    } catch (e) {
+      if (isMissingBackend(e)) fastUnavailable = true;
+      marker = null;
+    }
   }
+  const pending = new Set((await store.db.outboxAll()).map((e) => e.key));
+  let applied = 0;
+  const apply = <K extends Kind>(kind: K, rows: RowByKind[K][]) => { applied += applyIncoming(kind, rows, pending); };
+  const cursors = {} as Record<Kind, string | null>;
+  const since = {} as Record<Kind, string | null>;
+  for (const kind of KINDS) {
+    cursors[kind] = (await store.db.getMeta<string | null>(cursorKey(uid, kind))) ?? null;
+    const cursorMs = msFromIso(cursors[kind]);
+    since[kind] = cursorMs != null ? new Date(cursorMs - OVERLAP_MS).toISOString() : null;
+  }
+  let next: Record<Kind, string | null> | null = null;
+  if (!fastUnavailable) {
+    try { next = await pullAllSince(sb, since, apply); } catch (e) {
+      if (!isMissingBackend(e)) throw e;
+      fastUnavailable = true;
+    }
+  }
+  if (!next) {
+    next = { ...since };
+    for (const kind of KINDS) {
+      next[kind] = await pullSince(sb, kind, since[kind], (rows) => apply(kind, rows));
+      if (activeUser !== uid) return applied > 0; // signed out mid-sync
+    }
+  }
+  if (activeUser !== uid) return applied > 0;
+  for (const kind of KINDS) {
+    const newest = next[kind];
+    if (newest && newest !== cursors[kind]) await store.db.setMeta(cursorKey(uid, kind), newest);
+  }
+  // Marker read before the pull, so a write that lands meanwhile triggers another one.
+  if (marker) await store.db.setMeta(changedKey(uid), marker);
+  forcePull = false;
+  return applied > 0;
 }
 
-function applyIncoming<K extends Kind>(kind: K, rows: RowByKind[K][], pending: Set<string>): void {
+function applyIncoming<K extends Kind>(kind: K, rows: RowByKind[K][], pending: Set<string>): number {
   const map = store.map(kind);
   const accept: RowByKind[K][] = [];
   const requeue: OutboxEntry[] = [];
@@ -191,6 +257,7 @@ function applyIncoming<K extends Kind>(kind: K, rows: RowByKind[K][], pending: S
   }
   store.applyRemote(kind, accept);
   if (requeue.length) void store.db.putRows(kind, [], requeue).then(() => requestSync(1000));
+  return accept.length;
 }
 
 let triggersInstalled = false;
@@ -208,6 +275,11 @@ export function installSyncTriggers(): void {
   window.addEventListener('offline', () => { if (activeUser) setSyncState({ status: 'offline' }); });
   window.addEventListener('focus', onFocus);
   document.addEventListener('visibilitychange', onFocus);
-  store.subscribe((c) => { if (!c.remote && c.kind !== 'settings') requestSync(1500); });
-  setInterval(() => { if (document.visibilityState === 'visible') requestSync(0); }, PERIODIC_MS);
+  store.subscribe((c) => { if (!c.remote && c.kind !== 'settings') { idleStreak = 0; requestSync(1500); } });
+  // Self-pacing poll; while retries are backing off they own the schedule.
+  const poll = () => setTimeout(() => {
+    if (document.visibilityState === 'visible' && failures === 0) requestSync(0);
+    poll();
+  }, pollDelay(idleStreak));
+  poll();
 }
