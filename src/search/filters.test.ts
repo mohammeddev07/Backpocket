@@ -39,6 +39,11 @@ describe('selectLinks', () => {
     expect(ids(selectLinks(links, folders, q({ mode: 'revisit' })))).toEqual(['c']);
   });
 
+  it('Favorites shows starred links only (rows without the flag are not starred)', () => {
+    const starred = [...links, link('e', { favorite: true, createdAt: NOW - DAY }), link('f', { favorite: false })];
+    expect(ids(selectLinks(starred, folders, q({ mode: 'favorites' })))).toEqual(['e']);
+  });
+
   it('keyword search covers title, caption, tags and folder path (all terms)', () => {
     expect(ids(selectLinks(links, folders, q({ query: 'sicilian' })))).toEqual(['c']);
     expect(ids(selectLinks(links, folders, q({ query: 'job interview' })))).toEqual(['a']);

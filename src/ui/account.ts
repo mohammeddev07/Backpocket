@@ -10,14 +10,14 @@ import {
 } from '../data/sync';
 import { isIos, isStandalone } from '../platform';
 import { openBackupModal } from './backupModal';
-import { byId, plural } from './dom';
+import { byId, plural, svgIcon } from './dom';
 import { relativeTime } from './format';
 import { closeModal, onModalClose, openModal } from './modal';
 import { showToast } from './toast';
 import { go } from './view';
 
 // Account: Google sign-in, first-sign-in upload of guest data, sign out,
-// account deletion, and the sync status line in the drawer footer.
+// account deletion, and the sync status line at the top of Settings.
 
 type AccountListener = (u: AuthUser | null) => void;
 const accountListeners: AccountListener[] = [];
@@ -58,12 +58,17 @@ function renderStatus(s: SyncState = syncState()): void {
   if (s.message && s.status === 'error') el.title = s.message; else el.removeAttribute('title');
 }
 
-// ---- Drawer + settings account UI ----
-const LOCAL_NOTICE = 'Backpocket doesn\'t keep a copy of your saves. Everything is stored locally in this browser on this device, so clearing site data or uninstalling removes it. Use Backup & import to keep a copy. Optional lookups (site icons, thumbnails, AI) are explained below.';
+// ---- Settings: account card and Account section ----
+const LOCAL_NOTICE = 'Backpocket doesn\'t keep a copy of your saves. Everything is stored locally in this browser on this device, so clearing site data or uninstalling removes it. Use Backup & import to keep a copy.';
 function renderAccount(u: AuthUser | null): void {
   const btn = byId('accountBtn');
   btn.hidden = !CLOUD_CONFIGURED;
   const avatar = byId('accountAvatar');
+  for (const id of ['meAvatar', 'sideAvatar']) {
+    const a = byId(id);
+    if (u) a.textContent = initials(u); else a.replaceChildren(svgIcon('user'));
+  }
+  byId('meBtn').setAttribute('aria-label', u ? 'Settings, signed in as ' + (u.email || u.name) : 'Settings');
   if (u) {
     avatar.textContent = initials(u);
     byId('accountName').textContent = u.name || u.email || 'Signed in';
@@ -81,7 +86,7 @@ function renderAccount(u: AuthUser | null): void {
   const desc = byId('settingsAccountDesc');
   const actions = byId('settingsAccountActions');
   actions.replaceChildren();
-  const add = (label: string, fn: () => void, cls = 'btn-ghost') => {
+  const add = (label: string, fn: () => void, cls = 'row-btn') => {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = cls;
@@ -99,10 +104,10 @@ function renderAccount(u: AuthUser | null): void {
     add('Sign out', () => void doSignOut(false));
     add('Sign out and remove from this device', () => void doSignOut(true));
     add('Export (.json)', () => { closeModal(byId('settingsModal')); openBackupModal(); });
-    add('Delete my account and cloud data', () => void deleteAccount(), 'btn-ghost danger');
+    add('Delete my account and cloud data', () => void deleteAccount(), 'row-btn danger');
   } else {
     desc.textContent = 'You\'re using Backpocket without an account. Sign in to sync and use AI.';
-    add('Continue with Google', () => { closeModal(byId('settingsModal')); openSignIn(); }, 'btn-primary');
+    add('Continue with Google', () => { closeModal(byId('settingsModal')); openSignIn(); }, 'row-btn accent');
   }
 }
 
@@ -283,7 +288,8 @@ export async function initAccount(): Promise<void> {
   if (!CLOUD_CONFIGURED) return;
 
   byId('accountBtn').onclick = () => {
-    if (currentUser()) { openModal(byId('settingsModal')); return; }
+    if (currentUser()) { byId('settingsAccount').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    closeModal(byId('settingsModal'));
     openSignIn();
   };
   byId('accountCloseBtn').onclick = () => closeModal(byId('accountModal'));

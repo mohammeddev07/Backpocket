@@ -60,7 +60,8 @@ function showImportSummary(incoming: ImportBundle): void {
   byId('importSummaryText').textContent =
     'Found ' + plural(incoming.links.length, 'link') + ' and ' + plural(incomingFolders, 'folder') + ' in this file. ' +
     'Your library currently has ' + plural(currentLinks, 'link') + ' and ' + plural(currentFolders, 'folder') + '. ' +
-    'Merge adds these alongside what you have; Replace wipes your current library first.';
+    'Merge adds these alongside what you have; Replace wipes your current library first.' +
+    (incoming.skippedUnsafe ? ' Left out ' + plural(incoming.skippedUnsafe, 'bookmarklet or non-web link', 'bookmarklets or non-web links') + ', which Backpocket can\'t open.' : '');
   byId('backupSummarySection').hidden = false;
 }
 

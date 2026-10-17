@@ -18,7 +18,7 @@ Deploy: pushing to `develop` publishes the frontend (`.github/workflows/deploy.y
 
 - `index.html` holds all static markup: the SVG icon sprite (`#i-*`, `#brand-mark`), dialogs, the inline theme + splash scripts/styles. UI modules grab elements by id with `byId()` (`src/ui/dom.ts`).
 - `src/data/`: IndexedDB store (`store.ts` is the in-memory source of truth, persisted via `localStore.ts`), sync with Supabase (`sync.ts`, outbox pattern), v1 migration, backup. Pure modules shared with the service worker: `nudge.ts`, `recap.ts`, `tree.ts`.
-- `src/ui/`: one module per surface (list, sidebar, settings, reminders, recap, sheets). `view.ts` holds UI state; `renderAll/renderMain/renderTree` re-render. Extension points instead of cross-imports: `addCardDecorator`, `addHeaderExtra`, `addLinkMenuItems`, `addRenderHook`, `addFolderMenuItems`.
+- `src/ui/`: one module per surface (nav = tab bar, list, library = view chips + folder grid, queue, settings = full-screen page from the avatar, reminders, recap, sheets). `view.ts` holds UI state; `renderAll/renderMain` re-render. Extension points instead of cross-imports: `addCardDecorator`, `addHeaderExtra`, `addLinkMenuItems`, `addRenderHook`, `addFolderMenuItems`.
 - `src/ai/`: `aiCall()` routes to the Edge Function (allowlisted accounts) or straight to Gemini with the user's own key (`byok.ts`). `aiReady()` = access + the user's AI toggle; `aiSettled()` waits for the first access check (everyone starts as `guest`).
 - `supabase/functions/_shared/`: config, prompts, JSON schemas and validators used by BOTH the Edge Function and the browser BYOK path. Change behaviour there, not in one caller.
 - `src/sw.ts`: offline app shell, runtime caches, background reminders (`periodicsync`) and notification taps. It reads IndexedDB directly and must never create the DB or write user rows.
@@ -35,7 +35,7 @@ Deploy: pushing to `develop` publishes the frontend (`.github/workflows/deploy.y
 ## Gotchas
 
 - Base path is `/Backpocket/`. Manifest and share target use relative paths; keep them relative.
-- Reminders and the recap store state in IndexedDB `meta` (`nudgeAt`, `nudgeNext`, `nudgeHistory`, `recap`, `recapNotifiedAt`), shared between page and worker. Keep keys in `nudge.ts` / `recap.ts`.
+- Reminders, the recap and the Daily Queue store state in IndexedDB `meta` (`nudgeAt`, `nudgeNext`, `nudgeHistory`, `recap`, `recapNotifiedAt`, `queue`, `queueStreak`). Keep keys in `nudge.ts` / `recap.ts` / `queue.ts`.
 - Embedding features (More like this, duplicate warnings, smart reminder picks) only work signed in with AI on; they call SQL functions (`related_links`, `revisit_picks`) and must degrade silently when those fail.
 - AI budget is tight (free tier, ~600 calls/day across all users). New AI features should reuse embeddings or cost about one call per user per day; set costs in `_shared/config.ts`.
 - Migrations: `search_path` is empty in functions, so qualify pgvector bits (`operator(extensions.<=>)`, `extensions.avg`). Functions are `security invoker` and filter on `auth.uid()`.

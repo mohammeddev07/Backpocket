@@ -4,6 +4,7 @@ import { COLORS, convertV1, isV1Data, V1_ROOT_ID } from './migrate';
 import { childrenOf } from './tree';
 import type { Folder, Link, Plan, Snapshot } from './types';
 import { normalizeUrl } from './normalizeUrl';
+import { isWebUrl } from './urls';
 
 // Backup & import: JSON backups (v2, plus v1 files from the old app) and the
 // Netscape bookmarks HTML format every browser can export/import.
@@ -68,6 +69,14 @@ export interface ImportBundle {
   links: Link[];
   plans: Plan[];
   systemId: string;
+  /** Bookmarklets and other non-web links left out of the import. */
+  skippedUnsafe?: number;
+}
+
+/** Keeps only web links (see isWebUrl) and counts what was left out. */
+function webLinksOnly(b: ImportBundle): ImportBundle {
+  const links = b.links.filter((l) => isWebUrl(l.url));
+  return { ...b, links, skippedUnsafe: b.links.length - links.length };
 }
 
 // Bookmark HTML is old and browsers are lenient about how a folder's <DL>
@@ -110,7 +119,7 @@ export function parseBookmarksHtml(html: string, now = Date.now()): ImportBundle
   }
 
   walkDl(doc.querySelector('DL'), systemId);
-  return { folders, links, plans: [], systemId };
+  return webLinksOnly({ folders, links, plans: [], systemId });
 }
 
 function mkFolder(id: string, name: string, parentId: string | null, isSystem: boolean, position: number, now: number, color = COLORS[0]): Folder {
@@ -169,19 +178,19 @@ export function parseBackupJson(text: string, now = Date.now()): { bundle: Impor
     const links = (o.links as Link[]).filter((l) => l.deletedAt == null).map((l) => ({
       ...mkLink({ url: l.url, folderId: l.folderId || systemId, title: l.title ?? null, createdAt: l.createdAt || now }, now),
       id: l.id, titleSource: l.titleSource ?? (l.title ? 'user' as const : null), note: l.note ?? null, sharedText: l.sharedText ?? null, thumbnailUrl: l.thumbnailUrl ?? null,
-      tags: Array.isArray(l.tags) ? l.tags : [], status: l.status === 'done' ? 'done' as const : 'unread' as const,
+      tags: Array.isArray(l.tags) ? l.tags : [], status: l.status === 'done' ? 'done' as const : 'unread' as const, favorite: !!l.favorite,
       openedAt: l.openedAt ?? null, platform: l.platform || detectPlatform(l.url),
     }));
     const plans = Array.isArray(o.plans)
       ? (o.plans as Plan[]).filter((p) => p && typeof p.id === 'string' && Array.isArray(p.items) && p.deletedAt == null)
       : [];
-    return { bundle: { folders, links, plans, systemId } };
+    return { bundle: webLinksOnly({ folders, links, plans, systemId }) };
   }
 
   if (!isV1Data(o)) return { error: 'Missing or invalid "folders" list.' };
   if (!o.folders.some((f) => f.id === V1_ROOT_ID)) return { error: 'Backup is missing the root "All saves" folder.' };
   const s = convertV1(o, now);
-  return { bundle: { ...s, systemId: V1_ROOT_ID } };
+  return { bundle: webLinksOnly({ ...s, systemId: V1_ROOT_ID }) };
 }
 
 export interface ImportTarget {

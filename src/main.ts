@@ -12,18 +12,20 @@ import { initFiltersSheet } from './ui/filtersSheet';
 import { initFolderDialogs } from './ui/folderDialogs';
 import { initFolderPicker } from './ui/folderPicker';
 import { initLinkEditor } from './ui/linkEditor';
+import { initLibrary } from './ui/library';
 import { initList } from './ui/list';
+import { initQueue } from './ui/queue';
 import { setupModalA11y } from './ui/modal';
-import { applySharedPayload, initSaveBox, resetSaveTarget } from './ui/saveBox';
+import { applySharedPayload, initSaveBox, openSaveSheet, resetSaveTarget } from './ui/saveBox';
 import { initIosHelp } from './ui/iosHelp';
 import { initRecap } from './ui/recap';
 import { initReminders, maybeNudge } from './ui/reminders';
 import { initInstall, initSettings, initTheme } from './ui/settings';
-import { initSidebar } from './ui/sidebar';
+import { initNav } from './ui/nav';
 import { showToast } from './ui/toast';
 import { go, onNavigate, renderAll, scheduleRender } from './ui/view';
 
-const MODALS = ['folderModal', 'pickerModal', 'filtersSheet', 'linkModal', 'backupModal', 'settingsModal', 'accountModal', 'uploadModal', 'byokModal', 'iosHelpModal'];
+const MODALS = ['folderModal', 'pickerModal', 'filtersSheet', 'linkModal', 'backupModal', 'settingsModal', 'accountModal', 'uploadModal', 'byokModal', 'iosHelpModal', 'saveSheet'];
 
 async function boot(): Promise<void> {
   // Read the share params first, so they're cleared from the address bar
@@ -52,11 +54,13 @@ async function boot(): Promise<void> {
 
   initTheme();
   initFolderPicker();
-  initSidebar();
+  initNav();
   initFolderDialogs();
   initFiltersSheet();
   initLinkEditor();
   initList();
+  initLibrary();
+  initQueue();
   initSaveBox();
   initSettings();
   initBackupModal();
@@ -68,7 +72,7 @@ async function boot(): Promise<void> {
   onNavigate(resetSaveTarget);
   initDesktopShortcuts();
 
-  go('all');
+  go('queue');
   renderAll();
   if (shared) applySharedPayload(shared);
   if (warning) showToast(warning, false, undefined, 6000);
@@ -80,8 +84,9 @@ async function boot(): Promise<void> {
   void initAccount();
 }
 
-// Web affordances: "/" jumps to search, and pasting a link anywhere outside a
-// text field drops it into the save box. Both stand down while a dialog is open.
+// Web affordances: "/" jumps to search, "n" starts a new save, and pasting a
+// link anywhere outside a text field opens it in the Save sheet. All stand down
+// while a dialog is open.
 function initDesktopShortcuts(): void {
   const typing = (t: EventTarget | null) =>
     t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement ||
@@ -89,7 +94,9 @@ function initDesktopShortcuts(): void {
   const dialogOpen = () => !!document.querySelector('.modal-backdrop.show');
 
   document.addEventListener('keydown', (e) => {
-    if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey || typing(e.target) || dialogOpen()) return;
+    if (e.metaKey || e.ctrlKey || e.altKey || typing(e.target) || dialogOpen()) return;
+    if (e.key === 'n') { e.preventDefault(); openSaveSheet(); return; }
+    if (e.key !== '/') return;
     const search = byId<HTMLInputElement>('searchInput');
     if (search.offsetParent === null) return; // toolbar hidden (e.g. plan view)
     e.preventDefault();
@@ -102,10 +109,7 @@ function initDesktopShortcuts(): void {
     const url = firstSharedUrl([e.clipboardData?.getData('text')]);
     if (!url) return;
     e.preventDefault();
-    const input = byId<HTMLInputElement>('urlInput');
-    input.value = url;
-    input.dispatchEvent(new Event('input'));
-    input.focus();
+    openSaveSheet(url);
   });
 }
 

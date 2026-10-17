@@ -5,9 +5,9 @@
 Free, private by default, and it installs like an app in a few seconds: **<https://mohammeddev07.github.io/Backpocket/>**
 
 <p align="center">
-  <img src="docs/screenshots/desktop.jpg" alt="Backpocket on a computer: folders on the left, a save box, search, a weekly recap and saved links with colourful previews" width="760">
+  <img src="docs/screenshots/desktop.jpg" alt="Backpocket on a computer: a sidebar with Save a link, Daily Queue, Inbox, Library and Revisit; the Library with view chips, folder cards and a grid of saved links with previews and tags" width="760">
   &nbsp;
-  <img src="docs/screenshots/mobile.jpg" alt="Backpocket on a phone" width="200">
+  <img src="docs/screenshots/mobile.jpg" alt="Backpocket on a phone: the Daily Queue with a catch streak, today's focus video with Start watching and Done, and the bottom tab bar" width="200">
 </p>
 
 ## Why people use it
@@ -19,6 +19,7 @@ Free, private by default, and it installs like an app in a few seconds: **<https
 **You'll actually come back to it.** This is the part other bookmark apps forget:
 - **Cheeky reminders.** Opt in and Backpocket nudges you about saves you never opened, food-delivery style: *"Order up! "One-pan lemon orzo" has been ready for 9 days. Come and get it."* With AI on, each nudge is written for that link and picks the forgotten save that matches what you're into lately.
 - **A weekly recap.** Once a week you get a short summary of what you saved and the three things most worth opening first.
+- **Daily Queue.** Five saves a day to actually get through: one to focus on, four up next. Mark them done to keep your catch streak going.
 - **Revisit.** One tap shows everything you saved over a week ago and never opened, with a shuffle button for when you can't decide.
 
 **Find anything in seconds.** Instant search across titles, notes, captions, tags and folders. With AI, search by meaning ("that chess opening video", "tiktok from last week"). On any save, **More like this** finds its closest matches, and you get a heads-up when you save something very similar to what you already have.
@@ -32,14 +33,14 @@ Free, private by default, and it installs like an app in a few seconds: **<https
 ## Get started in 30 seconds
 
 1. Open **<https://mohammeddev07.github.io/Backpocket/>**.
-2. Paste a link and tap **Save**. That's it, you're using it.
+2. Tap **+**, paste a link and tap **Save to Backpocket**. That's it, you're using it.
 3. Optional: install it (☰ menu → **Install app**) so it appears in your phone's share sheet.
 4. Optional: **Sign in with Google** to sync across devices and unlock AI.
 5. Optional: **Settings → Reminders** to get nudged about forgotten saves.
 
 ## Everything it does
 
-- **Folders**: nested, colour-tagged, drag to reorder or nest. **Inbox** catches unfiled saves. **All saves** and **Revisit** are smart views.
+- **Folders**: nested and colour-tagged, shown as cards in the Library. **Inbox** catches unfiled saves. **Revisit** and **Favorites** (star any save from its menu) are smart views. Saves show as a list or a two-column grid.
 - **Beautiful cards**: a real thumbnail when one is available (YouTube, TikTok), otherwise a colourful tile in the platform's colours with the title's first letter. Every card shows the title, folder path, when you saved it and your tags.
 - **Unread and done**: opening a link records it; mark things done when you're finished.
 - **Tags** with autocomplete.
@@ -93,7 +94,7 @@ The Shortcut opens **Safari**, not the home-screen app, and iOS keeps their stor
 
 ### Desktop
 
-**Settings → Save from other apps** has a bookmarklet. Drag it to your bookmarks bar, then click it on any page to save that page. Pasting a link anywhere in the app (outside a text field) drops it into the save box, and **/** jumps to search.
+**Settings → Save from other apps** has a bookmarklet. Drag it to your bookmarks bar, then click it on any page to save that page. Pasting a link anywhere in the app (outside a text field) opens it in the Save sheet, **N** starts a new save, and **/** jumps to search.
 
 ## Reminders and weekly recap
 
@@ -154,7 +155,7 @@ Deletes are soft (`deletedAt`) so they can sync. A few small things stay in `loc
 
 **Upgrading from v1:** on first load, v2 copies everything from the old `localStorage` key `backpocket_data_v1` into IndexedDB. Links at the root move into Inbox and every id becomes a UUID. The old key is left untouched, and a raw copy is also kept as `backpocket_data_v1_backup`.
 
-**In the cloud** (signed in), the Supabase tables `folders`, `links` and `plans` mirror the local stores, plus an `embedding vector(768)` column on `links`. Sync pulls rows changed since the last sync and pushes the outbox. If two devices edit the same row, the last write wins. Sync runs on load, when the app regains focus, when it comes back online, and shortly after each change. The drawer footer shows the status ("Synced · 2 min ago" / "Offline - changes will sync"). On first sign-in with local saves, the app offers to upload them, skipping duplicates and merging folders by path.
+**In the cloud** (signed in), the Supabase tables `folders`, `links` and `plans` mirror the local stores, plus an `embedding vector(768)` column on `links`. Sync pulls rows changed since the last sync and pushes the outbox. If two devices edit the same row, the last write wins. Sync runs on load, when the app regains focus, when it comes back online, and shortly after each change. Settings (tap your avatar, top right) shows the status at the top ("Synced · 2 min ago" / "Offline - changes will sync"). On first sign-in with local saves, the app offers to upload them, skipping duplicates and merging folders by path.
 
 **Backup & import** exports a JSON backup (`backpocket-backup-YYYY-MM-DD.json`) or a bookmarks HTML file, and imports either one, or a v1 backup. Clearing site data removes the local copy. If you're signed in, it comes back from your account on the next sync. If you're a guest, only a backup brings it back.
 
@@ -187,7 +188,7 @@ src/
   ai/       Edge Function client, bring-your-own-key client, sort on save, search, embeddings, related.ts
   search/   keyword filters and query parsing
   share/    share-target URL extraction (+ tests against the v1 code)
-  ui/       drawer, list, sheets, modals, settings, reminders, recap
+  ui/       tab bar, settings page, library, queue, list, sheets, modals, settings, reminders, recap
 public/     manifest.webmanifest, icons/ (all rendered from icons/mark.svg)
 supabase/
   migrations/           schema, RLS, pgvector, rate limits, match_links, related_links, revisit_picks
@@ -202,4 +203,4 @@ supabase/
 - Apps are inconsistent about where they put the link. Chrome maps Android's shared text to `text`, so most social apps send the link there, sometimes inside a caption ("Check out … https://vm.tiktok.com/…"). `src/share/extractSharedUrl.ts` checks `url`, then `text`, then `title`, and takes the first valid `http`/`https` URL. It drops trailing punctuation but keeps balanced parentheses. The iPhone Shortcut and the bookmarklet use the same `?url=` path.
 - Once the form is filled in, the share params are removed from the address bar with `history.replaceState`, so a reload or Back doesn't apply them again.
 - The service worker (`src/sw.ts`, built to `sw.js`, the same URL as v1) fetches the page and manifest from the network first and uses the cache only offline, so the first visit after a deploy never installs last release's manifest. Page loads are cached by path, ignoring the query string, so a share launch still opens offline. Fonts and YouTube/TikTok thumbnails are cached at runtime. Supabase, Gemini and oEmbed calls are never served from the cache. The cache name is derived from the build's file list, so every deploy refreshes the offline copy automatically. The same worker handles the background reminder (`periodicsync`) and notification taps.
-- Icons are in `public/icons/`, all rendered from `mark.svg` (also the SVG favicon and `#brand-mark` in `index.html`): `icon-192.png` and `icon-512.png` (`purpose: any`), plus `icon-512-maskable.png`, which keeps the artwork inside the 80% safe zone on an opaque background so Android's adaptive-icon masks don't clip it.
+- Icons are in `public/icons/`, all rendered from `mark.svg` (also `#brand-mark` in `index.html`). `favicon.svg` is the browser-tab icon: a light tile on light systems, a dark tile on dark ones. Home-screen icons can't switch with the theme, so the PNGs use the dark tile: `icon-192.png` and `icon-512.png` (`purpose: any`), plus `icon-512-maskable.png`, which keeps the artwork inside the 80% safe zone on an opaque background so Android's adaptive-icon masks don't clip it.

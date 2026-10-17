@@ -15,6 +15,19 @@ export const NUDGE_SYNC_TAG = 'bp-nudge';
 export const NUDGE_GAP_MS = 20 * 3_600_000;
 const DAY = 86_400_000;
 
+/**
+ * System notification look, shared by the page (test nudge) and the worker:
+ * the app icon, the monochrome status-bar badge Android needs, and Open/Later
+ * buttons when the nudge is about a link. Paths are relative to the worker scope.
+ */
+export function nudgeNotification(body: string, url?: string): NotificationOptions {
+  return {
+    body, tag: NUDGE_SYNC_TAG, icon: 'icons/icon-192.png', badge: 'icons/badge-96.png',
+    data: url ? { url } : {},
+    ...(url ? { actions: [{ action: 'open', title: 'Open it' }, { action: 'later', title: 'Later' }] } : {}),
+  } as NotificationOptions;
+}
+
 export interface PreparedNudge { linkId: string; title: string; body: string; at: number }
 export interface NudgeHistoryEntry { id: string; at: number }
 

@@ -3,7 +3,7 @@ import { aiCall } from '../ai/client';
 import { revisitPickIds } from '../ai/related';
 import { APP_CONFIG } from '../config';
 import {
-  isNudgeable, NUDGE_GAP_MS, NUDGE_HISTORY_KEY, NUDGE_META_KEY, NUDGE_NEXT_KEY, NUDGE_SYNC_TAG, nudgeCopy, pickForgotten,
+  isNudgeable, NUDGE_GAP_MS, NUDGE_HISTORY_KEY, NUDGE_META_KEY, NUDGE_NEXT_KEY, NUDGE_SYNC_TAG, nudgeCopy, nudgeNotification, pickForgotten,
   pushNudgeHistory, recentlyNudged, usablePrepared, type NudgeHistoryEntry, type PreparedNudge,
 } from '../data/nudge';
 import { store } from '../data/store';
@@ -11,7 +11,7 @@ import { pathLabel } from '../data/tree';
 import type { Link } from '../data/types';
 import { domainOf } from '../platform';
 import { byId } from './dom';
-import { openLink } from './list';
+import { linkVisual, openLink } from './list';
 import { showToast } from './toast';
 
 // "Forgotten save" reminders. Two delivery paths, no server:
@@ -85,13 +85,67 @@ async function ensurePrepared(): Promise<void> {
   if (!usablePrepared(p, store.liveLinks(), Date.now(), MIN_AGE())) await prepareNext();
 }
 
+// ---- In-app reminder banner ----
+let bannerTimer: ReturnType<typeof setTimeout> | undefined;
+
+function hideNudge(): void {
+  const el = byId('nudgeBanner');
+  clearTimeout(bannerTimer);
+  el.classList.remove('show');
+  el.style.transform = '';
+  setTimeout(() => { if (!el.classList.contains('show')) el.hidden = true; }, 400);
+}
+
+/** Auto-hides, but never while the pointer or keyboard focus is on it (time to read and act). */
+function armNudgeTimer(ms: number): void {
+  clearTimeout(bannerTimer);
+  bannerTimer = setTimeout(hideNudge, ms);
+}
+
 function showNudge(link: Link, copy: { title: string; body: string }): void {
-  const { title, body } = copy;
-  showToast(title + (/[.!?]$/.test(title) ? ' ' : '. ') + body, false, [
-    { label: 'Open it', onClick: () => openLink(link) },
-    { label: 'Later', onClick: () => {} },
-  ], 9000);
-  byId('toast').classList.add('nudge');
+  const el = byId('nudgeBanner');
+  byId('nudgeTitle').textContent = copy.title;
+  byId('nudgeBody').textContent = copy.body;
+  byId('nudgeThumb').replaceChildren(linkVisual(link));
+  byId('nudgeOpenBtn').onclick = () => { openLink(link); hideNudge(); };
+  el.hidden = false;
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
+  armNudgeTimer(12_000);
+  // The banner itself isn't a live region (it holds buttons), so announce it separately.
+  const announce = byId('nudgeAnnounce');
+  announce.textContent = '';
+  setTimeout(() => { announce.textContent = 'Reminder: ' + copy.title + ' ' + copy.body; }, 100);
+}
+
+function initNudgeBanner(): void {
+  const el = byId('nudgeBanner');
+  byId('nudgeLaterBtn').onclick = hideNudge;
+  byId('nudgeCloseBtn').onclick = hideNudge;
+  el.addEventListener('mouseenter', () => clearTimeout(bannerTimer));
+  el.addEventListener('focusin', () => clearTimeout(bannerTimer));
+  el.addEventListener('mouseleave', () => armNudgeTimer(5000));
+  el.addEventListener('focusout', () => armNudgeTimer(5000));
+  el.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideNudge(); });
+  // Swipe it up (or sideways on desktop) to dismiss, like a system banner.
+  let start: { x: number; y: number } | null = null;
+  el.addEventListener('pointerdown', (e) => {
+    if ((e.target as Element).closest('button')) return;
+    start = { x: e.clientX, y: e.clientY };
+    el.setPointerCapture(e.pointerId);
+  });
+  el.addEventListener('pointermove', (e) => {
+    if (!start) return;
+    const dy = Math.min(0, e.clientY - start.y);
+    el.style.transform = `translate(var(--nudge-x), ${dy}px)`;
+  });
+  const end = (e: PointerEvent) => {
+    if (!start) return;
+    const dy = e.clientY - start.y;
+    start = null;
+    if (dy < -40) hideNudge(); else el.style.transform = '';
+  };
+  el.addEventListener('pointerup', end);
+  el.addEventListener('pointercancel', end);
 }
 
 let nudging = false;
@@ -164,7 +218,7 @@ async function sendTest(): Promise<void> {
     const copy = await writeCopy(link, now);
     const reg = await registration();
     if (reg && 'Notification' in window && Notification.permission === 'granted') {
-      await reg.showNotification(copy.title, { body: copy.body, tag: NUDGE_SYNC_TAG, icon: 'icons/icon-192.png', data: { url: link.url } });
+      await reg.showNotification(copy.title, nudgeNotification(copy.body, link.url));
       showToast('Test nudge sent. Check your notifications.', true);
     } else {
       showNudge(link, copy);
@@ -175,6 +229,7 @@ async function sendTest(): Promise<void> {
 }
 
 export function initReminders(): void {
+  initNudgeBanner();
   const toggle = byId<HTMLInputElement>('remindersToggle');
   toggle.checked = store.settings.remindersEnabled;
   toggle.addEventListener('change', async () => {

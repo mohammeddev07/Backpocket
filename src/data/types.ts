@@ -47,6 +47,8 @@ export interface Link {
   thumbnailUrl: string | null;
   tags: string[];
   status: LinkStatus;
+  /** Starred. Absent on rows saved before Favorites existed, which reads as false. */
+  favorite?: boolean;
   openedAt: Ms | null;
   aiMeta: AiMeta | null;
   createdAt: Ms;
@@ -92,6 +94,8 @@ export interface Settings {
   iosHelpShown: boolean;
   /** Opt-in "forgotten save" nudges (in-app, plus system notifications where supported). */
   remindersEnabled: boolean;
+  /** Link list as rows or a 2-column card grid. */
+  libraryLayout: 'list' | 'grid';
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -101,4 +105,5 @@ export const DEFAULT_SETTINGS: Settings = {
   aiNoticeSeen: false,
   iosHelpShown: false,
   remindersEnabled: false,
+  libraryLayout: 'list',
 };

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <style>.tile { fill: #F2EFE9; } @media (prefers-color-scheme: dark) { .tile { fill: #17181C; } }</style>
+
+  <defs>
+    <linearGradient id="bp-front" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#EEBF55"/><stop offset="1" stop-color="#DBA036"/></linearGradient>
+    <linearGradient id="bp-card" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF9EC"/><stop offset="1" stop-color="#F3E2C3"/></linearGradient>
+  </defs>
+  <rect class="tile" width="64" height="64" rx="14.5"/>
+  <g transform="translate(5.4 5.6) scale(.83)">
+  <g stroke="#262A20" stroke-width="1.9" stroke-linejoin="round">
+    <g transform="rotate(4 32 22)">
+      <rect x="16.5" y="5.5" width="31" height="32" rx="4.5" fill="url(#bp-card)"/>
+      <g transform="translate(32 18.5) rotate(-45) scale(.78)" fill="none" stroke="#5F7556" stroke-width="3.6">
+        <rect x="-10.6" y="-3.8" width="12.4" height="7.6" rx="3.8"/>
+        <rect x="-1.8" y="-3.8" width="12.4" height="7.6" rx="3.8"/>
+      </g>
+    </g>
+    <path d="M7.6 19.8c0-2 1.7-3.4 3.7-2.9C18.8 18.9 24 30.5 32 30.5s13.2-11.6 20.7-13.6c2-.5 3.7.9 3.7 2.9V44a11 11 0 0 1-11 11H18.6a11 11 0 0 1-11-11z" fill="url(#bp-front)"/>
+  </g>
+  <path d="M11.6 24v20a7.2 7.2 0 0 0 7.2 7.2h26.4a7.2 7.2 0 0 0 7.2-7.2V24" fill="none" stroke="#6B4A1C" stroke-opacity=".75" stroke-width="1.1" stroke-dasharray="2.1 1.9" stroke-linecap="round"/>
+</g>
+</svg>

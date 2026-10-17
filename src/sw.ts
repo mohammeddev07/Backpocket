@@ -8,7 +8,7 @@
 // fills in self.__WB_MANIFEST with the build's files; no Workbox runtime.
 
 import {
-  NUDGE_GAP_MS, NUDGE_HISTORY_KEY, NUDGE_META_KEY, NUDGE_NEXT_KEY, NUDGE_SYNC_TAG, nudgeCopy, pickForgotten, pushNudgeHistory,
+  NUDGE_GAP_MS, NUDGE_HISTORY_KEY, NUDGE_META_KEY, NUDGE_NEXT_KEY, NUDGE_SYNC_TAG, nudgeCopy, nudgeNotification, pickForgotten, pushNudgeHistory,
   recentlyNudged, usablePrepared, type NudgeHistoryEntry, type PreparedNudge,
 } from './data/nudge';
 import { RECAP_EVERY_MS, RECAP_META_KEY, RECAP_MIN_LINKS, RECAP_NOTIFIED_KEY, recapDue, statsRecap, weekStats, type StoredRecap } from './data/recap';
@@ -226,7 +226,7 @@ async function nudgeInBackground(): Promise<void> {
       const stats = weekStats(links, folders.filter((f) => !f.deletedAt), now);
       if (stats.count >= RECAP_MIN_LINKS) {
         const { headline, summary } = statsRecap(stats);
-        await self.registration.showNotification(headline, { body: summary, tag: NUDGE_SYNC_TAG, icon: 'icons/icon-192.png', data: {} });
+        await self.registration.showNotification(headline, nudgeNotification(summary));
         const w = db.transaction('meta', 'readwrite').objectStore('meta');
         w.put(now, NUDGE_META_KEY);
         w.put(now, RECAP_NOTIFIED_KEY);
@@ -244,7 +244,7 @@ async function nudgeInBackground(): Promise<void> {
       if (!link) return;
       copy = nudgeCopy(link, now);
     }
-    await self.registration.showNotification(copy.title, { body: copy.body, tag: NUDGE_SYNC_TAG, icon: 'icons/icon-192.png', data: { url: link.url } });
+    await self.registration.showNotification(copy.title, nudgeNotification(copy.body, link.url));
     const w = db.transaction('meta', 'readwrite').objectStore('meta');
     w.put(now, NUDGE_META_KEY);
     w.put(pushNudgeHistory(history, link.id, now), NUDGE_HISTORY_KEY);
@@ -261,6 +261,7 @@ self.addEventListener('periodicsync', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
+  if (event.action === 'later') return;
   const url = (event.notification.data as { url?: string } | null)?.url;
   // ponytail: opens the saved link directly but doesn't mark it opened (the page
   // owns writes + sync), so it can be picked again; message open clients if that matters.

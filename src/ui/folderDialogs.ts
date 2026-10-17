@@ -74,7 +74,6 @@ function submitFolderModal(): void {
     return;
   }
   const created = createFolder(name, selectedColor, parentId);
-  if (parentId) view.expanded.add(parentId);
   const cb = onCreated;
   onCreated = null;
   closeModal(byId('folderModal'));
@@ -96,7 +95,6 @@ export function confirmDeleteFolder(folderId: string): void {
     if (!ok) return;
   }
   const removed = deleteFolderRecursive(folderId);
-  view.expanded.delete(folderId);
   if (removed.includes(view.saveTargetId)) view.saveTargetId = inboxId();
   if (view.mode === 'folder' && removed.includes(view.folderId)) go('all');
   showToast('Deleted "' + folder.name + '"', true);
@@ -124,7 +122,6 @@ export async function openMoveFolder(folderId: string): Promise<void> {
   });
   if (target === undefined) return;
   moveFolder(folderId, target);
-  if (target) view.expanded.add(target);
   showToast('Moved to ' + (target ? store.folder(target)?.name : 'top level'), true);
 }
 

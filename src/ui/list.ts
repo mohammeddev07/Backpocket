@@ -1,9 +1,10 @@
-import { deleteLinks, inboxId, markOpened, restoreLinks, setStatus } from '../actions';
+import { deleteLinks, inboxId, markOpened, restoreLinks, setFavorite, setStatus } from '../actions';
 import { APP_CONFIG } from '../config';
 import { COLORS } from '../data/migrate';
 import { store } from '../data/store';
 import { pathLabel, pathOf } from '../data/tree';
 import type { Folder, Link } from '../data/types';
+import { isWebUrl } from '../data/urls';
 import { domainOf, faviconFor, platformIconSvg } from '../platform';
 import { selectLinks, viewLinks, type ListQuery } from '../search/filters';
 import { byId, plural, svgIcon } from './dom';
@@ -12,7 +13,7 @@ import { openMoveLinks } from './folderDialogs';
 import { relativeTime, fullDate } from './format';
 import { openLinkEditor, setEditorDeleteHandler } from './linkEditor';
 import { openMenu, type MenuItem } from './menu';
-import { closeSidebarMobile, folderMenuItems } from './sidebar';
+import { folderMenuItems } from './nav';
 import { showToast } from './toast';
 import { clearFilters, go, renderMain, setRenderer, view } from './view';
 
@@ -36,16 +37,17 @@ type HeaderExtra = (container: HTMLElement) => void;
 const headerExtras: HeaderExtra[] = [];
 export function addHeaderExtra(fn: HeaderExtra): void { headerExtras.push(fn); }
 
-/** Replaces the card list (e.g. a folder's Plan tab). Returns true if it rendered. */
+/** Replaces the card list (a folder's Plan tab, the Daily Queue). Returns true if it rendered. */
 type ListOverride = (listEl: HTMLElement) => boolean;
-let listOverride: ListOverride | null = null;
-export function setListOverride(fn: ListOverride | null): void { listOverride = fn; }
+const listOverrides: ListOverride[] = [];
+export function addListOverride(fn: ListOverride): void { listOverrides.push(fn); }
 
 /** Extra ranked results (semantic search) merged ahead of keyword matches. */
 let extraResults: { query: string; ids: string[] } | null = null;
 export function setExtraResults(r: { query: string; ids: string[] } | null): void { extraResults = r; }
 
 export function openLink(link: Link): void {
+  if (!isWebUrl(link.url)) { showToast('Only web links can be opened, and this one isn\'t.', false); return; }
   window.open(link.url, '_blank', 'noopener,noreferrer');
   markOpened(link.id);
 }
@@ -114,6 +116,7 @@ function linkMenu(link: Link): MenuItem[] {
     { label: 'Open', onClick: () => openLink(link) },
     { label: 'Edit…', onClick: () => openLinkEditor(link) },
     { label: link.status === 'done' ? 'Mark as unread' : 'Mark as done', onClick: () => setStatus([link.id], link.status === 'done' ? 'unread' : 'done') },
+    { label: link.favorite ? 'Remove from favorites' : 'Add to favorites', onClick: () => setFavorite([link.id], !link.favorite) },
     { label: 'Copy link', onClick: () => copyLinkUrl(link) },
     { label: 'Move to…', onClick: () => void openMoveLinks([link.id]) },
     ...linkMenuExtras.flatMap((fn) => fn(link)),
@@ -163,7 +166,7 @@ export function fallbackTile(link: Link): HTMLElement {
   return tile;
 }
 
-function linkVisual(link: Link): HTMLElement {
+export function linkVisual(link: Link): HTMLElement {
   if (!link.thumbnailUrl || store.settings.localIconsOnly) return fallbackTile(link);
   const wrap = document.createElement('div');
   wrap.className = 'link-visual';
@@ -215,12 +218,14 @@ function buildLinkRow(link: Link, opts: { showFolder: boolean; folders: Folder[]
   // a nested interactive "role=link" wrapped around other buttons.
   const a = document.createElement('a');
   a.className = 'link-title' + (link.title ? '' : ' is-url');
-  a.href = link.url;
+  // Never an href that isn't a web link (old imports may hold javascript: ones).
+  if (isWebUrl(link.url)) a.href = link.url;
   a.target = '_blank';
   a.rel = 'noopener noreferrer';
   a.textContent = link.title || domainOf(link.url);
   a.addEventListener('click', (e) => {
     if (view.selectMode && cb) { e.preventDefault(); cb.checked = !cb.checked; cb.dispatchEvent(new Event('change')); return; }
+    if (!a.href) { e.preventDefault(); openLink(link); return; }
     markOpened(link.id);
   });
   main.appendChild(a);
@@ -228,6 +233,17 @@ function buildLinkRow(link: Link, opts: { showFolder: boolean; folders: Folder[]
   const meta = document.createElement('div');
   meta.className = 'link-meta';
   const bits: Node[] = [];
+  if (link.favorite) {
+    const star = document.createElement('span');
+    star.className = 'link-fav';
+    star.append(svgIcon('star'));
+    star.title = 'Favorite';
+    const label = document.createElement('span');
+    label.className = 'visually-hidden';
+    label.textContent = 'Favorite';
+    star.appendChild(label);
+    bits.push(star);
+  }
   if (opts.showFolder) {
     const f = store.folder(link.folderId);
     if (f) {
@@ -239,7 +255,7 @@ function buildLinkRow(link: Link, opts: { showFolder: boolean; folders: Folder[]
       crumb.style.setProperty('--folder-color', f.isSystem ? 'var(--ink-faint)' : (f.color || COLORS[0]));
       crumb.append(svgIcon(f.isSystem ? 'inbox' : 'folder'), label);
       crumb.setAttribute('aria-label', 'Go to folder ' + label.textContent);
-      crumb.onclick = (e) => { e.stopPropagation(); pathOf(opts.folders, f.id).forEach((p) => view.expanded.add(p.id)); go('folder', f.id); };
+      crumb.onclick = (e) => { e.stopPropagation(); go('folder', f.id); };
       bits.push(crumb);
     }
   } else if (link.title) {
@@ -325,14 +341,18 @@ function renderHeader(folders: Folder[]): void {
   if (view.mode === 'folder') {
     let folder = store.folder(view.folderId);
     if (!folder) { view.mode = 'all'; return renderHeader(folders); }
-    const path = pathOf(folders, folder.id);
-    path.slice(0, -1).forEach((p, i) => {
+    // Folders sit under Library; the Inbox has its own tab.
+    const crumbs = folder.isSystem ? [] : [
+      { name: 'Library', open: () => go('all') },
+      ...pathOf(folders, folder.id).slice(0, -1).map((p) => ({ name: p.name, open: () => go('folder', p.id) })),
+    ];
+    crumbs.forEach((c, i) => {
       if (i > 0) { const s = document.createElement('span'); s.textContent = '›'; s.setAttribute('aria-hidden', 'true'); crumbEl.appendChild(s); }
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'crumb-link';
-      b.textContent = p.name;
-      b.onclick = () => go('folder', p.id);
+      b.textContent = c.name;
+      b.onclick = c.open;
       crumbEl.appendChild(b);
     });
     if (!folder.isSystem) {
@@ -358,7 +378,7 @@ function renderHeader(folders: Folder[]): void {
     shuffleBtn.onclick = () => { view.shuffleSeed = Math.floor(Math.random() * 2 ** 31) + 1; renderMain(); };
     actions.appendChild(shuffleBtn);
   } else {
-    titleEl.textContent = 'All saves';
+    titleEl.textContent = view.mode === 'favorites' ? 'Favorites' : 'Library';
   }
   for (const extra of headerExtras) extra(actions);
 }
@@ -393,7 +413,7 @@ function render(): void {
     : plural(inView.length, 'saved link');
 
   const listEl = byId('linksList');
-  if (listOverride && listOverride(listEl)) { byId('listToolbar').hidden = true; byId('resultCount').hidden = true; updateBulkBar(); runRenderHooks(); return; }
+  if (listOverrides.some((fn) => fn(listEl))) { byId('listToolbar').hidden = true; byId('resultCount').hidden = true; updateBulkBar(); runRenderHooks(); return; }
   byId('listToolbar').hidden = false;
   listEl.replaceChildren();
   const previouslyShown = view.shownLinkIds;
@@ -401,9 +421,11 @@ function render(): void {
 
   if (store.liveLinks().length === 0 || (inView.length === 0 && !view.query && view.mode !== 'folder')) {
     byId('resultCount').hidden = true;
-    const cta = ghostButton('Save your first link', () => { closeSidebarMobile(); byId('urlInput').focus(); });
+    const cta = ghostButton('Save your first link', () => byId('tabAddBtn').click());
     listEl.appendChild(view.mode === 'revisit'
       ? emptyState(EMPTY_ILLUSTRATION, 'Nothing to revisit', 'Links you haven\'t opened for ' + APP_CONFIG.revisitMinAgeDays + ' days show up here.')
+      : view.mode === 'favorites' && store.liveLinks().length
+      ? emptyState(EMPTY_ILLUSTRATION, 'No favorites yet', 'Open a save\'s menu and pick Add to favorites to keep it here.')
       : emptyState(EMPTY_ILLUSTRATION, 'Your next good find belongs here', 'Save your first link and it\'ll show up here, searchable across every folder.', cta));
     updateBulkBar();
     runRenderHooks();
@@ -425,7 +447,7 @@ function render(): void {
     } else if (!filtered && view.mode === 'folder') {
       const isInbox = view.folderId === inboxId();
       listEl.appendChild(emptyState(EMPTY_ILLUSTRATION, isInbox ? 'Inbox zero' : 'Nothing here yet',
-        isInbox ? 'Links saved without a folder land here.' : 'Paste a link above to save it into this folder.'));
+        isInbox ? 'Links saved without a folder land here.' : 'Tap + to save a link into this folder.'));
     } else {
       listEl.appendChild(emptyState(NO_MATCH_ILLUSTRATION, 'No matches', 'Nothing fits your search and filters.',
         ghostButton('Clear search and filters', () => { clearFilters(); renderMain(); })));
