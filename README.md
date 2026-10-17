@@ -5,9 +5,9 @@
 Free, private by default, and it installs like an app in a few seconds: **<https://mohammeddev07.github.io/Backpocket/>**
 
 <p align="center">
-  <img src="docs/screenshots/desktop.jpg" alt="Backpocket on a computer: folders on the left, a save box, search, a weekly recap and saved links with colourful previews" width="760">
+  <img src="docs/screenshots/desktop.jpg" alt="Backpocket on a computer: a sidebar with Save a link, Daily Queue, Inbox, Library and Revisit; the Library with view chips, folder cards and a grid of saved links with previews and tags" width="760">
   &nbsp;
-  <img src="docs/screenshots/mobile.jpg" alt="Backpocket on a phone" width="200">
+  <img src="docs/screenshots/mobile.jpg" alt="Backpocket on a phone: the Daily Queue with a catch streak, today's focus video with Start watching and Done, and the bottom tab bar" width="200">
 </p>
 
 ## Why people use it
