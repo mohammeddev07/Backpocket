@@ -138,7 +138,7 @@
     <header class="appbar">
       <svg class="brand-mark" aria-hidden="true"><use href="#brand-mark"/></svg>
       <p class="brand">Backpocket</p>
-      <button type="button" class="me-btn" id="meBtn" aria-label="Account and settings" aria-haspopup="dialog">
+      <button type="button" class="me-btn" id="meBtn" aria-label="Settings" aria-haspopup="dialog">
         <span class="avatar" id="meAvatar" aria-hidden="true"><svg class="icon"><use href="#i-user"/></svg></span>
       </button>
     </header>
@@ -257,35 +257,6 @@
   </div>
 </div>
 
-<div class="modal-backdrop sheet-backdrop" id="meSheet">
-  <div class="modal sheet me-sheet" role="dialog" aria-modal="true" aria-labelledby="meSheetTitle">
-    <div class="sheet-handle" aria-hidden="true"></div>
-    <h2 id="meSheetTitle">You</h2>
-    <button type="button" class="account-btn" id="accountBtn" hidden>
-      <span class="avatar" id="accountAvatar" aria-hidden="true"><svg class="icon"><use href="#i-cloud"/></svg></span>
-      <span class="account-text">
-        <span class="account-name" id="accountName">Sign in to sync</span>
-        <span class="account-sub" id="accountSub">Use your saves on every device</span>
-      </span>
-    </button>
-    <div class="footer-links">
-      <button class="footer-link-btn" id="installBtn" hidden>
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M12 8v6m0 0-2.2-2.2M12 14l2.2-2.2"/></svg>
-        Install app
-      </button>
-      <p class="install-hint" id="installHint" hidden></p>
-      <button class="footer-link-btn" id="backupBtn">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V6M6 11l6-6 6 6M5 21h14"/></svg>
-        Backup &amp; import
-      </button>
-      <button class="footer-link-btn" id="settingsBtn">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        Settings
-      </button>
-    </div>
-    <p class="storage-note" id="storageNote" aria-live="polite">Stored on this browser</p>
-  </div>
-</div>
 
 <div class="modal-backdrop" id="folderModal">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="folderModalTitle">
@@ -380,61 +351,101 @@
   </div>
 </div>
 
-<div class="modal-backdrop" id="settingsModal">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
-    <h2 id="settingsModalTitle">Settings</h2>
-    <section class="data-notice" aria-labelledby="dataNoticeTitle">
-      <svg class="icon" aria-hidden="true"><use href="#i-device"/></svg>
-      <div>
-        <p class="settings-label" id="dataNoticeTitle">Your data stays on your device</p>
-        <p class="settings-desc" id="dataNoticeText">Backpocket doesn't keep a copy of your saves. Everything is stored locally in this browser on this device, so clearing site data or uninstalling removes it. Use Backup &amp; import to keep a copy. Optional lookups (site icons, thumbnails, AI) are explained below.</p>
-      </div>
-    </section>
-    <div class="settings-row">
-      <div>
-        <p class="settings-label">Appearance</p>
-        <p class="settings-desc">Switch between light and dark.</p>
-      </div>
-      <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode"></button>
+
+<div class="modal-backdrop page-backdrop" id="settingsModal">
+  <div class="modal page" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
+    <div class="page-head">
+      <button type="button" class="icon-btn back-btn" id="closeSettingsBtn" aria-label="Back"><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button>
+      <h2 id="settingsModalTitle">Settings</h2>
     </div>
-    <section class="settings-section" id="settingsAccount" hidden aria-labelledby="settingsAccountTitle">
-      <p class="settings-label" id="settingsAccountTitle">Account</p>
-      <p class="settings-desc" id="settingsAccountDesc"></p>
-      <div class="settings-actions" id="settingsAccountActions"></div>
-    </section>
-    <section class="settings-section" aria-labelledby="settingsRemindTitle">
-      <p class="settings-label" id="settingsRemindTitle">Reminders</p>
-      <p class="settings-desc">A cheeky nudge about links you saved but never opened, at most once a day.</p>
-      <label class="privacy-toggle check-row"><input type="checkbox" id="remindersToggle" /> <span>Remind me about forgotten saves</span></label>
-      <p class="settings-desc" id="remindersStatus" aria-live="polite"></p>
-      <div class="settings-actions"><button type="button" class="btn-ghost with-icon" id="remindersTestBtn"><svg class="icon" aria-hidden="true"><use href="#i-bell"/></svg>Send a test nudge</button></div>
-    </section>
-    <section class="settings-section" aria-labelledby="settingsShareTitle">
-      <p class="settings-label" id="settingsShareTitle">Save from other apps</p>
-      <p class="settings-desc">Android: install the app from Chrome and use the share sheet. iPhone: add a Shortcut. Computer: use the bookmarklet.</p>
-      <div class="settings-actions">
-        <button type="button" class="btn-ghost" id="iosHelpBtn">Add to iPhone share sheet</button>
+
+    <button type="button" class="account-btn" id="accountBtn" hidden>
+      <span class="avatar" id="accountAvatar" aria-hidden="true"><svg class="icon"><use href="#i-cloud"/></svg></span>
+      <span class="account-text">
+        <span class="account-name" id="accountName">Sign in to sync</span>
+        <span class="account-sub" id="accountSub">Use your saves on every device</span>
+      </span>
+    </button>
+    <p class="storage-note" id="storageNote" aria-live="polite">Stored on this browser</p>
+
+    <section aria-labelledby="settingsAppearanceTitle">
+      <h3 class="settings-group-title" id="settingsAppearanceTitle">Appearance</h3>
+      <div class="settings-group">
+        <label class="settings-item">
+          <span class="settings-text"><span class="settings-label">Dark mode</span><span class="settings-desc">Easy on the eyes at night.</span></span>
+          <input type="checkbox" class="switch" role="switch" id="themeToggle" />
+        </label>
       </div>
-      <p class="settings-desc bookmarklet-row">Drag this to your bookmarks bar, then click it on any page:
-        <a class="bookmarklet" id="bookmarkletLink" href="#">Save to Backpocket</a>
+    </section>
+
+    <section id="settingsAccount" hidden aria-labelledby="settingsAccountTitle">
+      <h3 class="settings-group-title" id="settingsAccountTitle">Account</h3>
+      <div class="settings-group">
+        <p class="settings-item settings-desc" id="settingsAccountDesc"></p>
+        <div class="settings-rows" id="settingsAccountActions"></div>
+      </div>
+    </section>
+
+    <section aria-labelledby="settingsRemindTitle">
+      <h3 class="settings-group-title" id="settingsRemindTitle">Reminders</h3>
+      <div class="settings-group">
+        <label class="settings-item">
+          <span class="settings-text"><span class="settings-label">Remind me about forgotten saves</span><span class="settings-desc">A cheeky nudge about links you saved but never opened, at most once a day.</span></span>
+          <input type="checkbox" class="switch" role="switch" id="remindersToggle" />
+        </label>
+        <p class="settings-item settings-desc" id="remindersStatus" aria-live="polite"></p>
+        <button type="button" class="row-btn" id="remindersTestBtn"><svg class="icon" aria-hidden="true"><use href="#i-bell"/></svg>Send a test nudge</button>
+      </div>
+    </section>
+
+    <section aria-labelledby="settingsShareTitle">
+      <h3 class="settings-group-title" id="settingsShareTitle">Save from other apps</h3>
+      <div class="settings-group">
+        <p class="settings-item settings-desc">Android: install the app from Chrome and use the share sheet. iPhone: add a Shortcut. Computer: use the bookmarklet.</p>
+        <button type="button" class="row-btn" id="iosHelpBtn">Add to iPhone share sheet</button>
+        <p class="settings-item settings-desc bookmarklet-row">Drag this to your bookmarks bar, then click it on any page:
+          <a class="bookmarklet" id="bookmarkletLink" href="#">Save to Backpocket</a>
         <button type="button" class="text-btn" id="bookmarkletCopyBtn">Copy code</button>
-      </p>
+        </p>
+      </div>
     </section>
-    <section class="settings-section" id="settingsAi" hidden aria-labelledby="settingsAiTitle">
-      <p class="settings-label" id="settingsAiTitle">AI</p>
-      <p class="settings-desc" id="aiStatusText"></p>
-      <label class="privacy-toggle check-row" id="aiToggleRow"><input type="checkbox" id="aiEnabledToggle" /> <span>AI sorting, search and plans</span></label>
-      <p class="settings-desc" id="aiPrivacyNote"></p>
-      <div class="settings-actions" id="aiActions"></div>
-      <button type="button" class="text-btn" id="aiRecheckBtn">Check access again</button>
+
+    <section id="settingsAi" hidden aria-labelledby="settingsAiTitle">
+      <h3 class="settings-group-title" id="settingsAiTitle">AI</h3>
+      <div class="settings-group">
+        <p class="settings-item settings-desc" id="aiStatusText"></p>
+        <label class="settings-item" id="aiToggleRow">
+          <span class="settings-text"><span class="settings-label">AI sorting, search and plans</span></span>
+          <input type="checkbox" class="switch" role="switch" id="aiEnabledToggle" />
+        </label>
+        <p class="settings-item settings-desc" id="aiPrivacyNote"></p>
+        <div class="settings-rows" id="aiActions"></div>
+        <button type="button" class="row-btn" id="aiRecheckBtn">Check access again</button>
+      </div>
     </section>
-    <label class="privacy-toggle" style="margin-top:20px;">
-      <input type="checkbox" id="faviconPrivacyToggle" />
-      <span>Use local icons only - skip favicon, thumbnail and title lookups, so the links you save are never sent to Google, YouTube or TikTok.</span>
-    </label>
-    <div class="modal-actions" style="margin-top:22px;">
-      <button class="btn-primary" id="closeSettingsBtn">Done</button>
-    </div>
+
+    <section aria-labelledby="settingsPrivacyTitle">
+      <h3 class="settings-group-title" id="settingsPrivacyTitle">Privacy</h3>
+      <div class="settings-group">
+        <label class="settings-item">
+          <span class="settings-text"><span class="settings-label">Use local icons only</span><span class="settings-desc">Skip favicon, thumbnail and title lookups, so the links you save are never sent to Google, YouTube or TikTok.</span></span>
+          <input type="checkbox" class="switch" role="switch" id="faviconPrivacyToggle" />
+        </label>
+      </div>
+    </section>
+
+    <section aria-labelledby="settingsDataTitle">
+      <h3 class="settings-group-title" id="settingsDataTitle">Your data</h3>
+      <div class="settings-group">
+        <div class="settings-item data-notice">
+          <svg class="icon" aria-hidden="true"><use href="#i-device"/></svg>
+          <span class="settings-text"><span class="settings-label" id="dataNoticeTitle">Your data stays on your device</span><span class="settings-desc" id="dataNoticeText"></span></span>
+        </div>
+        <button type="button" class="row-btn" id="backupBtn" data-leaves-settings><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V6M6 11l6-6 6 6M5 21h14"/></svg>Backup &amp; import</button>
+        <button type="button" class="row-btn" id="installBtn" hidden><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M12 8v6m0 0-2.2-2.2M12 14l2.2-2.2"/></svg>Install app</button>
+        <p class="settings-item settings-desc" id="installHint" hidden></p>
+      </div>
+    </section>
   </div>
 </div>
 

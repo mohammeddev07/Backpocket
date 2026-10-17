@@ -1,8 +1,8 @@
 import { backfillThumbnails } from '../actions';
 import { THEME_KEY } from '../data/migrate';
 import { store } from '../data/store';
-import { byId, svgIcon } from './dom';
-import { closeModal, openModal } from './modal';
+import { byId } from './dom';
+import { closeModal, onModalClose, openModal } from './modal';
 import { renderMain } from './view';
 
 // ---- Theme ----
@@ -14,13 +14,13 @@ export function applyTheme(theme: 'light' | 'dark'): void {
   document.documentElement.setAttribute('data-theme', theme);
   // Browser/status-bar colour follows the in-app theme, not just the OS one.
   document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute('content', theme === 'dark' ? '#090a0c' : '#f6f5f3'));
-  byId('themeToggle').replaceChildren(svgIcon(theme === 'dark' ? 'sun' : 'moon'));
+  byId<HTMLInputElement>('themeToggle').checked = theme === 'dark';
 }
 
 export function initTheme(): void {
   const saved = store.settings.theme;
   applyTheme(saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
-  byId('themeToggle').onclick = () => {
+  byId('themeToggle').onchange = () => {
     const next = currentTheme() === 'dark' ? 'light' : 'dark';
     store.setSettings({ theme: next });
     // Mirror to localStorage: the inline <head> script reads it before first paint.
@@ -32,15 +32,26 @@ export function initTheme(): void {
   };
 }
 
-// ---- Settings modal ----
+// ---- Settings page ----
+// A full-screen page with its own history entry, so the phone's back gesture
+// (and the browser's Back) closes it like any other screen.
 export function openSettings(): void {
-  openModal(byId('settingsModal'));
+  const page = byId('settingsModal');
+  if (page.classList.contains('show')) return;
+  openModal(page);
+  history.pushState({ bpSettings: true }, '');
 }
 
 export function initSettings(): void {
   const settingsModal = byId('settingsModal');
-  byId('settingsBtn').onclick = openSettings;
+  byId('meBtn').onclick = openSettings;
   byId('closeSettingsBtn').onclick = () => closeModal(settingsModal);
+  onModalClose(settingsModal, () => { if (history.state?.bpSettings) history.back(); });
+  window.addEventListener('popstate', () => closeModal(settingsModal));
+  // Rows that open another dialog (Backup & import) step out of Settings first.
+  settingsModal.addEventListener('click', (e) => {
+    if ((e.target as Element).closest('[data-leaves-settings]')) closeModal(settingsModal);
+  }, true);
 
   // Privacy: local-icons-only toggle.
   const toggle = byId<HTMLInputElement>('faviconPrivacyToggle');

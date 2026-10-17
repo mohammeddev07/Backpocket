@@ -6,6 +6,7 @@ import { store } from '../data/store';
 import { openSignIn } from './account';
 import { byId } from './dom';
 import { closeModal, openModal } from './modal';
+import { openSettings } from './settings';
 import { showToast } from './toast';
 import { renderMain } from './view';
 
@@ -23,7 +24,7 @@ export function requireAi(what: string): boolean {
   else if (mode === 'guest') openSignIn('Sign in to use AI to ' + what + '.');
   else if (mode === 'needs-key') openByokModal();
   else if (mode === 'checking') showToast('Checking AI access… try again in a moment.', false);
-  else if (!store.settings.aiEnabled) showToast('AI is turned off in Settings.', false, [{ label: 'Settings', onClick: () => openModal(byId('settingsModal')) }]);
+  else if (!store.settings.aiEnabled) showToast('AI is turned off in Settings.', false, [{ label: 'Settings', onClick: openSettings }]);
   return false;
 }
 
@@ -50,7 +51,7 @@ function renderAiSettings(): void {
   byId('aiRecheckBtn').hidden = mode === 'guest' || mode === 'unavailable';
   const actions = byId('aiActions');
   actions.replaceChildren();
-  const add = (label: string, fn: () => void, cls = 'btn-ghost') => {
+  const add = (label: string, fn: () => void, cls = 'row-btn') => {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = cls;
@@ -58,11 +59,11 @@ function renderAiSettings(): void {
     b.onclick = fn;
     actions.appendChild(b);
   };
-  if (mode === 'guest') add('Sign in', () => { closeModal(byId('settingsModal')); openSignIn(); }, 'btn-primary');
-  if (mode === 'needs-key') add('Use your own free Gemini key', openByokModal, 'btn-primary');
+  if (mode === 'guest') add('Sign in', () => { closeModal(byId('settingsModal')); openSignIn(); }, 'row-btn accent');
+  if (mode === 'needs-key') add('Use your own free Gemini key', openByokModal, 'row-btn accent');
   if (mode === 'byok') {
     add('Change key', openByokModal);
-    add('Remove key', () => { setByokKey(null); byokKeyChanged(); renderAiSettings(); showToast('Key removed from this device', true); }, 'btn-ghost danger');
+    add('Remove key', () => { setByokKey(null); byokKeyChanged(); renderAiSettings(); showToast('Key removed from this device', true); }, 'row-btn danger');
   }
 }
 

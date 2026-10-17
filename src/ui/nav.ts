@@ -5,11 +5,10 @@ import type { Folder } from '../data/types';
 import { byId, plural } from './dom';
 import { confirmDeleteFolder, openFolderModal, openMoveFolder } from './folderDialogs';
 import { type MenuItem } from './menu';
-import { closeModal, openModal } from './modal';
 import { go, setRenderer, view } from './view';
 
-// App navigation: the bottom tab bar and the avatar sheet (account, settings,
-// backup, sync status). Also the folder menu shared by folder headers.
+// App navigation: the tab bar (bottom on phones, sidebar on desktop). Also the
+// folder menu shared by folder headers.
 
 /** Extra folder-menu items registered by later features (e.g. "Make a plan"). */
 const extraFolderItems: Array<(f: Folder) => MenuItem[]> = [];
@@ -53,15 +52,4 @@ export function initNav(): void {
   byId('tabQueue').onclick = () => go('queue');
   byId('tabLibrary').onclick = () => go('all');
   byId('tabRevisit').onclick = () => go('revisit');
-
-  const sheet = byId('meSheet');
-  const meBtn = byId('meBtn');
-  meBtn.onclick = () => openModal(sheet);
-  // Every action in the sheet opens something else (or acts in place), so the
-  // sheet steps aside first and hands focus back to the avatar for later.
-  sheet.querySelector('[role="dialog"]')!.addEventListener('click', (e) => {
-    if (!(e.target as Element).closest('button')) return;
-    closeModal(sheet);
-    meBtn.focus();
-  }, true);
 }

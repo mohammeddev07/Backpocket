@@ -25,7 +25,7 @@ import { initNav } from './ui/nav';
 import { showToast } from './ui/toast';
 import { go, onNavigate, renderAll, scheduleRender } from './ui/view';
 
-const MODALS = ['folderModal', 'pickerModal', 'filtersSheet', 'linkModal', 'backupModal', 'settingsModal', 'accountModal', 'uploadModal', 'byokModal', 'iosHelpModal', 'meSheet', 'saveSheet'];
+const MODALS = ['folderModal', 'pickerModal', 'filtersSheet', 'linkModal', 'backupModal', 'settingsModal', 'accountModal', 'uploadModal', 'byokModal', 'iosHelpModal', 'saveSheet'];
 
 async function boot(): Promise<void> {
   // Read the share params first, so they're cleared from the address bar

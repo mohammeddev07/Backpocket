@@ -155,7 +155,7 @@ Deletes are soft (`deletedAt`) so they can sync. A few small things stay in `loc
 
 **Upgrading from v1:** on first load, v2 copies everything from the old `localStorage` key `backpocket_data_v1` into IndexedDB. Links at the root move into Inbox and every id becomes a UUID. The old key is left untouched, and a raw copy is also kept as `backpocket_data_v1_backup`.
 
-**In the cloud** (signed in), the Supabase tables `folders`, `links` and `plans` mirror the local stores, plus an `embedding vector(768)` column on `links`. Sync pulls rows changed since the last sync and pushes the outbox. If two devices edit the same row, the last write wins. Sync runs on load, when the app regains focus, when it comes back online, and shortly after each change. The avatar sheet (top right) shows the status ("Synced · 2 min ago" / "Offline - changes will sync"). On first sign-in with local saves, the app offers to upload them, skipping duplicates and merging folders by path.
+**In the cloud** (signed in), the Supabase tables `folders`, `links` and `plans` mirror the local stores, plus an `embedding vector(768)` column on `links`. Sync pulls rows changed since the last sync and pushes the outbox. If two devices edit the same row, the last write wins. Sync runs on load, when the app regains focus, when it comes back online, and shortly after each change. Settings (tap your avatar, top right) shows the status at the top ("Synced · 2 min ago" / "Offline - changes will sync"). On first sign-in with local saves, the app offers to upload them, skipping duplicates and merging folders by path.
 
 **Backup & import** exports a JSON backup (`backpocket-backup-YYYY-MM-DD.json`) or a bookmarks HTML file, and imports either one, or a v1 backup. Clearing site data removes the local copy. If you're signed in, it comes back from your account on the next sync. If you're a guest, only a backup brings it back.
 
@@ -188,7 +188,7 @@ src/
   ai/       Edge Function client, bring-your-own-key client, sort on save, search, embeddings, related.ts
   search/   keyword filters and query parsing
   share/    share-target URL extraction (+ tests against the v1 code)
-  ui/       tab bar, avatar sheet, library, list, sheets, modals, settings, reminders, recap
+  ui/       tab bar, settings page, library, queue, list, sheets, modals, settings, reminders, recap
 public/     manifest.webmanifest, icons/ (all rendered from icons/mark.svg)
 supabase/
   migrations/           schema, RLS, pgvector, rate limits, match_links, related_links, revisit_picks
