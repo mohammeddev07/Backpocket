@@ -180,4 +180,9 @@ describe('poll pacing', () => {
     expect(pollDelay(3, () => 0.5)).toBeGreaterThan(pollDelay(0, () => 0.5));
     expect(pollDelay(50, () => 1)).toBe(720_000);
   });
+
+  it('with the push channel up, polling is just a 10 minute safety net', () => {
+    expect(pollDelay(0, () => 0.5, true)).toBe(600_000);
+    expect(pollDelay(0, () => 0.5, true)).toBeGreaterThan(pollDelay(0, () => 0.5));
+  });
 });

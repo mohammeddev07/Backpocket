@@ -28,9 +28,12 @@ export function backoffDelay(failures: number, rand = Math.random): number {
   return Math.round(cap / 2 + rand() * (cap / 2));
 }
 
-/** Time to the next background poll: 90 s while things change, stretching to 10 min when idle, always +-20%. */
-export function pollDelay(idleStreak: number, rand = Math.random): number {
-  const base = Math.min(PERIODIC_MAX_MS, PERIODIC_MS * 1.5 ** idleStreak);
+/**
+ * Time to the next background poll: 90 s while things change, stretching to 10 min
+ * when idle, always +-20%. With the push channel up, polling is only a safety net.
+ */
+export function pollDelay(idleStreak: number, rand = Math.random, live = false): number {
+  const base = live ? PERIODIC_MAX_MS : Math.min(PERIODIC_MAX_MS, PERIODIC_MS * 1.5 ** idleStreak);
   return Math.round(base * (0.8 + rand() * 0.4));
 }
 
@@ -50,6 +53,9 @@ export function setSyncState(patch: Partial<SyncState>): void {
 }
 
 let activeUser: string | null = null;
+/** The Realtime channel for the active account, and whether it is currently connected. */
+let channel: { unsubscribe: () => unknown } | null = null;
+let live = false;
 let timer: ReturnType<typeof setTimeout> | undefined;
 let queued = false;
 let failures = 0;
@@ -123,11 +129,43 @@ export function startSync(userId: string): void {
   failures = 0;
   idleStreak = 0;
   forcePull = true;
+  unlisten(); // a different account may have been active
   requestSync(0);
+  void listen(userId);
+}
+
+/**
+ * Push path: Realtime tells this device when the account's sync_state row changes
+ * (any device's write), and it pulls right away. Purely an accelerator: if the
+ * backend, the socket or the table's publication is missing, polling still works.
+ */
+async function listen(uid: string): Promise<void> {
+  try {
+    const sb = await getSupabase();
+    if (activeUser !== uid || channel) return;
+    const ch = sb.channel(`sync:${uid}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sync_state', filter: `user_id=eq.${uid}` },
+        // A little spread, so a burst of edits (or many devices) doesn't pull in lockstep.
+        () => requestSync(200 + Math.random() * 800))
+      .subscribe((status) => {
+        live = status === 'SUBSCRIBED';
+        // Events missed while disconnected are caught up by a pull on (re)connect.
+        if (live && activeUser === uid) requestSync(Math.random() * 1000);
+      });
+    channel = ch;
+  } catch { /* polling only */ }
+}
+
+function unlisten(): void {
+  live = false;
+  const ch = channel;
+  channel = null;
+  try { void ch?.unsubscribe(); } catch { /* already closed */ }
 }
 
 export function stopSync(status: 'local' | 'signed-out' | 'pending-link', message?: string): void {
   activeUser = null;
+  unlisten();
   clearTimeout(timer);
   setSyncState({ status, message });
 }
@@ -280,6 +318,6 @@ export function installSyncTriggers(): void {
   const poll = () => setTimeout(() => {
     if (document.visibilityState === 'visible' && failures === 0) requestSync(0);
     poll();
-  }, pollDelay(idleStreak));
+  }, pollDelay(idleStreak, Math.random, live));
   poll();
 }
