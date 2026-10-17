@@ -72,7 +72,7 @@ async function boot(): Promise<void> {
   onNavigate(resetSaveTarget);
   initDesktopShortcuts();
 
-  go('all');
+  go('queue');
   renderAll();
   if (shared) applySharedPayload(shared);
   if (warning) showToast(warning, false, undefined, 6000);
