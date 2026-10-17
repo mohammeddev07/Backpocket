@@ -951,8 +951,57 @@ p.settings-item:empty { display: none; }
 }
 .toast-undo + .toast-undo { margin-left: 0; }
 .toast-undo:hover { background: rgba(255, 138, 0, .24); }
-/* Reminder toast: a little more presence than a confirmation. */
-.toast.nudge { border-color: rgba(255, 138, 0, .4); box-shadow: 0 18px 50px rgba(0, 0, 0, .35), 0 0 40px -12px rgba(255, 122, 0, .4); }
+
+/* ---------- Reminder banner ----------
+   Looks like a system notification: app logo, name, "now", then the nudge.
+   Drops in from the top on phones, slides in at the top right on desktop. */
+.nudge-banner {
+  --nudge-x: -50%;
+  position: fixed; z-index: 66; left: 50%; top: max(12px, env(safe-area-inset-top));
+  width: min(calc(100% - 24px), 420px); padding: 12px 14px 14px;
+  border-radius: 22px; border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--paper-raised) 90%, transparent);
+  box-shadow: var(--shadow-modal), 0 0 44px -16px var(--glow);
+  transform: translate(var(--nudge-x), calc(-100% - 32px)); opacity: 0; touch-action: none;
+  transition: transform .5s var(--spring), opacity .25s ease;
+}
+@supports (backdrop-filter: blur(1px)) {
+  .nudge-banner { backdrop-filter: blur(22px) saturate(160%); -webkit-backdrop-filter: blur(22px) saturate(160%); }
+}
+.nudge-banner.show { transform: translate(var(--nudge-x), 0); opacity: 1; }
+.nudge-head { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink-faint); }
+.nudge-logo {
+  display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 7px;
+  background: #17181C; /* the app icon's dark tile, in both themes */
+}
+.nudge-logo .brand-mark { width: 19px; height: 19px; }
+.nudge-app { font-weight: 600; color: var(--ink-soft); }
+.nudge-when::before { content: '·'; margin-right: 6px; }
+.nudge-close {
+  display: inline-flex; align-items: center; justify-content: center; margin: -6px -6px -6px auto;
+  width: 32px; height: 32px; padding: 0; border: none; border-radius: 50%; background: none; color: var(--ink-faint); cursor: pointer;
+}
+.nudge-close .icon { width: 15px; height: 15px; }
+.nudge-close:hover { background: var(--hover); color: var(--ink); }
+.nudge-main { display: flex; align-items: flex-start; gap: 12px; margin-top: 8px; }
+.nudge-text { flex: 1; min-width: 0; }
+.nudge-title { margin: 0; font: 700 15px/1.35 var(--font-sans); color: var(--ink); text-wrap: balance; }
+.nudge-body {
+  margin: 3px 0 0; font-size: 14px; line-height: 1.45; color: var(--ink-soft);
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; line-clamp: 3; overflow: hidden;
+}
+.nudge-thumb .link-visual { --thumb: 56px; border-radius: 12px; }
+.nudge-thumb .tile-badge { display: none; }
+.nudge-actions { display: flex; gap: 8px; margin-top: 12px; }
+.nudge-open {
+  flex: 1; min-height: 40px; border: none; border-radius: var(--radius-md); cursor: pointer;
+  background: var(--accent-grad); color: var(--accent-ink); font: 700 14px var(--font-sans);
+  transition: transform .35s var(--spring), filter .15s ease;
+}
+.nudge-open:hover { filter: brightness(1.06); }
+.nudge-open:active { transform: scale(.96); }
+.nudge-open:focus-visible { outline-color: var(--ink); }
+.nudge-later { min-height: 40px; }
 
 /* ---------- AI plans ---------- */
 .plan { padding: 4px 2px 20px; }
@@ -1061,7 +1110,8 @@ p.settings-item:empty { display: none; }
 
 /* ---------- Touch: 44px targets, no hover-only controls ---------- */
 @media (pointer: coarse) {
-  .link-kebab, .folder-card-kebab, .links.is-grid .link-kebab, .queue-card-done { width: 44px; height: 44px; }
+  .link-kebab, .folder-card-kebab, .links.is-grid .link-kebab, .queue-card-done, .nudge-close { width: 44px; height: 44px; }
+  .nudge-open, .nudge-later { min-height: 44px; }
   .icon-btn.small { width: 44px; height: 44px; }
   .picker-btn, .text-btn, .btn-primary, .btn-ghost { min-height: 44px; }
   .text-btn { padding: 0 6px; }
@@ -1135,12 +1185,14 @@ p.settings-item:empty { display: none; }
   .queue-card { flex: none; }
 
   .toast { bottom: 28px; left: calc(50% + var(--sidebar-w) / 2); }
+  .nudge-banner { --nudge-x: 0; left: auto; right: 24px; top: 24px; transform: translate(calc(100% + 40px), 0); }
+  .nudge-banner.show { transform: none; }
   .page-backdrop { left: var(--sidebar-w); } /* Settings opens beside the sidebar, like any other screen */
   .modal.page { max-width: 720px; }
 }
 
 /* Transparency-sensitive users get solid surfaces. */
 @media (prefers-reduced-transparency: reduce) {
-  .modal-backdrop, .bulk-bar, .tabbar { backdrop-filter: none; -webkit-backdrop-filter: none; }
-  .bulk-bar, .tabbar { background: var(--paper-raised); }
+  .modal-backdrop, .bulk-bar, .tabbar, .nudge-banner { backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .bulk-bar, .tabbar, .nudge-banner { background: var(--paper-raised); }
 }

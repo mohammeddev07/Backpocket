@@ -560,5 +560,26 @@
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<!-- Reminder banner: looks like a system notification, with the app's logo. -->
+<section class="nudge-banner" id="nudgeBanner" aria-labelledby="nudgeTitle" hidden>
+  <div class="nudge-head">
+    <span class="nudge-logo" aria-hidden="true"><svg class="brand-mark"><use href="#brand-mark"/></svg></span>
+    <span class="nudge-app">Backpocket</span>
+    <span class="nudge-when">now</span>
+    <button type="button" class="nudge-close" id="nudgeCloseBtn" aria-label="Dismiss reminder"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+  </div>
+  <div class="nudge-main">
+    <div class="nudge-text">
+      <p class="nudge-title" id="nudgeTitle"></p>
+      <p class="nudge-body" id="nudgeBody"></p>
+    </div>
+    <div class="nudge-thumb" id="nudgeThumb" aria-hidden="true"></div>
+  </div>
+  <div class="nudge-actions">
+    <button type="button" class="nudge-open" id="nudgeOpenBtn">Open it</button>
+    <button type="button" class="btn-ghost nudge-later" id="nudgeLaterBtn">Later</button>
+  </div>
+</section>
 </body>
 </html>

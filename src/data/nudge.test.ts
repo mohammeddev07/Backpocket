@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ALL_NUDGE_COPY, nudgeCopy, pickForgotten, pushNudgeHistory, recentlyNudged, usablePrepared } from './nudge';
+import { ALL_NUDGE_COPY, nudgeCopy, nudgeNotification, pickForgotten, pushNudgeHistory, recentlyNudged, usablePrepared } from './nudge';
 import type { Link } from './types';
 
 const DAY = 86_400_000;
@@ -76,5 +76,14 @@ describe('nudge history and prepared nudges', () => {
     expect(usablePrepared(p('opened'), links, NOW, 7)).toBe(false);
     expect(usablePrepared(p('a', 4), links, NOW, 7)).toBe(false);
     expect(usablePrepared(undefined, links, NOW, 7)).toBe(false);
+  });
+});
+
+describe('nudgeNotification', () => {
+  it('always carries the app icon and status-bar badge; Open/Later only for a link', () => {
+    const withLink = nudgeNotification('body', 'https://example.com') as NotificationOptions & { actions?: unknown[] };
+    expect(withLink).toMatchObject({ icon: 'icons/icon-192.png', badge: 'icons/badge-96.png', data: { url: 'https://example.com' } });
+    expect(withLink.actions).toHaveLength(2);
+    expect((nudgeNotification('recap') as { actions?: unknown[] }).actions).toBeUndefined();
   });
 });
