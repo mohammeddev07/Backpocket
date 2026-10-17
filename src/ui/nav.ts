@@ -52,10 +52,6 @@ export function initNav(): void {
   byId('tabInbox').onclick = () => go('folder', inboxId());
   byId('tabLibrary').onclick = () => go('all');
   byId('tabRevisit').onclick = () => go('revisit');
-  byId('tabAddBtn').onclick = () => {
-    window.scrollTo({ top: 0 });
-    byId('urlInput').focus();
-  };
 
   const sheet = byId('meSheet');
   const meBtn = byId('meBtn');

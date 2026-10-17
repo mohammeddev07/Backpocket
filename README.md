@@ -32,7 +32,7 @@ Free, private by default, and it installs like an app in a few seconds: **<https
 ## Get started in 30 seconds
 
 1. Open **<https://mohammeddev07.github.io/Backpocket/>**.
-2. Paste a link and tap **Save**. That's it, you're using it.
+2. Tap **+**, paste a link and tap **Save to Backpocket**. That's it, you're using it.
 3. Optional: install it (☰ menu → **Install app**) so it appears in your phone's share sheet.
 4. Optional: **Sign in with Google** to sync across devices and unlock AI.
 5. Optional: **Settings → Reminders** to get nudged about forgotten saves.
@@ -93,7 +93,7 @@ The Shortcut opens **Safari**, not the home-screen app, and iOS keeps their stor
 
 ### Desktop
 
-**Settings → Save from other apps** has a bookmarklet. Drag it to your bookmarks bar, then click it on any page to save that page. Pasting a link anywhere in the app (outside a text field) drops it into the save box, and **/** jumps to search.
+**Settings → Save from other apps** has a bookmarklet. Drag it to your bookmarks bar, then click it on any page to save that page. Pasting a link anywhere in the app (outside a text field) opens it in the Save sheet, and **/** jumps to search.
 
 ## Reminders and weekly recap
 

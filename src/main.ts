@@ -15,7 +15,7 @@ import { initLinkEditor } from './ui/linkEditor';
 import { initLibrary } from './ui/library';
 import { initList } from './ui/list';
 import { setupModalA11y } from './ui/modal';
-import { applySharedPayload, initSaveBox, resetSaveTarget } from './ui/saveBox';
+import { applySharedPayload, initSaveBox, openSaveSheet, resetSaveTarget } from './ui/saveBox';
 import { initIosHelp } from './ui/iosHelp';
 import { initRecap } from './ui/recap';
 import { initReminders, maybeNudge } from './ui/reminders';
@@ -24,7 +24,7 @@ import { initNav } from './ui/nav';
 import { showToast } from './ui/toast';
 import { go, onNavigate, renderAll, scheduleRender } from './ui/view';
 
-const MODALS = ['folderModal', 'pickerModal', 'filtersSheet', 'linkModal', 'backupModal', 'settingsModal', 'accountModal', 'uploadModal', 'byokModal', 'iosHelpModal', 'meSheet'];
+const MODALS = ['folderModal', 'pickerModal', 'filtersSheet', 'linkModal', 'backupModal', 'settingsModal', 'accountModal', 'uploadModal', 'byokModal', 'iosHelpModal', 'meSheet', 'saveSheet'];
 
 async function boot(): Promise<void> {
   // Read the share params first, so they're cleared from the address bar
@@ -83,7 +83,7 @@ async function boot(): Promise<void> {
 }
 
 // Web affordances: "/" jumps to search, and pasting a link anywhere outside a
-// text field drops it into the save box. Both stand down while a dialog is open.
+// text field opens it in the Save sheet. Both stand down while a dialog is open.
 function initDesktopShortcuts(): void {
   const typing = (t: EventTarget | null) =>
     t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement ||
@@ -104,10 +104,7 @@ function initDesktopShortcuts(): void {
     const url = firstSharedUrl([e.clipboardData?.getData('text')]);
     if (!url) return;
     e.preventDefault();
-    const input = byId<HTMLInputElement>('urlInput');
-    input.value = url;
-    input.dispatchEvent(new Event('input'));
-    input.focus();
+    openSaveSheet(url);
   });
 }
 

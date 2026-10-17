@@ -417,7 +417,7 @@ function render(): void {
 
   if (store.liveLinks().length === 0 || (inView.length === 0 && !view.query && view.mode !== 'folder')) {
     byId('resultCount').hidden = true;
-    const cta = ghostButton('Save your first link', () => { byId('urlInput').focus(); });
+    const cta = ghostButton('Save your first link', () => byId('tabAddBtn').click());
     listEl.appendChild(view.mode === 'revisit'
       ? emptyState(EMPTY_ILLUSTRATION, 'Nothing to revisit', 'Links you haven\'t opened for ' + APP_CONFIG.revisitMinAgeDays + ' days show up here.')
       : view.mode === 'favorites' && store.liveLinks().length
@@ -443,7 +443,7 @@ function render(): void {
     } else if (!filtered && view.mode === 'folder') {
       const isInbox = view.folderId === inboxId();
       listEl.appendChild(emptyState(EMPTY_ILLUSTRATION, isInbox ? 'Inbox zero' : 'Nothing here yet',
-        isInbox ? 'Links saved without a folder land here.' : 'Paste a link above to save it into this folder.'));
+        isInbox ? 'Links saved without a folder land here.' : 'Tap + to save a link into this folder.'));
     } else {
       listEl.appendChild(emptyState(NO_MATCH_ILLUSTRATION, 'No matches', 'Nothing fits your search and filters.',
         ghostButton('Clear search and filters', () => { clearFilters(); renderMain(); })));
