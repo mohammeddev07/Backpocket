@@ -1042,6 +1042,9 @@ p.settings-item:empty { display: none; }
 .tab-add:focus-visible { outline-color: var(--ink); }
 
 
+/* Sidebar-only bits (desktop). */
+.tabbar-brand, .tab-add-label, .tab-settings { display: none; }
+
 /* ---------- Phones & small tablets ---------- */
 @media (max-width: 780px) {
   .sheet-backdrop { align-items: flex-end; padding: 0; }
@@ -1074,6 +1077,66 @@ p.settings-item:empty { display: none; }
 }
 @media (hover: none) {
   .link-item:active { background: var(--hover); }
+}
+
+/* ---------- Desktop ----------
+   The tab bar becomes a left sidebar and the content gets room: wider
+   column, multi-column grids, side-by-side Daily Queue focus card. */
+@media (min-width: 960px) {
+  :root { --sidebar-w: 248px; --gutter: 40px; }
+  .app { padding-left: var(--sidebar-w); }
+  .main { max-width: 1120px; padding-top: 32px; padding-bottom: 64px; }
+  .appbar { display: none; }
+
+  .tabbar {
+    top: 0; bottom: 0; left: 0; transform: none; width: var(--sidebar-w); max-width: none; min-height: 0;
+    display: flex; flex-direction: column; align-items: stretch; gap: 2px;
+    padding: 24px 14px 18px; border: none; border-right: 1px solid var(--line-soft); border-radius: 0; box-shadow: none;
+    background: var(--paper-raised);
+  }
+  .tabbar-brand { display: flex; align-items: center; gap: 10px; padding: 0 8px 22px; order: 0; }
+  .tabbar-brand .brand { font-size: 20px; }
+  .tab-add {
+    order: 1; justify-self: auto; width: 100%; height: 46px; gap: 8px; margin-bottom: 14px;
+    border-radius: var(--radius-md); font: 700 15px var(--font-sans);
+  }
+  .tab-add .icon { width: 20px; height: 20px; }
+  .tab-add-label { display: inline; }
+  .tab-add:active { transform: scale(.97); }
+  #tabQueue { order: 2; } #tabInbox { order: 3; } #tabLibrary { order: 4; } #tabRevisit { order: 5; }
+  .tab {
+    position: relative; flex-direction: row; justify-content: flex-start; gap: 12px;
+    min-height: 44px; padding: 0 12px; font: 500 14.5px/1 var(--font-sans); color: var(--ink-soft);
+  }
+  .tab:hover { background: var(--hover); color: var(--ink); }
+  .tab[aria-current="page"] { background: var(--selected-fill); color: var(--accent-text); }
+  .tab[aria-current="page"] .tab-icon { transform: none; }
+  .tab-icon { position: static; }
+  .tab-icon .icon { width: 20px; height: 20px; }
+  .tab-badge { top: 50%; left: auto; right: 12px; transform: translateY(-50%); box-shadow: none; }
+  .tab-settings { display: flex; order: 6; margin-top: auto; min-height: 52px; }
+  .tab-settings .avatar { width: 30px; height: 30px; font-size: 12px; }
+  .tab-settings .avatar .icon { width: 16px; height: 16px; }
+
+  .list-toolbar { flex-wrap: nowrap; }
+  .search-field { flex: 1 1 auto; }
+  .sort-field { margin-right: 0; }
+  .link-item { --thumb: 84px; gap: 16px; padding: 12px 8px 12px 12px; }
+  .links.is-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+  .folder-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+  .view-chips { flex-wrap: wrap; overflow: visible; margin-inline: 0; padding-inline: 0; }
+
+  .queue-focus { display: grid; grid-template-columns: 1.3fr 1fr; }
+  .queue-media .link-visual { height: 100%; min-height: 320px; aspect-ratio: auto; }
+  .queue-title { font-size: 26px; }
+  .queue-body { display: flex; flex-direction: column; justify-content: flex-end; padding: 28px; }
+  .queue-desc { -webkit-line-clamp: 5; line-clamp: 5; font-size: 15px; }
+  .queue-next { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); overflow: visible; margin: 0; padding: 0; }
+  .queue-card { flex: none; }
+
+  .toast { bottom: 28px; left: calc(50% + var(--sidebar-w) / 2); }
+  .page-backdrop { left: var(--sidebar-w); } /* Settings opens beside the sidebar, like any other screen */
+  .modal.page { max-width: 720px; }
 }
 
 /* Transparency-sensitive users get solid surfaces. */

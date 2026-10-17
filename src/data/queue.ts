@@ -47,6 +47,19 @@ export function buildQueue(links: Link[], now: number, minAgeDays: number, prefe
   return [...new Set(ordered)].slice(0, size);
 }
 
+/**
+ * Keeps today's queue at the daily size: drops deleted links and fills any gap
+ * (e.g. it was picked before anything was saved). Done links stay, so clearing
+ * the five doesn't pull in more.
+ */
+export function topUpQueue(ids: string[], links: Link[], now: number, minAgeDays: number, size = QUEUE_SIZE): string[] {
+  const live = new Set(links.filter((l) => l.deletedAt == null).map((l) => l.id));
+  const kept = ids.filter((id) => live.has(id));
+  if (kept.length >= size) return kept;
+  const extra = buildQueue(links, now, minAgeDays, [], size).filter((id) => !kept.includes(id));
+  return [...kept, ...extra].slice(0, size);
+}
+
 /** Marks today as a streak day (once per day). */
 export function recordStreakDay(s: Streak | undefined, today: string): Streak {
   if (s?.last === today) return s;

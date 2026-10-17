@@ -94,7 +94,7 @@ The Shortcut opens **Safari**, not the home-screen app, and iOS keeps their stor
 
 ### Desktop
 
-**Settings → Save from other apps** has a bookmarklet. Drag it to your bookmarks bar, then click it on any page to save that page. Pasting a link anywhere in the app (outside a text field) opens it in the Save sheet, and **/** jumps to search.
+**Settings → Save from other apps** has a bookmarklet. Drag it to your bookmarks bar, then click it on any page to save that page. Pasting a link anywhere in the app (outside a text field) opens it in the Save sheet, **N** starts a new save, and **/** jumps to search.
 
 ## Reminders and weekly recap
 

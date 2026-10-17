@@ -84,8 +84,9 @@ async function boot(): Promise<void> {
   void initAccount();
 }
 
-// Web affordances: "/" jumps to search, and pasting a link anywhere outside a
-// text field opens it in the Save sheet. Both stand down while a dialog is open.
+// Web affordances: "/" jumps to search, "n" starts a new save, and pasting a
+// link anywhere outside a text field opens it in the Save sheet. All stand down
+// while a dialog is open.
 function initDesktopShortcuts(): void {
   const typing = (t: EventTarget | null) =>
     t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement ||
@@ -93,7 +94,9 @@ function initDesktopShortcuts(): void {
   const dialogOpen = () => !!document.querySelector('.modal-backdrop.show');
 
   document.addEventListener('keydown', (e) => {
-    if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey || typing(e.target) || dialogOpen()) return;
+    if (e.metaKey || e.ctrlKey || e.altKey || typing(e.target) || dialogOpen()) return;
+    if (e.key === 'n') { e.preventDefault(); openSaveSheet(); return; }
+    if (e.key !== '/') return;
     const search = byId<HTMLInputElement>('searchInput');
     if (search.offsetParent === null) return; // toolbar hidden (e.g. plan view)
     e.preventDefault();

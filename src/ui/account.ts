@@ -64,8 +64,10 @@ function renderAccount(u: AuthUser | null): void {
   const btn = byId('accountBtn');
   btn.hidden = !CLOUD_CONFIGURED;
   const avatar = byId('accountAvatar');
-  const meAvatar = byId('meAvatar');
-  if (u) meAvatar.textContent = initials(u); else meAvatar.replaceChildren(svgIcon('user'));
+  for (const id of ['meAvatar', 'sideAvatar']) {
+    const a = byId(id);
+    if (u) a.textContent = initials(u); else a.replaceChildren(svgIcon('user'));
+  }
   byId('meBtn').setAttribute('aria-label', u ? 'Settings, signed in as ' + (u.email || u.name) : 'Settings');
   if (u) {
     avatar.textContent = initials(u);

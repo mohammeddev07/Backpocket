@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildQueue, currentStreak, dayKey, recordStreakDay } from './queue';
+import { buildQueue, currentStreak, dayKey, recordStreakDay, topUpQueue } from './queue';
 import type { Link } from './types';
 
 const NOW = new Date(2026, 9, 16, 9, 0).getTime();
@@ -33,6 +33,17 @@ describe('buildQueue', () => {
   it('is stable within a day', () => {
     const many = Array.from({ length: 20 }, (_, i) => link('l' + i, { createdAt: NOW - (10 + i) * DAY }));
     expect(buildQueue(many, NOW, 7)).toEqual(buildQueue(many, NOW + 3 * 3600_000, 7));
+  });
+});
+
+describe('topUpQueue', () => {
+  it('fills a queue picked before anything was saved', () => {
+    expect(topUpQueue([], [link('a'), link('b')], NOW, 7).sort()).toEqual(['a', 'b']);
+  });
+
+  it('keeps done links (no refills after clearing) and replaces deleted ones', () => {
+    const links = [link('d', { status: 'done' }), link('x', { deletedAt: NOW }), link('n')];
+    expect(topUpQueue(['d', 'x'], links, NOW, 7, 2)).toEqual(['d', 'n']);
   });
 });
 

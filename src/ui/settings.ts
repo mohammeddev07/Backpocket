@@ -45,6 +45,7 @@ export function openSettings(): void {
 export function initSettings(): void {
   const settingsModal = byId('settingsModal');
   byId('meBtn').onclick = openSettings;
+  byId('tabSettings').onclick = openSettings;
   byId('closeSettingsBtn').onclick = () => closeModal(settingsModal);
   onModalClose(settingsModal, () => { if (history.state?.bpSettings) history.back(); });
   window.addEventListener('popstate', () => closeModal(settingsModal));

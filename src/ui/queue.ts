@@ -2,7 +2,7 @@ import { setStatus } from '../actions';
 import { revisitPickIds } from '../ai/related';
 import { currentUser } from '../cloud/auth';
 import { APP_CONFIG } from '../config';
-import { buildQueue, currentStreak, dayKey, QUEUE_META_KEY, recordStreakDay, STREAK_META_KEY, type DailyQueue, type Streak } from '../data/queue';
+import { buildQueue, currentStreak, dayKey, QUEUE_META_KEY, recordStreakDay, STREAK_META_KEY, topUpQueue, type DailyQueue, type Streak } from '../data/queue';
 import { store } from '../data/store';
 import { pathLabel } from '../data/tree';
 import type { Link } from '../data/types';
@@ -28,7 +28,11 @@ const saveMeta = (key: string, value: unknown) => store.db.setMeta(key, value).c
 /** Today's five, picked on the first look each day. Smart picks upgrade it once, before anything is done. */
 function ensureToday(): DailyQueue {
   const day = today();
-  if (queue && queue.day === day) return queue;
+  if (queue && queue.day === day) {
+    const ids = topUpQueue(queue.ids, store.liveLinks(), Date.now(), APP_CONFIG.revisitMinAgeDays);
+    if (ids.join() !== queue.ids.join()) { queue = { day, ids }; void saveMeta(QUEUE_META_KEY, queue); }
+    return queue;
+  }
   const picked: DailyQueue = { day, ids: buildQueue(store.liveLinks(), Date.now(), APP_CONFIG.revisitMinAgeDays) };
   queue = picked;
   void saveMeta(QUEUE_META_KEY, picked);
