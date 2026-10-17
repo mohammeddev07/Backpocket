@@ -12,6 +12,10 @@ export default defineConfig({
       '@shared': fileURLToPath(new URL('./supabase/functions/_shared', import.meta.url)),
     },
   },
+  build: {
+    // The app plus two static pages; GitHub Pages serves 404.html for any missing path.
+    rolldownOptions: { input: ['index.html', 'privacy.html', '404.html'] },
+  },
   plugins: [
     VitePWA({
       // Hand-written worker (src/sw.ts -> dist/sw.js, same URL as v1 so existing

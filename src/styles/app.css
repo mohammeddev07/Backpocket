@@ -1210,3 +1210,15 @@ p.settings-item:empty { display: none; }
   .modal-backdrop, .bulk-bar, .tabbar, .nudge-banner { backdrop-filter: none; -webkit-backdrop-filter: none; }
   .bulk-bar, .tabbar, .nudge-banner { background: var(--paper-raised); }
 }
+
+/* ---------- Static pages (privacy.html, 404.html) ---------- */
+.doc { max-width: 680px; margin: 0 auto; padding: var(--space-6) var(--gutter) 64px; }
+.doc-brand { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; font-weight: 700; font-size: 17px; text-decoration: none; }
+.doc h1 { margin: var(--space-5) 0 var(--space-2); font-size: 28px; line-height: 1.2; letter-spacing: -.02em; }
+.doc h2 { margin: 28px 0 var(--space-2); font-size: 17px; }
+.doc p, .doc li { font-size: 15px; color: var(--ink-soft); }
+.doc a:not([class]) { color: var(--accent-text); }
+.doc .doc-date { font-size: 13px; color: var(--ink-faint); }
+.doc-links { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-5); }
+.doc-links a { min-height: 44px; text-decoration: none; }
+a.row-btn { text-decoration: none; }

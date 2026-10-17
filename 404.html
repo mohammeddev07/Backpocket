@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Page not found - Backpocket</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#f6f5f3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#090a0c" media="(prefers-color-scheme: dark)">
+<script>
+  try {
+    var t = localStorage.getItem('backpocket_theme');
+    if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', t);
+  } catch (e) {}
+</script>
+<link rel="stylesheet" href="/src/styles/app.css">
+</head>
+<body>
+<!-- GitHub Pages serves this for any missing path at any depth, so links are absolute. -->
+<main class="doc">
+  <a class="doc-brand" href="/Backpocket/"><img src="/icons/mark.svg" alt="" width="32" height="32">Backpocket</a>
+  <h1>This page isn't in your pocket</h1>
+  <p>The link may be old or mistyped. Your saves are fine, they're right where you left them.</p>
+  <p class="doc-links">
+    <a class="btn-primary" href="/Backpocket/">Open Backpocket</a>
+    <a class="btn-ghost" href="/Backpocket/privacy.html">Privacy policy</a>
+  </p>
+</main>
+</body>
+</html>
