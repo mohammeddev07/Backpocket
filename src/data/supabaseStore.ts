@@ -8,7 +8,7 @@ import type { Folder, Kind, Link, Plan, RowByKind } from './types';
 const COLUMNS: Record<Kind, string> = {
   folders: 'id,parent_id,name,color,is_system,position,created_at,updated_at,deleted_at,synced_at',
   // Never select the embedding: it's large and only the server uses it.
-  links: 'id,folder_id,url,platform,title,title_source,note,shared_text,thumbnail_url,tags,status,opened_at,ai_meta,created_at,updated_at,deleted_at,synced_at',
+  links: 'id,folder_id,url,platform,title,title_source,note,shared_text,thumbnail_url,tags,status,favorite,opened_at,ai_meta,created_at,updated_at,deleted_at,synced_at',
   plans: 'id,folder_id,title,summary,items,model,created_at,updated_at,deleted_at,synced_at',
 };
 
@@ -36,7 +36,7 @@ export function toServer<K extends Kind>(kind: K, row: RowByKind[K], userId: str
     return {
       ...base, folder_id: l.folderId, url: l.url, normalized_url: normalizeUrl(l.url), platform: l.platform,
       title: l.title, title_source: l.titleSource, note: l.note, shared_text: l.sharedText,
-      thumbnail_url: l.thumbnailUrl, tags: l.tags, status: l.status, opened_at: iso(l.openedAt), ai_meta: l.aiMeta,
+      thumbnail_url: l.thumbnailUrl, tags: l.tags, status: l.status, favorite: !!l.favorite, opened_at: iso(l.openedAt), ai_meta: l.aiMeta,
     };
   }
   const p = row as Plan;
@@ -63,7 +63,7 @@ export function fromServer<K extends Kind>(kind: K, r: ServerRow): RowByKind[K] 
       title: (r.title as string) ?? null, titleSource: (r.title_source as Link['titleSource']) ?? null,
       note: (r.note as string) ?? null, sharedText: (r.shared_text as string) ?? null,
       thumbnailUrl: (r.thumbnail_url as string) ?? null, tags: Array.isArray(r.tags) ? (r.tags as string[]) : [],
-      status: r.status === 'done' ? 'done' : 'unread', openedAt: msFromIso(r.opened_at as string),
+      status: r.status === 'done' ? 'done' : 'unread', favorite: !!r.favorite, openedAt: msFromIso(r.opened_at as string),
       aiMeta: (r.ai_meta as Link['aiMeta']) ?? null,
     } satisfies Link as RowByKind[K];
   }

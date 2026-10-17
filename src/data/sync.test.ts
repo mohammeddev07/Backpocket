@@ -43,7 +43,7 @@ const { store } = await import('./store');
 const { openLocalDb } = await import('./localStore');
 const { adoptAccount, fetchAccount, syncNow } = await import('./sync');
 const { freshInboxSnapshot } = await import('./migrate');
-const { toServer } = await import('./supabaseStore');
+const { fromServer, toServer } = await import('./supabaseStore');
 
 const USER = '99999999-9999-4999-8999-999999999999';
 const LINK_ID = '11111111-1111-4111-8111-111111111111';
@@ -115,5 +115,10 @@ describe('sync engine', () => {
     const live = other.snapshot.links.filter((l) => l.deletedAt == null).map((l) => [l.id, l.title]);
     const mine = store.liveLinks().map((l) => [l.id, l.title]);
     expect(live.sort()).toEqual(mine.sort());
+  });
+
+  it('favorite maps both ways, and rows saved before Favorites go up as false', () => {
+    expect(toServer('links', link(), USER).favorite).toBe(false);
+    expect(fromServer('links', toServer('links', link({ favorite: true }), USER)).favorite).toBe(true);
   });
 });

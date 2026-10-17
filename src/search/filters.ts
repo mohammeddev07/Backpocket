@@ -4,7 +4,7 @@ import type { Folder, Link } from '../data/types';
 // Which links the list shows: view (All saves / a folder / Revisit), keyword
 // search and the Filters sheet. Pure, so it's unit-tested.
 
-export type ViewMode = 'all' | 'folder' | 'revisit';
+export type ViewMode = 'all' | 'folder' | 'revisit' | 'favorites';
 export type SortMode = 'newest' | 'oldest' | 'platform' | 'title';
 export type StatusFilter = 'any' | 'unread' | 'done';
 
@@ -78,6 +78,7 @@ export function shuffle<T>(arr: T[], seed: number): T[] {
 /** Links in the current view before search/filters (for counts and empty states). */
 export function viewLinks(links: Link[], q: Pick<ListQuery, 'mode' | 'folderId' | 'filters' | 'now' | 'revisitMinAgeDays'>): Link[] {
   if (q.mode === 'revisit') return links.filter((l) => isRevisitCandidate(l, q.now, q.revisitMinAgeDays));
+  if (q.mode === 'favorites') return links.filter((l) => l.favorite);
   if (q.mode === 'folder' && q.filters.scope === 'folder') return links.filter((l) => l.folderId === q.folderId);
   return links;
 }

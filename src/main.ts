@@ -12,6 +12,7 @@ import { initFiltersSheet } from './ui/filtersSheet';
 import { initFolderDialogs } from './ui/folderDialogs';
 import { initFolderPicker } from './ui/folderPicker';
 import { initLinkEditor } from './ui/linkEditor';
+import { initLibrary } from './ui/library';
 import { initList } from './ui/list';
 import { setupModalA11y } from './ui/modal';
 import { applySharedPayload, initSaveBox, resetSaveTarget } from './ui/saveBox';
@@ -57,6 +58,7 @@ async function boot(): Promise<void> {
   initFiltersSheet();
   initLinkEditor();
   initList();
+  initLibrary();
   initSaveBox();
   initSettings();
   initBackupModal();

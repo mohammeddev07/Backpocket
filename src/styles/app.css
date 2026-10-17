@@ -546,6 +546,69 @@ h1.folder-title {
   .link-item:hover .link-kebab, .link-item:focus-within .link-kebab { opacity: 1; }
 }
 
+/* Favorite star in a card's meta line */
+.link-fav { display: inline-flex; color: var(--accent-text); }
+.link-fav .icon { width: 13px; height: 13px; fill: currentColor; }
+
+/* Grid layout: the same card, stacked, two per row. */
+.links.is-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.links.is-grid .link-item { --thumb: 120px; flex-direction: column; gap: 10px; padding: 8px 8px 12px; }
+.links.is-grid .link-visual { width: 100%; height: auto; aspect-ratio: 4 / 3; border-radius: var(--radius-md); }
+.links.is-grid .link-main { width: 100%; padding: 0 4px; }
+.links.is-grid .link-title { font-size: 14px; }
+.links.is-grid .link-tags { display: none; }
+.links.is-grid .folder-badge { max-width: 100%; }
+.links.is-grid .link-kebab {
+  position: absolute; top: 10px; right: 10px; width: 36px; height: 36px; border-radius: 50%;
+  background: rgba(8, 9, 12, .45); color: #fff; /* sits on the photo/tile, not the theme */
+}
+.links.is-grid .select-checkbox { position: absolute; top: 16px; left: 16px; z-index: 1; margin: 0; }
+
+/* View chips: All, Inbox, Revisit, Favorites. Scroll sideways when tight. */
+.view-chips {
+  display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
+  margin: 0 calc(-1 * var(--gutter)) 16px; padding: 2px var(--gutter);
+}
+.view-chips::-webkit-scrollbar { display: none; }
+.view-chips .chip { flex-shrink: 0; min-height: 36px; padding: 0 14px; font-size: 13px; }
+.view-chips .chip.active { color: var(--accent-text); }
+.chip-count { font-variant-numeric: tabular-nums; color: var(--ink-faint); }
+.chip.active .chip-count { color: inherit; }
+
+/* Folder cards */
+.folder-section { margin: 0 0 20px; }
+.section-title { font: 700 18px/1.3 var(--font-sans); letter-spacing: -.015em; margin: 0 0 10px; }
+.folder-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.folder-card { position: relative; }
+.folder-card-btn {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; min-height: 104px;
+  padding: 14px; border: 1px solid var(--line-soft); border-radius: var(--radius-lg);
+  background: var(--paper-raised); color: var(--ink); box-shadow: var(--shadow-card);
+  font: inherit; text-align: left; cursor: pointer;
+  transition: transform .35s var(--spring), border-color .15s ease, background .15s ease;
+}
+.folder-card-btn:hover { border-color: var(--line); }
+.folder-card-btn:active { transform: scale(.97); }
+.folder-card-btn > .icon {
+  width: 30px; height: 30px; margin-bottom: auto; color: var(--folder-color);
+  fill: color-mix(in srgb, currentColor 30%, transparent); stroke: color-mix(in srgb, currentColor var(--glyph-mix), var(--ink)); stroke-width: 1.5;
+}
+.folder-card-name { max-width: 100%; margin-top: 12px; font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.folder-card-count { font-size: 12.5px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+.folder-card-kebab {
+  position: absolute; top: 6px; right: 6px; width: 36px; height: 36px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: none; border-radius: var(--radius-md); background: none; color: var(--ink-faint); cursor: pointer;
+}
+.folder-card-kebab .icon { width: 18px; height: 18px; }
+.folder-card-kebab:hover { color: var(--ink); background: var(--hover); }
+.folder-card.is-new .folder-card-btn {
+  flex-direction: row; align-items: center; justify-content: center; gap: 8px;
+  border: 1px dashed var(--line); background: transparent; box-shadow: none; color: var(--ink-soft); font-weight: 500;
+}
+.folder-card.is-new .folder-card-btn:hover { color: var(--ink); border-color: color-mix(in srgb, var(--accent) 60%, transparent); }
+.folder-card.is-new .icon { width: 16px; height: 16px; }
+
 /* Weekly recap card (top of All saves) */
 .recap-card {
   position: relative; isolation: isolate; margin-bottom: 12px; padding: 16px;
@@ -891,7 +954,7 @@ h1.folder-title {
 
 /* ---------- Touch: 44px targets, no hover-only controls ---------- */
 @media (pointer: coarse) {
-  .link-kebab { width: 44px; height: 44px; }
+  .link-kebab, .folder-card-kebab, .links.is-grid .link-kebab { width: 44px; height: 44px; }
   .icon-btn.small { width: 44px; height: 44px; }
   .picker-btn, .note-toggle, .text-btn, .footer-link-btn, .btn-primary, .btn-ghost { min-height: 44px; }
   .text-btn { padding: 0 6px; }

@@ -169,7 +169,7 @@ export function parseBackupJson(text: string, now = Date.now()): { bundle: Impor
     const links = (o.links as Link[]).filter((l) => l.deletedAt == null).map((l) => ({
       ...mkLink({ url: l.url, folderId: l.folderId || systemId, title: l.title ?? null, createdAt: l.createdAt || now }, now),
       id: l.id, titleSource: l.titleSource ?? (l.title ? 'user' as const : null), note: l.note ?? null, sharedText: l.sharedText ?? null, thumbnailUrl: l.thumbnailUrl ?? null,
-      tags: Array.isArray(l.tags) ? l.tags : [], status: l.status === 'done' ? 'done' as const : 'unread' as const,
+      tags: Array.isArray(l.tags) ? l.tags : [], status: l.status === 'done' ? 'done' as const : 'unread' as const, favorite: !!l.favorite,
       openedAt: l.openedAt ?? null, platform: l.platform || detectPlatform(l.url),
     }));
     const plans = Array.isArray(o.plans)

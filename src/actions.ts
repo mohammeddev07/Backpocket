@@ -87,6 +87,11 @@ export function setStatus(ids: string[], status: LinkStatus): void {
   store.write('links', rows.map((l) => ({ ...l, status })));
 }
 
+export function setFavorite(ids: string[], favorite: boolean): void {
+  const rows = ids.map((id) => store.link(id)).filter((l): l is Link => !!l && !!l.favorite !== favorite);
+  store.write('links', rows.map((l) => ({ ...l, favorite })));
+}
+
 // ---- oEmbed title + thumbnail (YouTube, TikTok) ----
 const enriching = new Set<string>();
 

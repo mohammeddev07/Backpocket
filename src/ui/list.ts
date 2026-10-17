@@ -1,4 +1,4 @@
-import { deleteLinks, inboxId, markOpened, restoreLinks, setStatus } from '../actions';
+import { deleteLinks, inboxId, markOpened, restoreLinks, setFavorite, setStatus } from '../actions';
 import { APP_CONFIG } from '../config';
 import { COLORS } from '../data/migrate';
 import { store } from '../data/store';
@@ -9,7 +9,6 @@ import { selectLinks, viewLinks, type ListQuery } from '../search/filters';
 import { byId, plural, svgIcon } from './dom';
 import { renderActiveFilters, setResultCounter } from './filtersSheet';
 import { openMoveLinks } from './folderDialogs';
-import { pickFolder } from './folderPicker';
 import { relativeTime, fullDate } from './format';
 import { openLinkEditor, setEditorDeleteHandler } from './linkEditor';
 import { openMenu, type MenuItem } from './menu';
@@ -115,6 +114,7 @@ function linkMenu(link: Link): MenuItem[] {
     { label: 'Open', onClick: () => openLink(link) },
     { label: 'Edit…', onClick: () => openLinkEditor(link) },
     { label: link.status === 'done' ? 'Mark as unread' : 'Mark as done', onClick: () => setStatus([link.id], link.status === 'done' ? 'unread' : 'done') },
+    { label: link.favorite ? 'Remove from favorites' : 'Add to favorites', onClick: () => setFavorite([link.id], !link.favorite) },
     { label: 'Copy link', onClick: () => copyLinkUrl(link) },
     { label: 'Move to…', onClick: () => void openMoveLinks([link.id]) },
     ...linkMenuExtras.flatMap((fn) => fn(link)),
@@ -229,6 +229,17 @@ function buildLinkRow(link: Link, opts: { showFolder: boolean; folders: Folder[]
   const meta = document.createElement('div');
   meta.className = 'link-meta';
   const bits: Node[] = [];
+  if (link.favorite) {
+    const star = document.createElement('span');
+    star.className = 'link-fav';
+    star.append(svgIcon('star'));
+    star.title = 'Favorite';
+    const label = document.createElement('span');
+    label.className = 'visually-hidden';
+    label.textContent = 'Favorite';
+    star.appendChild(label);
+    bits.push(star);
+  }
   if (opts.showFolder) {
     const f = store.folder(link.folderId);
     if (f) {
@@ -326,14 +337,18 @@ function renderHeader(folders: Folder[]): void {
   if (view.mode === 'folder') {
     let folder = store.folder(view.folderId);
     if (!folder) { view.mode = 'all'; return renderHeader(folders); }
-    const path = pathOf(folders, folder.id);
-    path.slice(0, -1).forEach((p, i) => {
+    // Folders sit under Library; the Inbox has its own tab.
+    const crumbs = folder.isSystem ? [] : [
+      { name: 'Library', open: () => go('all') },
+      ...pathOf(folders, folder.id).slice(0, -1).map((p) => ({ name: p.name, open: () => go('folder', p.id) })),
+    ];
+    crumbs.forEach((c, i) => {
       if (i > 0) { const s = document.createElement('span'); s.textContent = '›'; s.setAttribute('aria-hidden', 'true'); crumbEl.appendChild(s); }
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'crumb-link';
-      b.textContent = p.name;
-      b.onclick = () => go('folder', p.id);
+      b.textContent = c.name;
+      b.onclick = c.open;
       crumbEl.appendChild(b);
     });
     if (!folder.isSystem) {
@@ -359,17 +374,7 @@ function renderHeader(folders: Folder[]): void {
     shuffleBtn.onclick = () => { view.shuffleSeed = Math.floor(Math.random() * 2 ** 31) + 1; renderMain(); };
     actions.appendChild(shuffleBtn);
   } else {
-    titleEl.textContent = 'All saves';
-    const foldersBtn = document.createElement('button');
-    foldersBtn.type = 'button';
-    foldersBtn.className = 'btn-ghost with-icon';
-    foldersBtn.setAttribute('aria-haspopup', 'dialog');
-    foldersBtn.append(svgIcon('folder'), document.createTextNode('Folders'));
-    foldersBtn.onclick = async () => {
-      const id = await pickFolder({ title: 'Open a folder' });
-      if (id) go('folder', id);
-    };
-    actions.appendChild(foldersBtn);
+    titleEl.textContent = view.mode === 'favorites' ? 'Favorites' : 'Library';
   }
   for (const extra of headerExtras) extra(actions);
 }
@@ -415,6 +420,8 @@ function render(): void {
     const cta = ghostButton('Save your first link', () => { byId('urlInput').focus(); });
     listEl.appendChild(view.mode === 'revisit'
       ? emptyState(EMPTY_ILLUSTRATION, 'Nothing to revisit', 'Links you haven\'t opened for ' + APP_CONFIG.revisitMinAgeDays + ' days show up here.')
+      : view.mode === 'favorites' && store.liveLinks().length
+      ? emptyState(EMPTY_ILLUSTRATION, 'No favorites yet', 'Open a save\'s menu and pick Add to favorites to keep it here.')
       : emptyState(EMPTY_ILLUSTRATION, 'Your next good find belongs here', 'Save your first link and it\'ll show up here, searchable across every folder.', cta));
     updateBulkBar();
     runRenderHooks();
