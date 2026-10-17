@@ -54,16 +54,22 @@ function markDone(link: Link, card: HTMLElement): void {
   card.classList.add('is-leaving');
   setTimeout(() => {
     setStatus([link.id], 'done');
+    const before = streak;
     streak = recordStreakDay(streak, today());
     void saveMeta(STREAK_META_KEY, streak);
-    showToast('Done! ' + streakText(), true, () => setStatus([link.id], 'unread'));
+    showToast('Done! ' + streakText(), true, () => {
+      setStatus([link.id], 'unread');
+      // Undo shouldn't leave a streak day behind (a no-op if today already counted before this one).
+      streak = before;
+      void saveMeta(STREAK_META_KEY, before ?? null);
+    });
   }, 260);
 }
 
 function titleOf(link: Link): string { return link.title || domainOf(link.url); }
 
-function metaLine(link: Link): HTMLElement {
-  const p = document.createElement('p');
+function metaLine(link: Link, tag: 'p' | 'span' = 'p'): HTMLElement {
+  const p = document.createElement(tag);
   p.className = 'queue-meta';
   p.textContent = pathLabel(store.liveFolders(), link.folderId) + ' · ' + relativeTime(link.createdAt);
   return p;
@@ -129,15 +135,18 @@ function focusCard(link: Link): HTMLElement {
 function nextCard(link: Link): HTMLLIElement {
   const li = document.createElement('li');
   li.className = 'queue-card';
+  // The preview sits outside the button (a button may only hold text-level
+  // content); tapping anywhere on the card still opens the link.
   const open = document.createElement('button');
   open.type = 'button';
   open.className = 'queue-card-open';
   const t = document.createElement('span');
   t.className = 'queue-card-title';
   t.textContent = titleOf(link);
-  open.append(linkVisual(link), t, metaLine(link));
+  open.append(t, metaLine(link, 'span'));
   open.onclick = () => openLink(link);
-  li.append(open, doneButton(link, li, 'queue-card-done', false));
+  li.onclick = (e) => { if (!(e.target as Element).closest('button')) openLink(link); };
+  li.append(linkVisual(link), open, doneButton(link, li, 'queue-card-done', false));
   return li;
 }
 
@@ -189,7 +198,9 @@ function renderQueue(listEl: HTMLElement): void {
   section.appendChild(head);
 
   if (!items.length) {
-    section.appendChild(restingState('Nothing to catch up on', 'Save a few links and Backpocket lines up five a day for you here.'));
+    section.appendChild(store.liveLinks().length
+      ? restingState('All caught up', 'Every save is marked done. Anything new you save shows up here.')
+      : restingState('Nothing to catch up on', 'Save a few links and Backpocket lines up five a day for you here.'));
   } else if (!left.length) {
     section.appendChild(restingState('Queue cleared', 'That was today\'s five. Come back tomorrow for a fresh set.'));
   } else {

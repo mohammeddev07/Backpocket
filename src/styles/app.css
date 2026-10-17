@@ -34,6 +34,7 @@
   --accent-grad: linear-gradient(135deg, #FFA800 0%, #FF7A00 100%);
   --accent-ink: #1A0D00;
   --spring: cubic-bezier(.34, 1.56, .64, 1);
+  --icon-tile: #17181C;      /* the app icon's dark tile, same in both themes */
   --success: #10B981;
   --ease: cubic-bezier(.32, .72, 0, 1);
 
@@ -538,7 +539,7 @@ h1.folder-title {
 .links.is-grid .link-visual { width: 100%; height: auto; aspect-ratio: 4 / 3; border-radius: var(--radius-md); }
 .links.is-grid .link-main { width: 100%; padding: 0 4px; }
 .links.is-grid .link-title { font-size: 14px; }
-.links.is-grid .link-tags { display: none; }
+.links.is-grid .link-tags { margin-top: 6px; }
 .links.is-grid .folder-badge { max-width: 100%; }
 .links.is-grid .link-kebab {
   position: absolute; top: 10px; right: 10px; width: 36px; height: 36px; border-radius: 50%;
@@ -650,15 +651,16 @@ h1.folder-title {
 }
 .queue-next::-webkit-scrollbar { display: none; }
 .queue-card {
-  position: relative; flex: 0 0 64%; scroll-snap-align: start;
+  position: relative; flex: 0 0 64%; scroll-snap-align: start; padding: 8px 8px 12px; cursor: pointer;
   border-radius: var(--radius-lg); background: var(--paper-raised); border: 1px solid var(--line-soft); box-shadow: var(--shadow-card);
   animation: rise .3s var(--ease) both;
 }
 .queue-card-open {
-  display: flex; flex-direction: column; gap: 6px; width: 100%; padding: 8px 8px 12px; border: none; background: none;
+  display: flex; flex-direction: column; gap: 6px; width: 100%; margin-top: 10px; padding: 0; border: none; background: none;
   color: var(--ink); font: inherit; text-align: left; cursor: pointer;
 }
-.queue-card-open .link-visual { --thumb: 110px; width: 100%; height: auto; aspect-ratio: 16 / 10; border-radius: var(--radius-md); margin-bottom: 4px; }
+.queue-card > .link-visual { --thumb: 110px; width: 100%; height: auto; aspect-ratio: 16 / 10; border-radius: var(--radius-md); }
+.queue-card-open .queue-meta { display: block; }
 .queue-card-title {
   padding: 0 4px; font-weight: 600; font-size: 14px; line-height: 1.35;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-clamp: 2; overflow: hidden;
@@ -977,7 +979,7 @@ p.settings-item:empty { display: none; }
 .nudge-head { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink-faint); }
 .nudge-logo {
   display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 7px;
-  background: #17181C; /* the app icon's dark tile, in both themes */
+  background: var(--icon-tile);
 }
 .nudge-logo .brand-mark { width: 19px; height: 19px; }
 .nudge-app { font-weight: 600; color: var(--ink-soft); }

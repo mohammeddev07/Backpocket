@@ -35,11 +35,13 @@ export function initTheme(): void {
 // ---- Settings page ----
 // A full-screen page with its own history entry, so the phone's back gesture
 // (and the browser's Back) closes it like any other screen.
+let pushedEntry = false;
 export function openSettings(): void {
   const page = byId('settingsModal');
   if (page.classList.contains('show')) return;
   openModal(page);
   history.pushState({ bpSettings: true }, '');
+  pushedEntry = true;
   renderNav();
 }
 
@@ -48,11 +50,13 @@ export function initSettings(): void {
   byId('meBtn').onclick = openSettings;
   byId('tabSettings').onclick = openSettings;
   byId('closeSettingsBtn').onclick = () => closeModal(settingsModal);
+  // A reload while Settings was open keeps that entry's state; it's not ours any more.
+  if (history.state?.bpSettings) history.replaceState(null, '');
   onModalClose(settingsModal, () => {
     renderNav();
-    if (history.state?.bpSettings) history.back();
+    if (pushedEntry) { pushedEntry = false; history.back(); }
   });
-  window.addEventListener('popstate', () => closeModal(settingsModal));
+  window.addEventListener('popstate', () => { pushedEntry = false; closeModal(settingsModal); });
   // Rows that open another dialog (Backup & import) step out of Settings first.
   settingsModal.addEventListener('click', (e) => {
     if ((e.target as Element).closest('[data-leaves-settings]')) closeModal(settingsModal);

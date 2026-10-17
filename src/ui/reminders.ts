@@ -111,6 +111,10 @@ function showNudge(link: Link, copy: { title: string; body: string }): void {
   el.hidden = false;
   requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
   armNudgeTimer(12_000);
+  // The banner itself isn't a live region (it holds buttons), so announce it separately.
+  const announce = byId('nudgeAnnounce');
+  announce.textContent = '';
+  setTimeout(() => { announce.textContent = 'Reminder: ' + copy.title + ' ' + copy.body; }, 100);
 }
 
 function initNudgeBanner(): void {

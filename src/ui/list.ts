@@ -4,6 +4,7 @@ import { COLORS } from '../data/migrate';
 import { store } from '../data/store';
 import { pathLabel, pathOf } from '../data/tree';
 import type { Folder, Link } from '../data/types';
+import { isWebUrl } from '../data/urls';
 import { domainOf, faviconFor, platformIconSvg } from '../platform';
 import { selectLinks, viewLinks, type ListQuery } from '../search/filters';
 import { byId, plural, svgIcon } from './dom';
@@ -46,6 +47,7 @@ let extraResults: { query: string; ids: string[] } | null = null;
 export function setExtraResults(r: { query: string; ids: string[] } | null): void { extraResults = r; }
 
 export function openLink(link: Link): void {
+  if (!isWebUrl(link.url)) { showToast('Only web links can be opened, and this one isn\'t.', false); return; }
   window.open(link.url, '_blank', 'noopener,noreferrer');
   markOpened(link.id);
 }
@@ -216,12 +218,14 @@ function buildLinkRow(link: Link, opts: { showFolder: boolean; folders: Folder[]
   // a nested interactive "role=link" wrapped around other buttons.
   const a = document.createElement('a');
   a.className = 'link-title' + (link.title ? '' : ' is-url');
-  a.href = link.url;
+  // Never an href that isn't a web link (old imports may hold javascript: ones).
+  if (isWebUrl(link.url)) a.href = link.url;
   a.target = '_blank';
   a.rel = 'noopener noreferrer';
   a.textContent = link.title || domainOf(link.url);
   a.addEventListener('click', (e) => {
     if (view.selectMode && cb) { e.preventDefault(); cb.checked = !cb.checked; cb.dispatchEvent(new Event('change')); return; }
+    if (!a.href) { e.preventDefault(); openLink(link); return; }
     markOpened(link.id);
   });
   main.appendChild(a);
