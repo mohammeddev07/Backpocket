@@ -33,3 +33,7 @@ npm-debug.log*
 
 # Deno lockfiles from local type-checks
 deno.lock
+
+# Playwright output
+test-results/
+playwright-report/

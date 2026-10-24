@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildQueue, currentStreak, dayKey, recordStreakDay, topUpQueue } from './queue';
+import { agoWords, buildQueue, currentStreak, dayKey, moveId, recordStreakDay, topUpQueue, whyNow } from './queue';
 import type { Link } from './types';
 
 const NOW = new Date(2026, 9, 16, 9, 0).getTime();
@@ -66,5 +66,33 @@ describe('streak', () => {
     expect(currentStreak({ last: yesterday, count: 4 }, today)).toBe(4);
     expect(currentStreak({ last: dayKey(NOW - 2 * DAY), count: 4 }, today)).toBe(0);
     expect(currentStreak(undefined, today)).toBe(0);
+  });
+});
+
+describe('moveId', () => {
+  it('takes the target\'s place in either direction', () => {
+    expect(moveId(['a', 'b', 'c', 'd'], 'd', 'b')).toEqual(['a', 'd', 'b', 'c']);
+    expect(moveId(['a', 'b', 'c', 'd'], 'a', 'c')).toEqual(['b', 'c', 'a', 'd']);
+  });
+
+  it('ignores unknown ids and self moves', () => {
+    const ids = ['a', 'b'];
+    expect(moveId(ids, 'a', 'a')).toBe(ids);
+    expect(moveId(ids, 'z', 'a')).toBe(ids);
+    expect(moveId(ids, 'a', 'z')).toBe(ids);
+  });
+});
+
+describe('whyNow', () => {
+  it('says how long a forgotten save has waited', () => {
+    expect(agoWords(NOW - 3 * DAY, NOW)).toBe('3 days ago');
+    expect(agoWords(NOW - 21 * DAY, NOW)).toBe('3 weeks ago');
+    expect(whyNow(link('a', { createdAt: NOW - 21 * DAY }), NOW, 7)).toBe('Saved 3 weeks ago and never opened');
+    expect(whyNow(link('a', { createdAt: NOW - DAY }), NOW, 7)).toBe('Saved yesterday');
+  });
+
+  it('nudges to finish what was opened', () => {
+    expect(whyNow(link('a', { openedAt: NOW - 60_000 }), NOW, 7)).toBe('You opened this today. Mark it done when you finish.');
+    expect(whyNow(link('a', { openedAt: NOW - 10 * DAY }), NOW, 7)).toBe('You opened this 10 days ago. Finish it off.');
   });
 });

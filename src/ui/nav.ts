@@ -2,7 +2,7 @@ import { inboxId, moveFolderUpDown } from '../actions';
 import { store } from '../data/store';
 import { childrenOf } from '../data/tree';
 import type { Folder } from '../data/types';
-import { byId, plural } from './dom';
+import { byId } from './dom';
 import { confirmDeleteFolder, openFolderModal, openMoveFolder } from './folderDialogs';
 import { type MenuItem } from './menu';
 import { closeModal } from './modal';
@@ -44,8 +44,16 @@ function renderTabbar(): void {
   const n = store.liveLinks().filter((l) => l.folderId === inbox).length;
   const badge = byId('tabInboxBadge');
   badge.hidden = !n;
-  badge.textContent = n > 99 ? '99+' : String(n);
-  byId('tabInbox').setAttribute('aria-label', n ? 'Inbox, ' + plural(n, 'link') : 'Inbox');
+  const label = n > 99 ? '99+' : String(n);
+  if (badge.textContent && badge.textContent !== label) {
+    // A brief bump says the count changed (restart the animation if it's mid-way).
+    badge.classList.remove('is-bump');
+    void badge.offsetWidth;
+    badge.classList.add('is-bump');
+  }
+  badge.textContent = label;
+  // The name starts with what's on screen ("6 Inbox") so voice control users can say it.
+  byId('tabInbox').setAttribute('aria-label', n ? label + ' Inbox ' + (n === 1 ? 'link' : 'links') : 'Inbox');
 }
 
 export function initNav(): void {
