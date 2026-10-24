@@ -1,6 +1,6 @@
 name: Deploy to GitHub Pages
 
-# Settings -> Pages -> Source must be "GitHub Actions".
+# Settings -> Pages -> Source should be "GitHub Actions" (see the deploy job).
 on:
   push:
     branches: [develop]
@@ -10,6 +10,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  actions: read # see "Let GitHub's branch build finish first"
 
 concurrency:
   group: pages
@@ -52,5 +53,26 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      # With Pages set to "Deploy from a branch", every push also starts
+      # GitHub's own "pages build and deployment", which publishes the raw repo
+      # (index.html pointing at /src/main.ts, so no CSS or JS). It used to finish
+      # a few seconds after this workflow and win. Wait for it, so this deploy
+      # lands last. A no-op once Settings -> Pages -> Source is "GitHub Actions".
+      - name: Let GitHub's branch build finish first
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          type=$(gh api "repos/$REPO/pages" --jq .build_type || echo unknown)
+          if [ "$type" = workflow ]; then exit 0; fi
+          echo "::warning::Pages source is '$type'. Set Settings > Pages > Source to 'GitHub Actions' to stop the duplicate branch build."
+          for _ in $(seq 60); do
+            running=$(gh api "repos/$REPO/actions/runs?head_sha=$SHA&event=dynamic" \
+              --jq '[.workflow_runs[] | select(.name == "pages build and deployment" and .status != "completed")] | length')
+            if [ "$running" = 0 ]; then exit 0; fi
+            sleep 5
+          done
+          echo "::warning::The branch build was still running after 5 minutes; deploying anyway."
       - id: deployment
         uses: actions/deploy-pages@v5
