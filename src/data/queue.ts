@@ -70,3 +70,35 @@ export function recordStreakDay(s: Streak | undefined, today: string): Streak {
 export function currentStreak(s: Streak | undefined, today: string): number {
   return s && (s.last === today || s.last === dayBefore(today)) ? s.count : 0;
 }
+
+/** Moves `id` into `targetId`'s place (drag and drop, Shift+J/K). */
+export function moveId(ids: string[], id: string, targetId: string): string[] {
+  const to = ids.indexOf(targetId);
+  if (id === targetId || to < 0 || !ids.includes(id)) return ids;
+  const out = ids.filter((x) => x !== id);
+  out.splice(to, 0, id);
+  return out;
+}
+
+const DAY_MS = 86_400_000;
+
+/** "3 weeks ago" style, for sentences (relativeTime's "3w ago" is for meta rows). */
+export function agoWords(ts: number, now: number): string {
+  const days = Math.floor((now - ts) / DAY_MS);
+  if (days < 1) return 'today';
+  if (days < 2) return 'yesterday';
+  if (days < 14) return days + ' days ago';
+  if (days < 60) return Math.floor(days / 7) + ' weeks ago';
+  if (days < 730) return Math.floor(days / 30) + ' months ago';
+  return Math.floor(days / 365) + ' years ago';
+}
+
+/** One line on why this save is up today, from the same signals the picker uses. */
+export function whyNow(link: Link, now: number, minAgeDays: number): string {
+  if (link.openedAt != null) {
+    return dayKey(link.openedAt) === dayKey(now)
+      ? 'You opened this today. Mark it done when you finish.'
+      : 'You opened this ' + agoWords(link.openedAt, now) + '. Finish it off.';
+  }
+  return 'Saved ' + agoWords(link.createdAt, now) + (isRevisitCandidate(link, now, minAgeDays) ? ' and never opened' : '');
+}

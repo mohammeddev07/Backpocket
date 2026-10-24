@@ -413,7 +413,9 @@ function render(): void {
     : plural(inView.length, 'saved link');
 
   const listEl = byId('linksList');
-  if (listOverrides.some((fn) => fn(listEl))) { byId('listToolbar').hidden = true; byId('resultCount').hidden = true; updateBulkBar(); runRenderHooks(); return; }
+  // The <ul> only holds <li> rows; a takeover view or an empty state isn't a list.
+  listEl.removeAttribute('role');
+  if (listOverrides.some((fn) => fn(listEl))) { listEl.setAttribute('role', 'none'); byId('listToolbar').hidden = true; byId('resultCount').hidden = true; updateBulkBar(); runRenderHooks(); return; }
   byId('listToolbar').hidden = false;
   listEl.replaceChildren();
   const previouslyShown = view.shownLinkIds;
@@ -421,6 +423,7 @@ function render(): void {
 
   if (store.liveLinks().length === 0 || (inView.length === 0 && !view.query && view.mode !== 'folder')) {
     byId('resultCount').hidden = true;
+    listEl.setAttribute('role', 'none');
     const cta = ghostButton('Save your first link', () => byId('tabAddBtn').click());
     listEl.appendChild(view.mode === 'revisit'
       ? emptyState(EMPTY_ILLUSTRATION, 'Nothing to revisit', 'Links you haven\'t opened for ' + APP_CONFIG.revisitMinAgeDays + ' days show up here.')
