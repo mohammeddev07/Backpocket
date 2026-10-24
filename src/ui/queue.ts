@@ -169,6 +169,8 @@ function folderLine(link: Link, cls: string): HTMLElement {
   p.className = cls;
   const dot = document.createElement('span');
   dot.className = 'queue-dot';
+  const c = folderColor(link);
+  if (c) dot.style.setProperty('--c', c);
   p.append(dot, pathLabel(store.liveFolders(), link.folderId));
   return p;
 }
@@ -181,15 +183,12 @@ function visual(link: Link): HTMLElement {
 
 /**
  * Card root shared by the focus card and Up next. data-qid lets transition()
- * follow a card to its new spot; --c (folder colour) tints the generated tile
- * and the folder dot. Any card is a drop target.
+ * follow a card to its new spot. Any card is a drop target.
  */
 function itemShell<K extends 'article' | 'li'>(tag: K, link: Link, cls: string): HTMLElementTagNameMap[K] {
   const el = document.createElement(tag);
   el.className = cls;
   el.dataset.qid = link.id;
-  const c = folderColor(link);
-  if (c) el.style.setProperty('--c', c);
   el.addEventListener('dragover', (e) => { if (dragId && dragId !== link.id) { e.preventDefault(); el.classList.add('is-drop'); } });
   el.addEventListener('dragleave', () => el.classList.remove('is-drop'));
   el.addEventListener('drop', (e) => { e.preventDefault(); el.classList.remove('is-drop'); if (dragId) moveCard(dragId, link.id); });

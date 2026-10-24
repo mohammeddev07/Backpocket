@@ -69,6 +69,8 @@
   --danger-tint: rgba(180, 35, 24, .08);
   --selected-fill: rgba(255, 138, 0, .11);
   --glow: rgba(255, 122, 0, .16);
+  --backdrop-glow: rgba(255, 138, 0, .09);  /* desktop page ambience, see body::before */
+  --grain: .05;
   --platform-x: #33383F;
   --glyph-mix: 70%;          /* pulls legacy pastel folder colours toward ink so they read on white */
   --scrim: rgba(12, 13, 18, .45);
@@ -95,6 +97,8 @@
   --danger-tint: rgba(248, 113, 113, .1);
   --selected-fill: rgba(255, 138, 0, .1);
   --glow: rgba(255, 122, 0, .13);
+  --backdrop-glow: rgba(255, 122, 0, .14);
+  --grain: .07;
   --platform-x: #C9CCD1;     /* X's near-black disappears on dark surfaces */
   --glyph-mix: 100%;
   --scrim: rgba(3, 3, 6, .62);
@@ -115,6 +119,21 @@ body {
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent; /* :active states give feedback instead of the grey flash */
+}
+/* Desktop has wide open page around the content: a still ember glow and a
+   fine grain keep it from reading as flat black or white. Fixed layers,
+   never animated; cards and the sidebar sit on top unchanged. */
+@media (min-width: 768px) and (min-height: 520px) {
+  body::before, body::after { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+  body::before {
+    background:
+      radial-gradient(60vw 42vw at 88% -12%, var(--backdrop-glow), transparent 70%),
+      radial-gradient(42vw 30vw at 18% 112%, var(--backdrop-glow), transparent 70%);
+  }
+  body::after {
+    opacity: var(--grain);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  }
 }
 ::selection { background: color-mix(in srgb, var(--accent) 35%, transparent); }
 a { color: inherit; }
@@ -310,8 +329,6 @@ h1.folder-title {
   width: min(100%, calc(30vh * 16 / 9)); width: min(100%, calc(30dvh * 16 / 9));
 }
 .save-preview.is-tall .link-visual { aspect-ratio: 9 / 16; width: min(132px, calc(30vh * 9 / 16)); width: min(132px, calc(30dvh * 9 / 16)); }
-.save-preview .tile-badge { left: 8px; bottom: 8px; width: 26px; height: 26px; border-radius: 8px; }
-.save-preview .tile-badge .icon, .save-preview .tile-badge img { width: 15px; height: 15px; }
 .save-sheet .save-preview[hidden] + label { margin-top: 16px; }
 
 /* Footer stays put while the form scrolls. */
@@ -456,51 +473,23 @@ h1.folder-title {
   content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08);
 }
-.tile { display: flex; align-items: center; justify-content: center; isolation: isolate; color: #fff; }
-.tile-initial {
-  font: 600 calc(var(--thumb) * .36)/1 var(--font-sans); letter-spacing: -.03em;
-  color: rgba(255, 255, 255, .94); text-shadow: 0 2px 12px rgba(0, 0, 0, .25);
-  transform: translate(3px, -3px);
+/* Generated tile: dark in both themes, tinted by the save's folder colour
+   (--c, set by fallbackTile) with the platform mark centred and scaled to
+   the box, so a row of Instagram saves still reads apart by folder. */
+.tile {
+  display: flex; align-items: center; justify-content: center; isolation: isolate; color: #fff;
+  background:
+    radial-gradient(70% 80% at 22% 12%, color-mix(in srgb, var(--c, var(--accent)) 60%, transparent), transparent 70%),
+    linear-gradient(150deg, color-mix(in srgb, var(--c, var(--accent)) 34%, var(--icon-tile)), var(--icon-tile));
 }
 .tile-badge {
-  position: absolute; left: 5px; bottom: 5px; width: 18px; height: 18px; border-radius: 6px;
+  --b: clamp(22px, calc(var(--thumb) * .34), 52px);
+  width: var(--b); height: var(--b); border-radius: calc(var(--b) * .3);
   display: flex; align-items: center; justify-content: center;
   background: rgba(8, 8, 12, .5); color: #fff; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14);
 }
-.tile-badge .icon { width: 11px; height: 11px; }
-.tile-badge img { width: 11px; height: 11px; border-radius: 3px; display: block; }
-.tile[data-kind="instagram"] {
-  background:
-    radial-gradient(60% 60% at 18% 12%, #FEDA75 0, transparent 70%),
-    radial-gradient(70% 70% at 92% 18%, #8134AF 0, transparent 70%),
-    radial-gradient(80% 80% at 70% 100%, #DD2A7B 0, transparent 70%),
-    linear-gradient(135deg, #C13584, #5B51D8);
-}
-.tile[data-kind="youtube"] { background: radial-gradient(80% 70% at 25% 15%, rgba(255, 160, 140, .55), transparent 70%), linear-gradient(140deg, #FF4E45, #8E0E00); }
-.tile[data-kind="tiktok"] {
-  background:
-    radial-gradient(70% 60% at 15% 15%, rgba(37, 244, 238, .45), transparent 70%),
-    radial-gradient(70% 60% at 90% 95%, rgba(254, 44, 85, .55), transparent 70%),
-    linear-gradient(135deg, #1C1F27, #0B0C10);
-}
-.tile[data-kind="facebook"] { background: radial-gradient(80% 70% at 25% 15%, rgba(160, 200, 255, .5), transparent 70%), linear-gradient(140deg, #4C8DF6, #1A3E8C); }
-.tile[data-kind="x"] { background: radial-gradient(80% 70% at 25% 15%, rgba(255, 255, 255, .16), transparent 70%), linear-gradient(140deg, #2A2D36, #0F1014); }
-.tile[data-kind="code"] {
-  background-color: #10121A;
-  background-image:
-    linear-gradient(rgba(255, 138, 0, .11) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 138, 0, .11) 1px, transparent 1px),
-    radial-gradient(80% 70% at 85% 10%, rgba(255, 122, 0, .42), transparent 70%),
-    linear-gradient(140deg, #1B1E28, #0B0C11);
-  background-size: 11px 11px, 11px 11px, auto, auto;
-}
-.tile[data-kind="code"] .tile-initial { color: #FFB547; text-shadow: 0 0 18px rgba(255, 122, 0, .35); }
-/* Any other site: hue, angle and highlight position come from the URL hash. */
-.tile[data-kind="link"] {
-  background:
-    radial-gradient(75% 65% at var(--tile-x, 25%) var(--tile-y, 20%), hsl(var(--tile-h, 30) 75% 62% / .5), transparent 70%),
-    linear-gradient(var(--tile-a, 135deg), hsl(var(--tile-h, 30) 32% 26%), hsl(calc(var(--tile-h, 30) + 40) 28% 11%));
-}
+.tile-badge .icon, .tile-badge img { width: 50%; height: 50%; }
+.tile-badge img { border-radius: 3px; display: block; }
 
 .link-main { flex: 1; min-width: 0; padding-top: 2px; }
 .link-title {
@@ -735,19 +724,8 @@ h1.folder-title {
 .queue-card-done:hover { background: var(--accent-grad); color: var(--accent-ink); }
 .queue-card-done:active { transform: scale(.88); }
 
-/* Generated tiles in the queue: tinted by folder colour (--c) with the
-   platform mark large instead of a letter, so five Instagram saves in
-   different folders don't all look the same. */
-.queue .tile {
-  background:
-    radial-gradient(70% 80% at 22% 12%, color-mix(in srgb, var(--c, var(--accent)) 60%, transparent), transparent 70%),
-    linear-gradient(150deg, color-mix(in srgb, var(--c, var(--accent)) 34%, var(--icon-tile)), var(--icon-tile));
-}
-.queue .tile-initial, .queue-media:has(.queue-play) .tile-badge { display: none; }
-.queue .tile-badge { position: static; width: 52px; height: 52px; border-radius: 16px; }
-.queue .tile-badge .icon, .queue .tile-badge img { width: 26px; height: 26px; border-radius: 6px; }
-.queue-card .tile-badge { width: 40px; height: 40px; border-radius: 12px; }
-.queue-card .tile-badge .icon, .queue-card .tile-badge img { width: 20px; height: 20px; }
+/* The play disc already says what it is; no platform mark under it. */
+.queue-media:has(.queue-play) .tile-badge { display: none; }
 
 /* Entering the tab: cards rise in once, one after another. */
 .queue.is-entering .queue-focus, .queue.is-entering .queue-card {
@@ -812,7 +790,6 @@ h1.folder-title {
 }
 .recap-pick:hover { border-color: var(--line); background: var(--hover); }
 .recap-pick .link-visual { border-radius: 10px; }
-.recap-pick .tile-badge { display: none; }
 .recap-pick-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .recap-pick-title { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .recap-pick-folder { font-size: 12.5px; color: var(--ink-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1102,7 +1079,6 @@ p.settings-item:empty { display: none; }
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; line-clamp: 3; overflow: hidden;
 }
 .nudge-thumb .link-visual { --thumb: 56px; border-radius: 12px; }
-.nudge-thumb .tile-badge { display: none; }
 .nudge-actions { display: flex; gap: 8px; margin-top: 12px; }
 .nudge-open {
   flex: 1; min-height: 40px; border: none; border-radius: var(--radius-md); cursor: pointer;

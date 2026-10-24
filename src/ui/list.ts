@@ -125,44 +125,25 @@ function linkMenu(link: Link): MenuItem[] {
   ];
 }
 
-// Sites that get the code-grid tile instead of a hue-from-URL pattern.
-const CODE_HOSTS = /(^|\.)(github\.com|gitlab\.com|bitbucket\.org|stackoverflow\.com|stackexchange\.com|npmjs\.com|codepen\.io|dev\.to|developer\.mozilla\.org|huggingface\.co|vercel\.app|netlify\.app)$/;
-
-function hashStr(s: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
-  return h >>> 0;
-}
-
 /**
- * Local stand-in when there's no real thumbnail: a gradient tile in the
- * platform's colours with the title's first letter and a small platform icon.
- * Deterministic per link, drawn with CSS only - nothing is fetched or invented.
+ * Local stand-in when there's no real thumbnail: a dark tile tinted with the
+ * save's folder colour (--c) and the platform mark (or the site's favicon) in
+ * the middle, so saves from one platform still look different by folder.
+ * Drawn with CSS only - nothing is fetched or invented.
  */
 export function fallbackTile(link: Link): HTMLElement {
   const tile = document.createElement('div');
   tile.className = 'link-visual tile';
-  const host = domainOf(link.url);
-  const kind = link.platform !== 'Link' ? link.platform.toLowerCase() : CODE_HOSTS.test(host) ? 'code' : 'link';
-  tile.dataset.kind = kind;
-  if (kind === 'link') {
-    const h = hashStr(host);
-    tile.style.setProperty('--tile-h', String(h % 360));
-    tile.style.setProperty('--tile-a', (100 + (h >>> 9) % 120) + 'deg');
-    tile.style.setProperty('--tile-x', (15 + (h >>> 3) % 70) + '%');
-    tile.style.setProperty('--tile-y', (10 + (h >>> 6) % 40) + '%');
-  }
-  const initial = document.createElement('span');
-  initial.className = 'tile-initial';
-  initial.setAttribute('aria-hidden', 'true');
-  initial.textContent = ((link.title || host).match(/[\p{L}\p{N}]/u)?.[0] || '#').toUpperCase();
+  // The Inbox's colour is a neutral grey; its saves get the warm accent instead.
+  const folder = store.liveFolders().find((f) => f.id === link.folderId);
+  if (folder && !folder.isSystem) tile.style.setProperty('--c', folder.color);
   const badge = document.createElement('span');
   badge.className = 'tile-badge';
   // Privacy mode never contacts Google's favicon service; known platforms use
   // their own icon anyway (clearer than a favicon at this size).
   if (store.settings.localIconsOnly || link.platform !== 'Link') badge.innerHTML = platformIconSvg(link.platform);
   else badge.appendChild(faviconFor(link.id, link.url, link.platform));
-  tile.append(initial, badge);
+  tile.appendChild(badge);
   return tile;
 }
 
