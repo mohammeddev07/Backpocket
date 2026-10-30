@@ -3,9 +3,10 @@ import { defineConfig } from 'vitest/config';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
-  // GitHub Pages serves the repo under /Backpocket/. The manifest and share
-  // target use relative paths, so they keep working under this base.
-  base: '/Backpocket/',
+  // GitHub Pages serves the repo under /Backpocket/; Cloudflare Pages (CF_PAGES
+  // is set in its builds) serves from the domain root. The manifest and share
+  // target use relative paths, so they keep working under either base.
+  base: process.env.CF_PAGES ? '/' : '/Backpocket/',
   resolve: {
     alias: {
       // Prompts, schemas and limits shared with the Deno Edge Function.
