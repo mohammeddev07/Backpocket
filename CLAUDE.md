@@ -12,7 +12,7 @@ npm run build            # typecheck + production build (dist/)
 npm run check:functions  # Deno type-check of supabase/functions/*
 ```
 
-Deploy: pushing to `develop` publishes the frontend (`.github/workflows/deploy.yml`). Backend is manual and done by the owner: `npx supabase db push` (migrations) and `npx supabase functions deploy ai`. Never run deploys, `db push` or anything against the live Supabase project yourself; write the migration/function and hand over the commands.
+Deploy: merging `develop` into `release` tags the next version and publishes the frontend to GitHub Pages and Cloudflare Pages; running the workflow by hand with an old tag rolls back, after approval (`.github/workflows/release.yml`). Backend is manual and done by the owner: `npx supabase db push` (migrations) and `npx supabase functions deploy ai`. Never run deploys, `db push` or anything against the live Supabase project yourself; write the migration/function and hand over the commands.
 
 ## Architecture in one screen
 

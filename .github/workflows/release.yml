@@ -1,0 +1,135 @@
+name: Release
+
+# Merge develop -> release: tags the next version and deploys it to GitHub Pages
+# and Cloudflare Pages. To roll back (or forward), run this workflow by hand
+# with an existing tag (e.g. v2.0.1); that run waits for approval.
+# Settings -> Pages -> Source must be "GitHub Actions", or GitHub's own branch
+# build publishes the raw repo over this deploy.
+on:
+  push:
+    branches: [release]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing version tag to deploy, e.g. v2.0.1
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  # Only exists to pause for approval: the rollback environment has required
+  # reviewers, the normal one doesn't.
+  gate:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event_name == 'workflow_dispatch' && 'production-rollback' || 'production' }}
+    steps:
+      - env:
+          WHAT: ${{ inputs.tag || github.sha }}
+        run: echo "Deploying $WHAT"
+
+  build:
+    needs: gate
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Tags only on a rollback, so a typo can't deploy a branch.
+          ref: ${{ inputs.tag && format('refs/tags/{0}', inputs.tag) || github.sha }}
+          fetch-depth: 0
+      - name: Next version
+        id: tag
+        if: github.event_name == 'push'
+        # package.json's version if it isn't tagged yet (bump it in the PR for
+        # a minor or major release), otherwise the latest tag plus one patch.
+        run: |
+          v="v$(node -p "require('./package.json').version")"
+          if git rev-parse -q --verify "refs/tags/$v" >/dev/null; then
+            last=$(git tag -l 'v*' --sort=-v:refname | head -1)
+            v="${last%.*}.$(( ${last##*.} + 1 ))"
+          fi
+          echo "tag=$v" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Build
+        run: npm run build
+        env:
+          # Public by design (the anon key only works through RLS policies).
+          # Set them as repository variables; secrets work too.
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY || secrets.VITE_SUPABASE_ANON_KEY }}
+      - name: Build for Cloudflare (served from the domain root)
+        run: npx vite build --outDir dist-cf
+        env:
+          CF_PAGES: 1
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY || secrets.VITE_SUPABASE_ANON_KEY }}
+      - name: No Gemini key in the bundles
+        # Google API keys start with "AIza". The app never embeds one - the
+        # server key lives in Supabase secrets and BYOK keys stay on-device.
+        run: |
+          if grep -rE 'AIza[0-9A-Za-z_-]{35}' dist/ dist-cf/; then
+            echo "::error::A Google API key was found in the build"; exit 1
+          fi
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cloudflare-dist
+          path: dist-cf
+
+  github-pages:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
+
+  cloudflare:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: cloudflare-dist
+          path: dist-cf
+      # The project must be a Direct Upload one (a Git-connected project
+      # rejects uploads); "main" is its production branch.
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist-cf --project-name=backpocket --branch=main
+
+  # After both deploys succeed, so a failed deploy leaves no tag behind and
+  # re-running the workflow picks the same version.
+  release:
+    if: github.event_name == 'push'
+    needs: [build, github-pages, cloudflare]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Tag and publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.build.outputs.tag }}
+        run: gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "$TAG" --generate-notes
