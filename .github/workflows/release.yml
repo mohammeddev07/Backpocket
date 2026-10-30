@@ -1,8 +1,10 @@
 name: Release
 
-# Merge develop -> release: tags the next version and deploys it to GitHub Pages
-# and Cloudflare Pages. To roll back (or forward), run this workflow by hand
-# with an existing tag (e.g. v2.0.1); that run waits for approval.
+# Merge develop -> release: tags the next version and deploys it to GitHub Pages.
+# Cloudflare Pages builds `release` on its own (it is that project's production
+# branch), so rolling back there is done in the Cloudflare dashboard.
+# To roll back (or forward) GitHub Pages, run this workflow by hand with an
+# existing tag (e.g. v2.0.1); that run waits for approval.
 # Settings -> Pages -> Source must be "GitHub Actions", or GitHub's own branch
 # build publishes the raw repo over this deploy.
 on:
@@ -68,27 +70,17 @@ jobs:
           # Set them as repository variables; secrets work too.
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY || secrets.VITE_SUPABASE_ANON_KEY }}
-      - name: Build for Cloudflare (served from the domain root)
-        run: npx vite build --outDir dist-cf
-        env:
-          CF_PAGES: 1
-          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY || secrets.VITE_SUPABASE_ANON_KEY }}
-      - name: No Gemini key in the bundles
+      - name: No Gemini key in the bundle
         # Google API keys start with "AIza". The app never embeds one - the
         # server key lives in Supabase secrets and BYOK keys stay on-device.
         run: |
-          if grep -rE 'AIza[0-9A-Za-z_-]{35}' dist/ dist-cf/; then
-            echo "::error::A Google API key was found in the build"; exit 1
+          if grep -rE 'AIza[0-9A-Za-z_-]{35}' dist/; then
+            echo "::error::A Google API key was found in dist/"; exit 1
           fi
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:
           path: dist
-      - uses: actions/upload-artifact@v4
-        with:
-          name: cloudflare-dist
-          path: dist-cf
 
   github-pages:
     needs: build
@@ -103,27 +95,11 @@ jobs:
       - id: deployment
         uses: actions/deploy-pages@v5
 
-  cloudflare:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: cloudflare-dist
-          path: dist-cf
-      # The project must be a Direct Upload one (a Git-connected project
-      # rejects uploads); "main" is its production branch.
-      - uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist-cf --project-name=backpocket --branch=main
-
-  # After both deploys succeed, so a failed deploy leaves no tag behind and
+  # After the deploy succeeds, so a failed deploy leaves no tag behind and
   # re-running the workflow picks the same version.
   release:
     if: github.event_name == 'push'
-    needs: [build, github-pages, cloudflare]
+    needs: [build, github-pages]
     runs-on: ubuntu-latest
     permissions:
       contents: write

@@ -172,7 +172,7 @@ npm run preview          # serve dist/ with the service worker on
 npm run check:functions  # type-check the Edge Functions with Deno
 ```
 
-Merging `develop` into `release` runs `.github/workflows/release.yml`, which tests, builds, publishes to GitHub Pages and Cloudflare Pages, and tags the next version (`v2.0.1`, ...). To roll back, run that workflow by hand with an older tag; it waits for approval. Backend changes deploy separately:
+Merging `develop` into `release` runs `.github/workflows/release.yml`, which tests, builds, publishes to GitHub Pages and tags the next version (`v2.0.1`, ...). Cloudflare Pages builds the same branch on its own. To roll back GitHub Pages, run that workflow by hand with an older tag; it waits for approval. Roll back Cloudflare from its dashboard (Deployments, Rollback). Backend changes deploy separately:
 
 ```bash
 npx supabase db push               # apply new migrations
