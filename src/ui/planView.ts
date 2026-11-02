@@ -159,7 +159,7 @@ function renderPlan(listEl: HTMLElement, folder: Folder): void {
   meter.setAttribute('aria-valuenow', String(doneCount));
   meter.setAttribute('aria-label', 'Plan progress');
   const fill = document.createElement('span');
-  fill.style.width = (plan.items.length ? (doneCount / plan.items.length) * 100 : 0) + '%';
+  fill.style.transform = `scaleX(${plan.items.length ? doneCount / plan.items.length : 0})`;
   meter.appendChild(fill);
 
   const ol = document.createElement('ol');

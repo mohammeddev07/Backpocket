@@ -1,7 +1,7 @@
 // Server-only helpers for the Edge Functions (Deno). Kept out of _shared/,
 // which the browser app also imports.
 
-const DEFAULT_ORIGINS = 'https://mohammeddev07.github.io,http://localhost:5173,http://localhost:4173';
+const DEFAULT_ORIGINS = 'https://backpocketapp.pages.dev,https://mohammeddev07.github.io,http://localhost:5173,http://localhost:4173';
 
 function allowedOrigins(): string[] {
   return (Deno.env.get('ALLOWED_ORIGINS') || DEFAULT_ORIGINS).split(',').map((s) => s.trim()).filter(Boolean);

@@ -16,8 +16,7 @@ export const NUDGE_GAP_MS = 20 * 3_600_000;
 const DAY = 86_400_000;
 
 /**
- * System notification look, shared by the page (test nudge) and the worker:
- * the app icon, the monochrome status-bar badge Android needs, and Open/Later
+ * System notification look for the worker: the app icon, the monochrome status-bar badge Android needs, and Open/Later
  * buttons when the nudge is about a link. Paths are relative to the worker scope.
  */
 export function nudgeNotification(body: string, url?: string): NotificationOptions {
