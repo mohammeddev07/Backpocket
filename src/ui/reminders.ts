@@ -3,7 +3,7 @@ import { aiCall } from '../ai/client';
 import { revisitPickIds } from '../ai/related';
 import { APP_CONFIG } from '../config';
 import {
-  isNudgeable, NUDGE_GAP_MS, NUDGE_HISTORY_KEY, NUDGE_META_KEY, NUDGE_NEXT_KEY, NUDGE_SYNC_TAG, nudgeCopy, nudgeNotification, pickForgotten,
+  isNudgeable, NUDGE_GAP_MS, NUDGE_HISTORY_KEY, NUDGE_META_KEY, NUDGE_NEXT_KEY, NUDGE_SYNC_TAG, nudgeCopy, pickForgotten,
   pushNudgeHistory, recentlyNudged, usablePrepared, type NudgeHistoryEntry, type PreparedNudge,
 } from '../data/nudge';
 import { store } from '../data/store';
@@ -12,7 +12,6 @@ import type { Link } from '../data/types';
 import { domainOf } from '../platform';
 import { byId } from './dom';
 import { linkVisual, openLink } from './list';
-import { showToast } from './toast';
 
 // "Forgotten save" reminders. Two delivery paths, no server:
 // - in-app: a nudge toast when Backpocket is opened (every browser);
@@ -205,29 +204,6 @@ function renderStatus(mode: Mode): void {
   byId('remindersStatus').textContent = store.settings.remindersEnabled ? STATUS[mode] : '';
 }
 
-async function sendTest(): Promise<void> {
-  const now = Date.now();
-  const links = store.liveLinks();
-  const link = await chooseLink(now)
-    ?? [...links].filter((l) => l.status !== 'done').sort((a, b) => a.createdAt - b.createdAt)[0]
-    ?? links[0];
-  if (!link) { showToast('Nothing in your pocket yet. Save something and we\'ll nag you about it later.', false); return; }
-  const btn = byId<HTMLButtonElement>('remindersTestBtn');
-  btn.disabled = true;
-  try {
-    const copy = await writeCopy(link, now);
-    const reg = await registration();
-    if (reg && 'Notification' in window && Notification.permission === 'granted') {
-      await reg.showNotification(copy.title, nudgeNotification(copy.body, link.url));
-      showToast('Test nudge sent. Check your notifications.', true);
-    } else {
-      showNudge(link, copy);
-    }
-  } finally {
-    btn.disabled = false;
-  }
-}
-
 export function initReminders(): void {
   initNudgeBanner();
   const toggle = byId<HTMLInputElement>('remindersToggle');
@@ -238,7 +214,6 @@ export function initReminders(): void {
     renderStatus(await setBackground(toggle.checked, true));
     if (toggle.checked) void ensurePrepared();
   });
-  byId('remindersTestBtn').onclick = () => void sendTest();
   // Re-arm background sync on load (no prompt), and nudge when returning to the app.
   void setBackground(store.settings.remindersEnabled, false).then(renderStatus);
   document.addEventListener('visibilitychange', () => void maybeNudge());

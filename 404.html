@@ -18,14 +18,14 @@
 <link rel="stylesheet" href="/src/styles/app.css">
 </head>
 <body>
-<!-- GitHub Pages serves this for any missing path at any depth, so links are absolute. -->
+<!-- Served for any missing path at any depth, so links are absolute. Vite fills in the base. -->
 <main class="doc">
-  <a class="doc-brand" href="/Backpocket/"><img src="/icons/mark.svg" alt="" width="32" height="32">Backpocket</a>
+  <a class="doc-brand" href="%BASE_URL%"><img src="/icons/mark.svg" alt="" width="32" height="32">Backpocket</a>
   <h1>This page isn't in your pocket</h1>
   <p>The link may be old or mistyped. Your saves are fine, they're right where you left them.</p>
   <p class="doc-links">
-    <a class="btn-primary" href="/Backpocket/">Open Backpocket</a>
-    <a class="btn-ghost" href="/Backpocket/privacy.html">Privacy policy</a>
+    <a class="btn-primary" href="%BASE_URL%">Open Backpocket</a>
+    <a class="btn-ghost" href="%BASE_URL%privacy.html">Privacy policy</a>
   </p>
 </main>
 </body>

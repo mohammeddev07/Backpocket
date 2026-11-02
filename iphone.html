@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Add to iPhone share sheet - Backpocket</title>
+<meta name="description" content="Save links to Backpocket from Instagram, TikTok, YouTube and any other iPhone app. Set up a free Apple Shortcut in about 2 minutes, step by step.">
+<link rel="canonical" href="https://backpocketapp.pages.dev/iphone">
+<link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#f6f5f3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#090a0c" media="(prefers-color-scheme: dark)">
+<script>
+  try {
+    var t = localStorage.getItem('backpocket_theme');
+    if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', t);
+  } catch (e) {}
+</script>
+<link rel="stylesheet" href="/src/styles/app.css">
+</head>
+<body>
+<main class="doc">
+  <a class="icon-btn back-btn" href="./" aria-label="Back" onclick="if (history.length > 1 && document.referrer.indexOf(location.origin) === 0) { history.back(); return false; }"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></a>
+  <h1>Add Backpocket to your iPhone share sheet</h1>
+  <p>iPhone doesn't let web apps join the share sheet directly, so a free Apple Shortcut does it. Set it up once, in about 2 minutes, then tap Share and Backpocket in Instagram, TikTok, YouTube or anywhere else.</p>
+
+  <ol class="doc-steps">
+    <li>
+      <h2>Create the shortcut</h2>
+      <p>Open the <strong>Shortcuts</strong> app and tap <strong>+</strong> to make a new shortcut. Tap the <strong>i</strong> button in the bottom bar and turn on <strong>Show in Share Sheet</strong>.</p>
+      <img class="doc-shot" src="/iphone/step-1.webp" width="1170" height="386" alt="The bottom bar of the Shortcuts editor. The i button is in the middle, between the redo and share buttons.">
+    </li>
+    <li>
+      <h2>Choose what it receives</h2>
+      <p>A <strong>Receive</strong> block appears at the top. Tap its blue input types and make sure <strong>URLs</strong> and <strong>Text</strong> are on. Leaving the rest on is fine, it then reads "Apps and 18 more". Leave <strong>If there's no input</strong> on <strong>Continue</strong>.</p>
+      <img class="doc-shot" src="/iphone/step-2.webp" width="1170" height="494" alt="The block reads: Receive Apps and 18 more from Share Sheet. If there's no input: Continue.">
+    </li>
+    <li>
+      <h2>Find the link</h2>
+      <p>Search for <strong>Get URLs from Input</strong> and add it. It should read <strong>Get URLs from Shortcut Input</strong>.</p>
+      <img class="doc-shot" src="/iphone/step-3.webp" width="1170" height="279" loading="lazy" alt="The block reads: Get URLs from Shortcut Input.">
+    </li>
+    <li>
+      <h2>Handle shares with no link</h2>
+      <p>Add <strong>If</strong> and set the condition to <strong>URLs</strong> <strong>does not have any value</strong>. Inside it, add <strong>Text</strong> and insert the <strong>Shortcut Input</strong> variable.</p>
+      <img class="doc-shot" src="/iphone/step-4.webp" width="1170" height="753" loading="lazy" alt="An If block reading: If URLs does not have any value. Below it, a Text block containing Shortcut Input.">
+    </li>
+    <li>
+      <h2>Handle shares with a link</h2>
+      <p>Under <strong>Otherwise</strong>, add another <strong>Text</strong> and insert the <strong>URLs</strong> variable.</p>
+      <img class="doc-shot" src="/iphone/step-5.webp" width="1170" height="665" loading="lazy" alt="An Otherwise block, followed by a Text block containing URLs.">
+    </li>
+    <li>
+      <h2>Encode the result</h2>
+      <p>Below <strong>End If</strong>, add <strong>URL Encode</strong> and set its input to <strong>If Result</strong>.</p>
+      <img class="doc-shot" src="/iphone/step-6.webp" width="1170" height="393" loading="lazy" alt="An End If block, followed by a block reading: URL Encode If Result.">
+    </li>
+    <li>
+      <h2>Open Backpocket</h2>
+      <p>Add <strong>Open URLs</strong> and paste this link:</p>
+      <div class="doc-copy">
+        <code id="shortcutUrl">https://backpocketapp.pages.dev/?url=</code>
+        <button type="button" class="btn-ghost" id="copyShortcutUrl" aria-live="polite">Copy</button>
+      </div>
+      <p>Then insert the <strong>URL Encoded Text</strong> variable straight after it, with no space in between.</p>
+      <img class="doc-shot" src="/iphone/step-7.webp" width="1170" height="481" loading="lazy" alt="The block reads: Open https://backpocketapp.pages.dev/?url= followed by URL Encoded Text.">
+    </li>
+    <li>
+      <h2>Name it</h2>
+      <p>Tap the name at the top, choose <strong>Rename</strong> and call it <strong>Backpocket</strong>. Then tap <strong>Choose Icon</strong> to pick one.</p>
+      <img class="doc-shot" src="/iphone/step-8.webp" width="1170" height="165" loading="lazy" alt="The top of the Shortcuts editor, with the shortcut's icon and the name Backpocket in the centre.">
+    </li>
+  </ol>
+
+  <h2>Try it</h2>
+  <p>Open any app, tap <strong>Share</strong> and choose <strong>Backpocket</strong>. Backpocket opens with the link filled in, ready to save. Some apps show their own share menu first, so look for <strong>More</strong> or <strong>Share to</strong> to reach iPhone's list.</p>
+
+  <h2>Good to know</h2>
+  <p>The Shortcut opens Backpocket in <strong>Safari</strong>. iPhone keeps a home-screen app's storage separate from Safari's, so sign in to Backpocket in Safari too. Links saved from the share sheet then sync to the same account as your home-screen app.</p>
+</main>
+<script>
+  document.getElementById('copyShortcutUrl').onclick = function () {
+    var btn = this;
+    navigator.clipboard.writeText(document.getElementById('shortcutUrl').textContent).then(
+      function () { btn.textContent = 'Copied'; },
+      function () { btn.textContent = 'Press and hold the link to copy'; }
+    );
+  };
+</script>
+</body>
+</html>

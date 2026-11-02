@@ -2,7 +2,7 @@
 
 **Stop losing the good stuff.** That recipe reel, the 20-minute workout, the thread you swore you'd read later. Backpocket catches everything you find on Instagram, TikTok, YouTube, X and the rest of the web, keeps it tidy, and actually gets you to come back to it.
 
-Free, private by default, and it installs like an app in a few seconds: **<https://mohammeddev07.github.io/Backpocket/>**
+Free, private by default, and it installs like an app in a few seconds: **<https://backpocketapp.pages.dev/>**
 
 <p align="center">
   <img src="docs/screenshots/desktop.jpg" alt="Backpocket on a computer: a sidebar with Save a link, Daily Queue, Inbox, Library and Revisit; the Library with view chips, folder cards and a grid of saved links with previews and tags" width="760">
@@ -32,7 +32,7 @@ Free, private by default, and it installs like an app in a few seconds: **<https
 
 ## Get started in 30 seconds
 
-1. Open **<https://mohammeddev07.github.io/Backpocket/>**.
+1. Open **<https://backpocketapp.pages.dev/>**.
 2. Tap **+**, paste a link and tap **Save to Backpocket**. That's it, you're using it.
 3. Optional: install it (☰ menu → **Install app**) so it appears in your phone's share sheet.
 4. Optional: **Sign in with Google** to sync across devices and unlock AI.
@@ -80,7 +80,7 @@ To use the share sheet on Android, install Backpocket from **Chrome**, even if B
 
 #### Backpocket isn't in the share sheet?
 
-1. **Check that it's really installed and not a shortcut.** Open `chrome://webapks` in Chrome on the phone. Backpocket should be listed, with **Manifest URL** ending in `/Backpocket/manifest.webmanifest`.
+1. **Check that it's really installed and not a shortcut.** Open `chrome://webapks` in Chrome on the phone. Backpocket should be listed, with **Manifest URL** ending in `/manifest.webmanifest`.
    - **Not listed:** you have a shortcut (Brave's home-screen icon, or Chrome's **Create shortcut**). Delete it and install from Chrome as above.
    - **Listed, but Manifest URL ends in `manifest.json`:** the install came from an older version of the page. Uninstall it, open the site in Chrome, reload once, then install again.
 2. **Open Android's full share sheet.** Instagram, TikTok and X show their own share panel first. Tap **More**, **Share to…** or **Other** to reach Android's list, and scroll it: new apps usually aren't in the top row.
@@ -88,7 +88,7 @@ To use the share sheet on Android, install Backpocket from **Chrome**, even if B
 
 ### iPhone
 
-iOS doesn't let web apps join the share sheet, so Backpocket uses a free Apple Shortcut instead (no App Store). In the app, open **Settings → Add to iPhone share sheet** for step-by-step instructions that match the current Shortcuts app. Backpocket also suggests this once the first time you open it on an iPhone. The Shortcut opens `https://mohammeddev07.github.io/Backpocket/?url=<link>`, which goes through the same path as an Android share. A one-tap "Add Shortcut" link can be turned on by setting `IOS_SHORTCUT_URL` in `src/config.ts`.
+iOS doesn't let web apps join the share sheet, so Backpocket uses a free Apple Shortcut instead (no App Store). Follow the [step-by-step guide](https://backpocketapp.pages.dev/iphone), also linked from **Settings → Add to iPhone share sheet**. Backpocket suggests it once the first time you open it on an iPhone. The Shortcut opens `https://backpocketapp.pages.dev/?url=<link>`, which goes through the same path as an Android share.
 
 The Shortcut opens **Safari**, not the home-screen app, and iOS keeps their storage separate. Sign in to the same account in both so saves made through the Shortcut sync to the home-screen app.
 
@@ -98,7 +98,7 @@ The Shortcut opens **Safari**, not the home-screen app, and iOS keeps their stor
 
 ## Reminders and weekly recap
 
-Turn them on in **Settings → Reminders**. At most one nudge a day, and **Send a test nudge** shows you one right away.
+Turn them on in **Settings → Reminders**. At most one nudge a day.
 
 - **Which link:** a save you never opened, haven't marked done, and saved at least 7 days ago. With AI on, it's the one closest to what you've saved recently; otherwise the pick rotates daily. Links you were nudged about in the last week are skipped.
 - **What it says:** with AI on, a short joke written for that link. Otherwise one of the built-in lines, with special ones for YouTube, Instagram, TikTok, X and Facebook.

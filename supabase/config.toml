@@ -20,6 +20,7 @@ site_url = "http://localhost:5173/Backpocket/"
 additional_redirect_urls = [
   "http://localhost:5173/Backpocket/",
   "http://localhost:4173/Backpocket/",
+  "https://backpocketapp.pages.dev/",
   "https://mohammeddev07.github.io/Backpocket/",
 ]
 

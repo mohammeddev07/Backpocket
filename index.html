@@ -5,20 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Backpocket - save what you find</title>
 <meta name="description" content="Save links from Instagram, TikTok, YouTube and the web in one tap. Backpocket keeps them tidy, nudges you to come back to them, and works offline. Free.">
-<link rel="canonical" href="https://mohammeddev07.github.io/Backpocket/">
+<link rel="canonical" href="https://backpocketapp.pages.dev/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Backpocket">
 <meta property="og:title" content="Backpocket - save what you find">
 <meta property="og:description" content="Save links from Instagram, TikTok, YouTube and the web in one tap. Backpocket keeps them tidy and nudges you to come back to them.">
-<meta property="og:url" content="https://mohammeddev07.github.io/Backpocket/">
-<meta property="og:image" content="https://mohammeddev07.github.io/Backpocket/icons/icon-512.png">
+<meta property="og:url" content="https://backpocketapp.pages.dev/">
+<meta property="og:image" content="https://backpocketapp.pages.dev/icons/icon-512.png">
 <meta property="og:image:alt" content="The Backpocket logo: a link card tucked into a stitched pocket">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Backpocket - save what you find">
 <meta name="twitter:description" content="Save links from Instagram, TikTok, YouTube and the web in one tap. Backpocket keeps them tidy and nudges you to come back to them.">
-<meta name="twitter:image" content="https://mohammeddev07.github.io/Backpocket/icons/icon-512.png">
+<meta name="twitter:image" content="https://backpocketapp.pages.dev/icons/icon-512.png">
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"Organization","name":"Backpocket","url":"https://mohammeddev07.github.io/Backpocket/","logo":"https://mohammeddev07.github.io/Backpocket/icons/icon-512.png","sameAs":["https://github.com/mohammeddev07/Backpocket"]}
+{"@context":"https://schema.org","@type":"Organization","name":"Backpocket","url":"https://backpocketapp.pages.dev/","logo":"https://backpocketapp.pages.dev/icons/icon-512.png"}
 </script>
 <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
@@ -84,6 +84,7 @@
 <script type="module" src="/src/main.ts"></script>
 </head>
 <body>
+<a class="skip-link" href="#main">Skip to content</a>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
   <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
   <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></symbol>
@@ -150,7 +151,7 @@
 </div>
 
 <div class="app">
-  <main class="main" id="main">
+  <main class="main" id="main" tabindex="-1">
     <header class="appbar">
       <svg class="brand-mark" aria-hidden="true"><use href="#brand-mark"/></svg>
       <p class="brand">Backpocket</p>
@@ -418,7 +419,6 @@
           <input type="checkbox" class="switch" role="switch" id="remindersToggle" />
         </label>
         <p class="settings-item settings-desc" id="remindersStatus" aria-live="polite"></p>
-        <button type="button" class="row-btn" id="remindersTestBtn"><svg class="icon" aria-hidden="true"><use href="#i-bell"/></svg>Send a test nudge</button>
       </div>
     </section>
 
@@ -426,10 +426,9 @@
       <h3 class="settings-group-title" id="settingsShareTitle">Save from other apps</h3>
       <div class="settings-group">
         <p class="settings-item settings-desc">Android: install the app from Chrome and use the share sheet. iPhone: add a Shortcut. Computer: use the bookmarklet.</p>
-        <button type="button" class="row-btn" id="iosHelpBtn">Add to iPhone share sheet</button>
+        <a class="row-btn" href="iphone.html">Add to iPhone share sheet</a>
         <p class="settings-item settings-desc bookmarklet-row">Drag this to your bookmarks bar, then click it on any page:
           <a class="bookmarklet" id="bookmarkletLink" href="#">Save to Backpocket</a>
-        <button type="button" class="text-btn" id="bookmarkletCopyBtn">Copy code</button>
         </p>
       </div>
     </section>
@@ -528,30 +527,6 @@
     <div class="modal-actions">
       <button class="btn-ghost" id="uploadLaterBtn">Not now</button>
       <button class="btn-primary" id="uploadConfirmBtn">Upload</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-backdrop" id="iosHelpModal">
-  <div class="modal help-modal" role="dialog" aria-modal="true" aria-labelledby="iosHelpTitle">
-    <h2 id="iosHelpTitle">Add Backpocket to the iPhone share sheet</h2>
-    <p class="save-hint">iPhone doesn't let web apps join the share sheet directly, so a free Apple Shortcut does it. Set it up once, then tap Share → Backpocket in Instagram, TikTok, YouTube or anywhere else.</p>
-    <p class="install-hint" id="iosShortcutReady" hidden>Quickest: <a id="iosShortcutLink" href="#" target="_blank" rel="noopener noreferrer">get the ready-made Shortcut</a>, tap “Add Shortcut”, and you're done.</p>
-    <p class="field-label" id="iosStepsLabel">Or build it yourself (about 2 minutes):</p>
-    <ol class="steps" aria-labelledby="iosStepsLabel">
-      <li>Open the <strong>Shortcuts</strong> app and tap <strong>+</strong> to make a new shortcut. Tap <strong>ⓘ</strong> in the bottom bar and turn on <strong>Show in Share Sheet</strong>.</li>
-      <li>A <strong>Receive … from Share Sheet</strong> block appears at the top. Tap its blue input types and make sure <strong>URLs</strong> and <strong>Text</strong> are on (leaving the rest on is fine; it then reads “Apps and 18 more”). Leave <strong>If there’s no input</strong> on <strong>Continue</strong>.</li>
-      <li>Search for <strong>Get URLs from Input</strong> and add it. It should read <strong>Get URLs from</strong> <em>Shortcut Input</em>.</li>
-      <li>Add <strong>If</strong> and set the condition to <em>URLs</em> <strong>does not have any value</strong>. Inside it, add <strong>Text</strong> and insert the <em>Shortcut Input</em> variable (the shared text itself).</li>
-      <li>Under <strong>Otherwise</strong>, add another <strong>Text</strong> and insert the <em>URLs</em> variable.</li>
-      <li>Below <strong>End If</strong>, add <strong>URL Encode</strong> and set its input to <em>If Result</em>.</li>
-      <li>Add <strong>Open URLs</strong> with: <code id="iosOpenUrl"></code><strong>[URL Encoded Text]</strong></li>
-      <li>Tap the name at the top, choose <strong>Rename</strong> and call it <strong>Backpocket</strong>, then <strong>Choose Icon</strong> to pick one.</li>
-    </ol>
-    <p class="install-hint"><strong>Good to know:</strong> the Shortcut opens Backpocket in <strong>Safari</strong>. iPhone keeps a home-screen app's storage separate from Safari's, so sign in to Backpocket in Safari too - then links saved from the share sheet sync to the same account as your home-screen app.</p>
-    <div class="modal-actions">
-      <button class="btn-ghost" id="iosCopyUrlBtn">Copy the link for step 7</button>
-      <button class="btn-primary" id="iosHelpCloseBtn">Done</button>
     </div>
   </div>
 </div>

@@ -150,7 +150,8 @@ export function fallbackTile(link: Link): HTMLElement {
 export function linkVisual(link: Link): HTMLElement {
   if (!link.thumbnailUrl || store.settings.localIconsOnly) return fallbackTile(link);
   const wrap = document.createElement('div');
-  wrap.className = 'link-visual';
+  // YouTube's hqdefault is 4:3 with the video letterboxed inside; CSS crops the bars.
+  wrap.className = 'link-visual' + (/\/\/i\.ytimg\.com\/.*\/hqdefault\./.test(link.thumbnailUrl) ? ' is-letterboxed' : '');
   const img = document.createElement('img');
   img.alt = '';
   img.loading = 'lazy';

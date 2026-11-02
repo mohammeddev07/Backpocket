@@ -14,8 +14,8 @@ export default defineConfig({
     },
   },
   build: {
-    // The app plus two static pages; GitHub Pages serves 404.html for any missing path.
-    rolldownOptions: { input: ['index.html', 'privacy.html', '404.html'] },
+    // The app plus three static pages; hosts serve 404.html for any missing path.
+    rolldownOptions: { input: ['index.html', 'privacy.html', 'iphone.html', '404.html'] },
   },
   plugins: [
     VitePWA({
