@@ -1,6 +1,7 @@
 import { AI_CONFIG } from '@shared/config.ts';
 import type { ClassifyOutput, FolderContext } from '@shared/schemas.ts';
 import { enrichLink, ensureFolderPath, inboxId, moveLinks } from '../actions';
+import { usesMicrolink } from '../data/preview';
 import { store } from '../data/store';
 import { pathLabel } from '../data/tree';
 import type { AiMeta, Link } from '../data/types';
@@ -39,8 +40,11 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 async function classifyLink(id: string, explicitFolder: boolean): Promise<void> {
   if (!aiReady()) return;
   showAiNoticeOnce();
-  // Give the oEmbed lookup a moment so the model sees the real video title.
-  await Promise.race([enrichLink(id), sleep(1500)]);
+  // Give the preview lookup a moment so the model sees the real title.
+  // Microlink is slower than oEmbed (and often already answered for the save box).
+  const pending = store.link(id);
+  if (!pending) return;
+  await Promise.race([enrichLink(id), sleep(usesMicrolink(pending.platform) ? 3500 : 1500)]);
   const link = store.link(id);
   if (!link) return;
 
@@ -52,6 +56,7 @@ async function classifyLink(id: string, explicitFolder: boolean): Promise<void> 
         url: link.url, platform: link.platform,
         title: link.titleSource === 'user' ? link.title : null,
         oembedTitle: link.titleSource === 'oembed' ? link.title : null,
+        description: link.description ?? null,
         caption: link.sharedText, note: link.note,
         folders: folderContext(),
       },

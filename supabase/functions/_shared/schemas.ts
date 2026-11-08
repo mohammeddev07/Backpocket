@@ -12,7 +12,10 @@ export interface ClassifyInput {
   title?: string | null;
   caption?: string | null;
   note?: string | null;
+  /** Title fetched from the page (oEmbed or Microlink). Name kept for older clients. */
   oembedTitle?: string | null;
+  /** The page's own summary, from the preview lookup. */
+  description?: string | null;
   folders: FolderContext[];
 }
 export interface ClassifyOutput {

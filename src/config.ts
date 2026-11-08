@@ -10,6 +10,17 @@ export const APP_CONFIG = {
   oembedTimeoutMs: 4000,
   /** Existing YouTube/TikTok links to backfill thumbnails for per app load. */
   oembedBackfillPerLoad: 30,
+  /** Link previews for Instagram, Facebook, X and web links. 'off' stops every Microlink call. */
+  previewProvider: 'microlink' as 'microlink' | 'off',
+  /** Our own cap on Microlink calls per device per day (its free keyless tier allows ~25 per IP). */
+  previewDailyBudget: 20,
+  /** Backfilling old links stops while fewer than this many calls are left, so new saves still get previews. */
+  previewBackfillReserve: 8,
+  /** Existing links without a preview to look up per app load. */
+  previewBackfillPerLoad: 3,
+  previewTimeoutMs: 6000,
+  /** Also fetch YouTube descriptions (for the AI) on new saves while budget lasts. */
+  previewDescribeYouTube: true,
   /** Who gets asked for site icons. Only the hostname is ever sent. */
   faviconProvider: 'duckduckgo' as FaviconProvider,
 };

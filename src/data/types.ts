@@ -39,12 +39,14 @@ export interface Link {
   platform: PlatformLabel;
   /** Display title. v1's "note" (shown as the card title) migrates here. */
   title: string | null;
-  /** Who set the title - AI never overwrites a 'user' title. */
+  /** Who set the title - AI never overwrites a 'user' title. 'oembed' = fetched from the page (oEmbed or Microlink). */
   titleSource: 'user' | 'oembed' | 'ai' | null;
   note: string | null;
   /** Caption/text the sharing app sent along with the link. */
   sharedText: string | null;
   thumbnailUrl: string | null;
+  /** The page's own summary, from the preview lookup. Absent on rows saved before previews had it. */
+  description?: string | null;
   tags: string[];
   status: LinkStatus;
   /** Starred. Absent on rows saved before Favorites existed, which reads as false. */

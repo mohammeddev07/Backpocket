@@ -31,7 +31,7 @@
   <p>Signing in with Google gives us your email address, name and profile picture. Your folders, links and plans sync to a Supabase database so they show up on your other devices. Settings stay on the device. Each account can only read its own rows.</p>
 
   <h2>AI features</h2>
-  <p>AI is optional, needs an account and has one switch in Settings. When it is on, the link, its caption and your note are sent to Google Gemini to sort, title and tag it. AI-written reminders and recaps send the titles, platforms and folder names of the saves involved. With AI on, Backpocket also stores a numeric summary (an embedding) of each link to power search by meaning and More like this.</p>
+  <p>AI is optional, needs an account and has one switch in Settings. When it is on, the link, its caption, its page description and your note are sent to Google Gemini to sort, title and tag it. AI-written reminders and recaps send the titles, platforms and folder names of the saves involved. With AI on, Backpocket also stores a numeric summary (an embedding) of each link to power search by meaning and More like this.</p>
   <p>If you use your own Gemini key, it is stored only on your device and only ever sent to Google.</p>
 
   <h2>Other services the app talks to</h2>
@@ -39,6 +39,7 @@
     <li>Google Fonts, for the app's typeface.</li>
     <li>DuckDuckGo's icon service, for site icons. It only gets the site's domain (like example.com), never the link itself.</li>
     <li>YouTube and TikTok, for thumbnails and titles of the links you save from them.</li>
+    <li>Microlink, for the thumbnail, title and description of Instagram, Facebook, X and other web links. It gets the link you save (not your notes or account).</li>
     <li>Cloudflare Pages hosts the app and may log visitor IP addresses for security.</li>
   </ul>
   <p>Settings, Use local icons only turns off the icon, thumbnail and title lookups.</p>

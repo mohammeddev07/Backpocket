@@ -3,6 +3,9 @@ import { uid } from './data/ids';
 import { FOLDER_COLORS as COLORS, INBOX_COLOR, INBOX_NAME } from './data/migrate';
 import { normalizeUrl } from './data/normalizeUrl';
 import { fetchOembed, supportsOembed } from './data/oembed';
+import {
+  currentQuota, fetchMicrolink, isExpiringThumb, PREVIEW_QUOTA_KEY, quotaAllows, quotaBlock, quotaSpend, usesMicrolink, type PreviewInfo,
+} from './data/preview';
 import { store } from './data/store';
 import { childrenOf, descendantIds } from './data/tree';
 import type { Folder, Link, LinkStatus } from './data/types';
@@ -53,7 +56,7 @@ export function createLink(input: NewLinkInput): Link {
     deletedAt: null,
   };
   const saved = store.write('links', [link])[0];
-  void enrichLink(saved.id);
+  void enrichLink(saved.id).then(() => describeVideo(saved.id));
   return saved;
 }
 
@@ -92,41 +95,156 @@ export function setFavorite(ids: string[], favorite: boolean): void {
   store.write('links', rows.map((l) => ({ ...l, favorite })));
 }
 
-// ---- oEmbed title + thumbnail (YouTube, TikTok) ----
+// ---- Previews: title, description and thumbnail ----
+// YouTube/TikTok use their own oEmbed (free, no quota). Everything else asks
+// Microlink's free keyless API, which allows about 25 calls a day per IP; we
+// spend at most previewDailyBudget of them and stop for the day on a 429.
+// Results are cached three ways so a link is looked up once: on the link row
+// itself (which syncs, so other devices reuse it), for this session by URL
+// (the save box's lookup is reused by the save), and from any other saved
+// link with the same URL.
 const enriching = new Set<string>();
+const previewMemo = new Map<string, Promise<PreviewInfo | null | undefined>>();
+let quotaChain: Promise<unknown> = Promise.resolve();
+
+export function previewsOff(): boolean {
+  return store.settings.localIconsOnly || APP_CONFIG.previewProvider === 'off' || !navigator.onLine;
+}
+
+/** Reserves one Microlink call, leaving `reserve` of today's budget unused. */
+function takeMicrolinkCall(reserve: number): Promise<boolean> {
+  const run = quotaChain.then(async () => {
+    const now = Date.now();
+    const q = currentQuota(await store.db.getMeta(PREVIEW_QUOTA_KEY), now);
+    if (!quotaAllows(q, now, APP_CONFIG.previewDailyBudget - reserve)) return false;
+    await store.db.setMeta(PREVIEW_QUOTA_KEY, quotaSpend(q));
+    return true;
+  });
+  const safe = run.catch(() => false);
+  quotaChain = safe;
+  return safe;
+}
+
+function blockMicrolinkForToday(): void {
+  quotaChain = quotaChain.then(async () => {
+    const now = Date.now();
+    await store.db.setMeta(PREVIEW_QUOTA_KEY, quotaBlock(currentQuota(await store.db.getMeta(PREVIEW_QUOTA_KEY), now), now));
+  }).catch(() => {});
+}
 
 /**
- * Looks up the oEmbed title/thumbnail for a link and caches them on it. The
- * title only fills an empty one - never what the user typed. An empty string
- * thumbnail marks "tried, nothing there" so it isn't retried every load.
+ * Microlink preview for a URL. null = Microlink had nothing useful; undefined =
+ * we didn't get to ask (budget used up, offline, error), so try again later.
  */
-export async function enrichLink(id: string): Promise<void> {
+export function lookupMicrolink(url: string, opts: { background?: boolean } = {}): Promise<PreviewInfo | null | undefined> {
+  const key = normalizeUrl(url);
+  const memo = previewMemo.get(key);
+  if (memo) return memo;
+  const run = (async () => {
+    if (previewsOff()) return undefined;
+    if (!(await takeMicrolinkCall(opts.background ? APP_CONFIG.previewBackfillReserve : 0))) return undefined;
+    const r = await fetchMicrolink(url, { timeoutMs: APP_CONFIG.previewTimeoutMs });
+    if (r.rateLimited) blockMicrolinkForToday();
+    return r.rateLimited || r.failed ? undefined : r.info;
+  })();
+  previewMemo.set(key, run);
+  // Only keep answers; a skipped or failed lookup may be retried.
+  void run.then((v) => { if (v === undefined && previewMemo.get(key) === run) previewMemo.delete(key); });
+  return run;
+}
+
+/** Preview for a URL that isn't saved yet (the save box). Microlink answers are reused by the save. */
+export async function previewForUrl(url: string, platform: Link['platform']): Promise<PreviewInfo | null> {
+  if (previewsOff()) return null;
+  if (supportsOembed(platform)) {
+    const info = await fetchOembed(url, platform, { timeoutMs: APP_CONFIG.oembedTimeoutMs });
+    return info && { ...info, description: null };
+  }
+  return usesMicrolink(platform) ? (await lookupMicrolink(url)) ?? null : null;
+}
+
+/** Another saved link with the same URL that already has its preview. */
+function previewFromTwin(link: Link): PreviewInfo | null {
+  const key = normalizeUrl(link.url);
+  const twin = store.liveLinks().find((l) => l.id !== link.id && l.thumbnailUrl != null && normalizeUrl(l.url) === key);
+  if (!twin) return null;
+  return {
+    title: twin.titleSource === 'oembed' ? twin.title : null,
+    description: twin.description ?? null,
+    thumbnailUrl: twin.thumbnailUrl,
+  };
+}
+
+async function fetchPreviewFor(link: Link, opts: { background?: boolean; fresh?: boolean }): Promise<PreviewInfo | null | undefined> {
+  if (!opts.fresh) {
+    const twin = previewFromTwin(link);
+    if (twin) return twin;
+  }
+  if (supportsOembed(link.platform)) {
+    const info = await fetchOembed(link.url, link.platform, { timeoutMs: APP_CONFIG.oembedTimeoutMs });
+    if (!info && !navigator.onLine) return undefined; // went offline mid-call: retry later
+    return info ? { ...info, description: null } : null;
+  }
+  if (!usesMicrolink(link.platform)) return null;
+  return lookupMicrolink(link.url, opts);
+}
+
+/**
+ * Looks up a link's preview and caches it on the link. The title only fills an
+ * empty one, never what the user typed. An empty-string thumbnail marks "tried,
+ * nothing there" so it isn't retried every load. `fresh` re-asks even if a
+ * thumbnail is stored (Instagram/Facebook image links expire).
+ */
+export async function enrichLink(id: string, opts: { background?: boolean; fresh?: boolean } = {}): Promise<void> {
   const link = store.link(id);
-  if (!link || enriching.has(id) || !supportsOembed(link.platform) || link.thumbnailUrl != null) return;
-  if (store.settings.localIconsOnly || !navigator.onLine) return;
+  if (!link || enriching.has(id) || (link.thumbnailUrl != null && !opts.fresh) || previewsOff()) return;
   enriching.add(id);
   try {
-    const info = await fetchOembed(link.url, link.platform, { timeoutMs: APP_CONFIG.oembedTimeoutMs });
+    const info = await fetchPreviewFor(link, opts);
     const cur = store.link(id);
-    if (!cur) return;
-    if (!info && !navigator.onLine) return; // went offline mid-call: retry later
-    const patch: Partial<Link> = { thumbnailUrl: info?.thumbnailUrl || '' };
+    if (!cur || info === undefined) return;
+    const patch: Partial<Link> = {};
+    const thumb = info?.thumbnailUrl || '';
+    if (cur.thumbnailUrl !== thumb) patch.thumbnailUrl = thumb;
     if (info?.title && !cur.title) { patch.title = info.title; patch.titleSource = 'oembed'; }
-    store.patch('links', id, patch);
+    if (info?.description && !cur.description) patch.description = info.description;
+    if (Object.keys(patch).length) store.patch('links', id, patch);
   } finally {
     enriching.delete(id);
   }
 }
 
-/** Fills thumbnails for existing YouTube/TikTok links, a few at a time. */
+/**
+ * YouTube's oEmbed has no description, which is what tells the AI what a
+ * video is about. New YouTube saves ask Microlink for it while budget lasts.
+ */
+async function describeVideo(id: string): Promise<void> {
+  const link = store.link(id);
+  if (!APP_CONFIG.previewDescribeYouTube || !link || link.platform !== 'YouTube' || link.description) return;
+  const info = await lookupMicrolink(link.url, { background: true });
+  const cur = store.link(id);
+  if (cur && info?.description && !cur.description) store.patch('links', id, { description: info.description });
+}
+
+const refreshed = new Set<string>();
+/** A stored Instagram/Facebook image stopped loading: ask for a fresh link, once per session. */
+export function refreshThumbnail(id: string): void {
+  const link = store.link(id);
+  if (!link?.thumbnailUrl || !isExpiringThumb(link.thumbnailUrl) || refreshed.has(id)) return;
+  refreshed.add(id);
+  void enrichLink(id, { background: true, fresh: true });
+}
+
+/** Fills previews for existing links, a few at a time, newest first. */
 export async function backfillThumbnails(): Promise<void> {
-  const todo = store.liveLinks()
-    .filter((l) => supportsOembed(l.platform) && l.thumbnailUrl == null)
-    .sort((a, b) => b.createdAt - a.createdAt)
-    .slice(0, APP_CONFIG.oembedBackfillPerLoad);
+  const missing = store.liveLinks().filter((l) => l.thumbnailUrl == null).sort((a, b) => b.createdAt - a.createdAt);
+  const todo = [
+    ...missing.filter((l) => supportsOembed(l.platform)).slice(0, APP_CONFIG.oembedBackfillPerLoad),
+    ...missing.filter((l) => usesMicrolink(l.platform)).slice(0, APP_CONFIG.previewBackfillPerLoad),
+  ];
   for (const l of todo) {
-    if (store.settings.localIconsOnly || !navigator.onLine) return;
-    await enrichLink(l.id);
+    if (previewsOff()) return;
+    await enrichLink(l.id, { background: true });
     await new Promise((r) => setTimeout(r, 400));
   }
 }

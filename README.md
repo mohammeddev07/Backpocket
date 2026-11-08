@@ -41,7 +41,7 @@ Free, private by default, and it installs like an app in a few seconds: **<https
 ## Everything it does
 
 - **Folders**: nested and colour-tagged, shown as cards in the Library. **Inbox** catches unfiled saves. **Revisit** and **Favorites** (star any save from its menu) are smart views. Saves show as a list or a two-column grid.
-- **Beautiful cards**: a real thumbnail when one is available (YouTube, TikTok), otherwise a colourful tile in the platform's colours with the title's first letter. Every card shows the title, folder path, when you saved it and your tags.
+- **Beautiful cards**: a real thumbnail and title when one is available (YouTube and TikTok always; Instagram, Facebook, X and web pages through Microlink, which sometimes only gets part of a post that needs a login), otherwise a colourful tile in the platform's colours with the title's first letter. Every card shows the title, folder path, when you saved it and your tags.
 - **Unread and done**: opening a link records it; mark things done when you're finished.
 - **Tags** with autocomplete.
 - **Duplicate detection**: links are normalised (tracking junk like `utm_*`, `igsh` and `si` is stripped, `youtu.be` expanded), so re-saving shows "Already saved in X · Open / Save anyway". With AI on, near-duplicates from different links get flagged too.
@@ -133,9 +133,9 @@ Rate limits are token buckets in Postgres, so a burst across a minute boundary c
 
 - **Guests:** everything stays in your browser. Nothing is sent to a Backpocket server, because guests never talk to one. Settings shows a plain "Your data stays on your device" notice.
 - **Signed in:** your folders, links and plans sync to a Supabase database (settings stay on the device), and the Settings notice says so. Row-level security means each account can only read its own rows.
-- **AI:** "AI features send the link, its caption and your note to Google Gemini." This note is shown in Settings and the first time you use AI. AI-written nudges and recaps send the titles, platforms and folder names of the saves involved.
+- **AI:** "AI features send the link, its caption, its page description and your note to Google Gemini." This note is shown in Settings and the first time you use AI. AI-written nudges and recaps send the titles, platforms and folder names of the saves involved.
 - **Your own Gemini key** is stored only on that device (`localStorage`) and is only ever sent to Google.
-- **Third parties the page talks to:** Google Fonts, DuckDuckGo's icon service for site icons (it gets the site's domain, never the link), and YouTube/TikTok oEmbed for thumbnails and titles. **Settings → Use local icons only** turns off the icon, thumbnail and title lookups, so nothing about the links you save is sent to them.
+- **Third parties the page talks to:** Google Fonts, DuckDuckGo's icon service for site icons (it gets the site's domain, never the link), YouTube/TikTok oEmbed for thumbnails and titles, and [Microlink](https://microlink.io) for the thumbnail, title and description of Instagram, Facebook, X and web links (it gets the link). Microlink is used on its free plan with no key, so it can never cost anything: each device makes at most 20 lookups a day and stops for the day if Microlink says the limit is reached. **Settings → Use local icons only** turns off the icon, thumbnail and title lookups, so nothing about the links you save is sent to them.
 - **Deleting your account** (Settings → Delete my account and cloud data) removes the account and all its cloud rows. You can choose to keep a local copy on the device.
 - The website bundle never contains the Gemini key. The deploy workflow fails if a Google API key shows up in `dist/`.
 
@@ -146,9 +146,9 @@ Rate limits are token buckets in Postgres, so a burst across a minute boundary c
 | Store | Holds |
 |---|---|
 | `folders` | id, parentId, name, color, isSystem (Inbox), position, timestamps |
-| `links` | id, folderId, url, platform, title, note, sharedText (the shared caption), thumbnailUrl, tags, status, openedAt, aiMeta, timestamps |
+| `links` | id, folderId, url, platform, title, note, sharedText (the shared caption), thumbnailUrl, description (from the preview lookup), tags, status, openedAt, aiMeta, timestamps |
 | `plans` | id, folderId, title, summary, items (`{text, done, linkIds}`), timestamps |
-| `meta` | settings, schema version, sync cursors, and reminder state (`nudgeAt`, `nudgeNext`, `nudgeHistory`, `recap`, `recapNotifiedAt`) |
+| `meta` | settings, schema version, sync cursors, and reminder state (`nudgeAt`, `nudgeNext`, `nudgeHistory`, `recap`, `recapNotifiedAt`), and today's Microlink count (`previewQuota`) |
 | `outbox` | rows changed locally that haven't been pushed to Supabase yet |
 
 Deletes are soft (`deletedAt`) so they can sync. A few small things stay in `localStorage`: `backpocket_theme` (read before first paint), `backpocket-auth` (the Supabase session), and `backpocket_gemini_key` plus its rate-limit counters if you bring your own key.
@@ -202,5 +202,5 @@ supabase/
 - `public/manifest.webmanifest` declares a GET `share_target` pointing at `./index.html`, with `title`, `text` and `url` params. All paths are relative, so it works under `/Backpocket/` without hardcoding the repo name.
 - Apps are inconsistent about where they put the link. Chrome maps Android's shared text to `text`, so most social apps send the link there, sometimes inside a caption ("Check out … https://vm.tiktok.com/…"). `src/share/extractSharedUrl.ts` checks `url`, then `text`, then `title`, and takes the first valid `http`/`https` URL. It drops trailing punctuation but keeps balanced parentheses. The iPhone Shortcut and the bookmarklet use the same `?url=` path.
 - Once the form is filled in, the share params are removed from the address bar with `history.replaceState`, so a reload or Back doesn't apply them again.
-- The service worker (`src/sw.ts`, built to `sw.js`, the same URL as v1) fetches the page and manifest from the network first and uses the cache only offline, so the first visit after a deploy never installs last release's manifest. Page loads are cached by path, ignoring the query string, so a share launch still opens offline. Fonts and YouTube/TikTok thumbnails are cached at runtime. Supabase, Gemini and oEmbed calls are never served from the cache. The cache name is derived from the build's file list, so every deploy refreshes the offline copy automatically. The same worker handles the background reminder (`periodicsync`) and notification taps.
+- The service worker (`src/sw.ts`, built to `sw.js`, the same URL as v1) fetches the page and manifest from the network first and uses the cache only offline, so the first visit after a deploy never installs last release's manifest. Page loads are cached by path, ignoring the query string, so a share launch still opens offline. Fonts and YouTube/TikTok thumbnails are cached at runtime. Supabase, Gemini, oEmbed and Microlink calls are never served from the cache. The cache name is derived from the build's file list, so every deploy refreshes the offline copy automatically. The same worker handles the background reminder (`periodicsync`) and notification taps.
 - Icons are in `public/icons/`, all rendered from `mark.svg` (also `#brand-mark` in `index.html`). `favicon.svg` is the browser-tab icon: a light tile on light systems, a dark tile on dark ones. Home-screen icons can't switch with the theme, so the PNGs use the dark tile: `icon-192.png` and `icon-512.png` (`purpose: any`), plus `icon-512-maskable.png`, which keeps the artwork inside the 80% safe zone on an opaque background so Android's adaptive-icon masks don't clip it.

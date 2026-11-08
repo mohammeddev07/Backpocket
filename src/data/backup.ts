@@ -4,6 +4,7 @@ import { COLORS, convertV1, isV1Data, V1_ROOT_ID } from './migrate';
 import { childrenOf } from './tree';
 import type { Folder, Link, Plan, Snapshot } from './types';
 import { normalizeUrl } from './normalizeUrl';
+import { DESCRIPTION_MAX } from './preview';
 import { isWebUrl } from './urls';
 
 // Backup & import: JSON backups (v2, plus v1 files from the old app) and the
@@ -178,6 +179,7 @@ export function parseBackupJson(text: string, now = Date.now()): { bundle: Impor
     const links = (o.links as Link[]).filter((l) => l.deletedAt == null).map((l) => ({
       ...mkLink({ url: l.url, folderId: l.folderId || systemId, title: l.title ?? null, createdAt: l.createdAt || now }, now),
       id: l.id, titleSource: l.titleSource ?? (l.title ? 'user' as const : null), note: l.note ?? null, sharedText: l.sharedText ?? null, thumbnailUrl: l.thumbnailUrl ?? null,
+      description: typeof l.description === 'string' ? l.description.slice(0, DESCRIPTION_MAX) : null,
       tags: Array.isArray(l.tags) ? l.tags : [], status: l.status === 'done' ? 'done' as const : 'unread' as const, favorite: !!l.favorite,
       openedAt: l.openedAt ?? null, platform: l.platform || detectPlatform(l.url),
     }));

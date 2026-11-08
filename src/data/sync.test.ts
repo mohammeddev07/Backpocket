@@ -162,6 +162,14 @@ describe('sync engine', () => {
     expect(toServer('links', link(), USER).favorite).toBe(false);
     expect(fromServer('links', toServer('links', link({ favorite: true }), USER)).favorite).toBe(true);
   });
+
+  it('description maps both ways, and rows from before previews read as null', () => {
+    expect(toServer('links', link(), USER).description).toBeNull();
+    expect(fromServer('links', toServer('links', link({ description: 'Quick dinner' }), USER)).description).toBe('Quick dinner');
+    const old = toServer('links', link(), USER);
+    delete old.description;
+    expect(fromServer('links', old).description).toBeNull();
+  });
 });
 
 describe('poll pacing', () => {

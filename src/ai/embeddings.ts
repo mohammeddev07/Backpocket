@@ -29,7 +29,7 @@ let timer: ReturnType<typeof setTimeout> | undefined;
 
 export function embedTextFor(l: Link, folders: Folder[]): string {
   return embedDocumentText({
-    title: l.title, note: l.note, caption: l.sharedText,
+    title: l.title, note: l.note, caption: l.sharedText, description: l.description,
     folderPath: pathLabel(folders, l.folderId), tags: l.tags, url: domainOf(l.url),
   });
 }

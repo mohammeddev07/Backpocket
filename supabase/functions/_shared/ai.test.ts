@@ -91,10 +91,20 @@ describe('prompts', () => {
     expect(p).toContain('caption shared with it: hi');
   });
 
+  it('includes the fetched page title and description when there is one', () => {
+    const p = classifyPrompt({ url: 'https://instagram.com/reel/1', platform: 'Instagram', oembedTitle: 'Five-minute pasta', description: 'Quick dinner', folders: [] });
+    expect(p).toContain('title from the page: Five-minute pasta');
+    expect(p).toContain('description from the page: Quick dinner');
+    expect(classifyPrompt({ url: 'https://a.example', platform: 'Link', folders: [] })).not.toContain('description');
+  });
+
   it('embedding texts follow the gemini-embedding-2 task format', () => {
     expect(embedQueryText('chess opening')).toBe('task: search result | query: chess opening');
     expect(embedDocumentText({ title: 'Sicilian', note: 'try it', tags: ['chess'] })).toBe('title: Sicilian | text: try it · #chess');
     expect(embedDocumentText({})).toBe('title: none | text: none');
+    // Links without a description keep their old text, so they aren't re-embedded.
+    expect(embedDocumentText({ title: 'Sicilian', note: 'try it', description: null, tags: ['chess'] })).toBe('title: Sicilian | text: try it · #chess');
+    expect(embedDocumentText({ title: 'Pasta', description: 'Quick dinner', folderPath: 'Recipes' })).toBe('title: Pasta | text: Quick dinner · Recipes');
   });
 
   it('hash is stable and changes with the text', () => {

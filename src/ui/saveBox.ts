@@ -1,6 +1,5 @@
-import { createLink, findDuplicate, inboxId } from '../actions';
-import { APP_CONFIG } from '../config';
-import { fetchOembed, supportsOembed } from '../data/oembed';
+import { createLink, findDuplicate, inboxId, previewForUrl, previewsOff } from '../actions';
+import { usesMicrolink } from '../data/preview';
 import { store } from '../data/store';
 import { pathLabel } from '../data/tree';
 import type { Link } from '../data/types';
@@ -66,7 +65,7 @@ function resetSaveForm(): void {
   renderPreview();
 }
 
-// ---- Preview: the link's thumbnail (YouTube/TikTok oEmbed) or its local tile ----
+// ---- Preview: the link's thumbnail (oEmbed or Microlink) or its local tile ----
 let previewToken = 0;
 let previewTimer = 0;
 
@@ -84,8 +83,11 @@ function renderPreview(): void {
   // A stand-in row just for drawing the tile; it is never stored.
   const stub = { id: 'preview', url, platform, title: titleInput.value.trim() || null } as Link;
   box.replaceChildren(fallbackTile(stub));
-  if (!supportsOembed(platform) || store.settings.localIconsOnly || !navigator.onLine) return;
-  void fetchOembed(url, platform, { timeoutMs: APP_CONFIG.oembedTimeoutMs }).then((info) => {
+  if (previewsOff()) return;
+  // Microlink calls come out of a small daily budget: wait until the link has
+  // stopped changing so typing one out doesn't spend several.
+  const settle = usesMicrolink(platform) ? new Promise((r) => setTimeout(r, 700)) : Promise.resolve();
+  void settle.then(() => (token === previewToken ? previewForUrl(url, platform) : null)).then((info) => {
     if (token !== previewToken || !info) return;
     if (info.title) titleInput.placeholder = info.title;
     if (!info.thumbnailUrl) return;

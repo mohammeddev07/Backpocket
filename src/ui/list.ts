@@ -1,8 +1,9 @@
-import { deleteLinks, inboxId, markOpened, restoreLinks, setFavorite, setStatus } from '../actions';
+import { deleteLinks, inboxId, markOpened, refreshThumbnail, restoreLinks, setFavorite, setStatus } from '../actions';
 import { APP_CONFIG } from '../config';
 import { COLORS } from '../data/migrate';
 import { store } from '../data/store';
 import { pathLabel, pathOf } from '../data/tree';
+import { isCacheableThumb } from '../data/preview';
 import type { Folder, Link } from '../data/types';
 import { isWebUrl } from '../data/urls';
 import { domainOf, faviconFor, platformIconSvg } from '../platform';
@@ -157,11 +158,14 @@ export function linkVisual(link: Link): HTMLElement {
   img.loading = 'lazy';
   img.decoding = 'async';
   img.referrerPolicy = 'no-referrer';
-  // CORS request so the service worker can cache it (see src/sw.ts).
-  img.crossOrigin = 'anonymous';
+  // CORS request for the hosts the service worker caches (see src/sw.ts).
+  // Others (Instagram, Facebook, news sites) may not send CORS headers, so
+  // asking that way would make them fail; they load as plain images.
+  if (URL.canParse(link.thumbnailUrl) && isCacheableThumb(new URL(link.thumbnailUrl))) img.crossOrigin = 'anonymous';
   img.src = link.thumbnailUrl;
-  // Never a broken-image icon: swap in the tile, same box.
-  img.onerror = () => wrap.replaceWith(fallbackTile(link));
+  // Never a broken-image icon: swap in the tile, same box. Signed
+  // Instagram/Facebook image links expire, so ask for a fresh one.
+  img.onerror = () => { wrap.replaceWith(fallbackTile(link)); refreshThumbnail(link.id); };
   wrap.appendChild(img);
   return wrap;
 }

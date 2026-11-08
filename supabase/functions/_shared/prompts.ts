@@ -33,7 +33,8 @@ export function classifyPrompt(input: ClassifyInput): string {
     'Saved link:',
     'url: ' + clip(input.url, 400),
     'platform: ' + input.platform,
-    input.oembedTitle ? 'video title: ' + clip(input.oembedTitle, 200) : '',
+    input.oembedTitle ? 'title from the page: ' + clip(input.oembedTitle, 200) : '',
+    input.description ? 'description from the page: ' + clip(input.description, 600) : '',
     input.title ? 'title the user gave: ' + clip(input.title, 200) : '',
     input.caption ? 'caption shared with it: ' + clip(input.caption, 1000) : '',
     input.note ? 'user note: ' + clip(input.note, 500) : '',
@@ -96,8 +97,9 @@ export function recapPrompt(input: RecapInput): string {
 }
 
 // ---- Embeddings (gemini-embedding-2 takes the task as a text prefix) ----
-export function embedDocumentText(p: { title?: string | null; note?: string | null; caption?: string | null; folderPath?: string; tags?: string[]; url?: string }): string {
-  const body = [p.note, p.caption, p.folderPath, p.tags?.length ? p.tags.map((t) => '#' + t).join(' ') : '', p.url]
+export function embedDocumentText(p: { title?: string | null; note?: string | null; caption?: string | null; description?: string | null; folderPath?: string; tags?: string[]; url?: string }): string {
+  // Description sits after the user's own words; links without one embed exactly as before.
+  const body = [p.note, p.caption, p.description, p.folderPath, p.tags?.length ? p.tags.map((t) => '#' + t).join(' ') : '', p.url]
     .map((s) => clip(s, 800)).filter(Boolean).join(' · ');
   return clip('title: ' + (clip(p.title, 200) || 'none') + ' | text: ' + (body || 'none'), AI_CONFIG.maxEmbedChars);
 }

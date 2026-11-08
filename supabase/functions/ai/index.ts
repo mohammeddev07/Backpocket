@@ -41,7 +41,7 @@ function parseClassifyInput(raw: unknown): ClassifyInput {
     }));
   return {
     url, platform: s(o.platform, 20) || 'Link', title: s(o.title, 300), caption: s(o.caption, 2000),
-    note: s(o.note, 1000), oembedTitle: s(o.oembedTitle, 300), folders,
+    note: s(o.note, 1000), oembedTitle: s(o.oembedTitle, 300), description: s(o.description, 1000), folders,
   };
 }
 

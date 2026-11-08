@@ -12,6 +12,7 @@ import {
   recentlyNudged, usablePrepared, type NudgeHistoryEntry, type PreparedNudge,
 } from './data/nudge';
 import { RECAP_EVERY_MS, RECAP_META_KEY, RECAP_MIN_LINKS, RECAP_NOTIFIED_KEY, recapDue, statsRecap, weekStats, type StoredRecap } from './data/recap';
+import { isCacheableThumb } from './data/preview';
 import type { Folder, Link } from './data/types';
 import { REVISIT_MIN_AGE_DAYS } from './search/filters';
 
@@ -42,7 +43,7 @@ const isFontCss = (u: URL) => u.hostname === 'fonts.googleapis.com';
 const isFontFile = (u: URL) => u.hostname === 'fonts.gstatic.com';
 // YouTube and TikTok thumbnail CDNs (both send CORS headers). TikTok's URLs
 // are signed and expire, so a cached copy keeps old cards looking right.
-const isThumb = (u: URL) => u.hostname === 'i.ytimg.com' || /(^|\.)tiktokcdn(-[a-z]+)?\.com$/.test(u.hostname);
+const isThumb = isCacheableThumb;
 
 /** Keeps a runtime cache bounded (oldest entries first). */
 async function trimCache(name: string, max: number): Promise<void> {

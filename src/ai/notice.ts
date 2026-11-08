@@ -2,7 +2,7 @@ import { store } from '../data/store';
 import { openSettings } from '../ui/settings';
 import { showToast } from '../ui/toast';
 
-export const AI_PRIVACY_NOTE = 'AI features send the link, its caption and your note to Google Gemini.';
+export const AI_PRIVACY_NOTE = 'AI features send the link, its caption, its page description and your note to Google Gemini.';
 
 /** Shown once, the first time an AI feature runs. */
 export function showAiNoticeOnce(): void {
