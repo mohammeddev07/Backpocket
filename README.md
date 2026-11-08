@@ -135,7 +135,7 @@ Rate limits are token buckets in Postgres, so a burst across a minute boundary c
 - **Signed in:** your folders, links and plans sync to a Supabase database (settings stay on the device), and the Settings notice says so. Row-level security means each account can only read its own rows.
 - **AI:** "AI features send the link, its caption and your note to Google Gemini." This note is shown in Settings and the first time you use AI. AI-written nudges and recaps send the titles, platforms and folder names of the saves involved.
 - **Your own Gemini key** is stored only on that device (`localStorage`) and is only ever sent to Google.
-- **Third parties the page talks to:** Google Fonts, Google's favicon service, and YouTube/TikTok oEmbed for thumbnails and titles. **Settings → Use local icons only** turns off the favicon, thumbnail and title lookups, so the links you save are never sent to them.
+- **Third parties the page talks to:** Google Fonts, DuckDuckGo's icon service for site icons (it gets the site's domain, never the link), and YouTube/TikTok oEmbed for thumbnails and titles. **Settings → Use local icons only** turns off the icon, thumbnail and title lookups, so nothing about the links you save is sent to them.
 - **Deleting your account** (Settings → Delete my account and cloud data) removes the account and all its cloud rows. You can choose to keep a local copy on the device.
 - The website bundle never contains the Gemini key. The deploy workflow fails if a Google API key shows up in `dist/`.
 

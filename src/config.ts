@@ -1,3 +1,4 @@
+import type { FaviconProvider } from './platform';
 import { REVISIT_MIN_AGE_DAYS } from './search/filters';
 
 // Client configuration. AI limits and model ids live in
@@ -9,6 +10,8 @@ export const APP_CONFIG = {
   oembedTimeoutMs: 4000,
   /** Existing YouTube/TikTok links to backfill thumbnails for per app load. */
   oembedBackfillPerLoad: 30,
+  /** Who gets asked for site icons. Only the hostname is ever sent. */
+  faviconProvider: 'duckduckgo' as FaviconProvider,
 };
 
 // Public by design: the anon key only grants what RLS policies allow.

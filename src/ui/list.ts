@@ -139,7 +139,7 @@ export function fallbackTile(link: Link): HTMLElement {
   if (folder && !folder.isSystem) tile.style.setProperty('--c', folder.color);
   const badge = document.createElement('span');
   badge.className = 'tile-badge';
-  // Privacy mode never contacts Google's favicon service; known platforms use
+  // Privacy mode never contacts the favicon service; known platforms use
   // their own icon anyway (clearer than a favicon at this size).
   if (store.settings.localIconsOnly || link.platform !== 'Link') badge.innerHTML = platformIconSvg(link.platform);
   else badge.appendChild(faviconFor(link.id, link.url, link.platform));

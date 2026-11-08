@@ -1,3 +1,4 @@
+import { APP_CONFIG } from './config';
 import type { PlatformLabel } from './data/types';
 
 // Substring checks carried over from v1 (so existing links keep the same label).
@@ -41,12 +42,43 @@ export function domainOf(url: string): string {
   try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return url; }
 }
 
+export type FaviconProvider = 'duckduckgo' | 'google' | 'iconhorse';
+
+/**
+ * Favicon URL for a link's site, or null when there is no public site to ask
+ * about. Only the hostname leaves the device, never the saved link itself.
+ */
+export function faviconUrl(url: string, provider: FaviconProvider): string | null {
+  let host: string;
+  try {
+    const u = new URL(url);
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return null;
+    host = u.hostname.toLowerCase().replace(/\.$/, '');
+  } catch {
+    return null;
+  }
+  // No IPs, localhost or intranet names: nothing useful to look up, and they leak.
+  if (!host.includes('.') || /^[\d.]+$/.test(host) || host.startsWith('[')) return null;
+  const h = encodeURIComponent(host);
+  if (provider === 'google') return 'https://www.google.com/s2/favicons?sz=64&domain=' + h;
+  if (provider === 'iconhorse') return 'https://icon.horse/icon/' + h;
+  return 'https://icons.duckduckgo.com/ip3/' + h + '.ico';
+}
+
 // Re-use already-loaded favicon <img>s across re-renders. Fresh <img>s blink
 // empty for a frame while they decode, even from cache, so every search
 // keystroke made the icon column flicker.
 const faviconCache = new Map<string, HTMLImageElement>();
-export function faviconFor(linkId: string, url: string, platform: string): HTMLImageElement {
-  const src = 'https://www.google.com/s2/favicons?sz=64&domain_url=' + encodeURIComponent(url);
+
+function platformIconNode(platform: string): Element {
+  const tmp = document.createElement('span');
+  tmp.innerHTML = platformIconSvg(platform);
+  return tmp.firstElementChild || tmp;
+}
+
+export function faviconFor(linkId: string, url: string, platform: string): Element {
+  const src = faviconUrl(url, APP_CONFIG.faviconProvider);
+  if (!src) return platformIconNode(platform);
   const key = linkId + ' ' + src;
   const cached = faviconCache.get(key);
   if (cached && cached.complete && cached.naturalWidth > 0) return cached;
@@ -54,11 +86,10 @@ export function faviconFor(linkId: string, url: string, platform: string): HTMLI
   img.alt = '';
   img.loading = 'lazy';
   img.decoding = 'async';
+  img.referrerPolicy = 'no-referrer';
   img.onerror = () => {
     faviconCache.delete(key);
-    const fallback = document.createElement('span');
-    fallback.innerHTML = platformIconSvg(platform);
-    if (fallback.firstChild) img.replaceWith(fallback.firstChild);
+    img.replaceWith(platformIconNode(platform));
   };
   img.src = src;
   faviconCache.set(key, img);
