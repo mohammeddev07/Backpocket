@@ -34,12 +34,14 @@
   --accent-grad: linear-gradient(135deg, #FFA800 0%, #FF7A00 100%);
   --accent-ink: #1A0D00;
   --spring: cubic-bezier(.34, 1.56, .64, 1);
-  --icon-tile: #17181C;      /* the app icon's dark tile, same in both themes */
+  --icon-tile: #17181C;      /* dark base of the generated link tiles, same in both themes */
+  --icon-paper: #F2EFE9;     /* the app icon's own tile (public/icons), same in both themes */
   --success: #10B981;
   --ease: cubic-bezier(.32, .72, 0, 1);
 
   /* Motion. Animate only transform and opacity. Nothing runs over
-     --dur-move except the Done moment (--dur-done, the whole sequence).
+     --dur-move except the two rewards: the Done moment (--dur-done, the
+     whole sequence) and a save's flight to the pocket (--dur-save).
      Reduced motion: the rule below drops animations and transitions, and
      JS skips its card animations, so state changes land instantly. JS reads
      these tokens (getComputedStyle) or waits on the animations themselves
@@ -49,6 +51,7 @@
   --dur-base: 220ms;         /* an element entering or leaving */
   --dur-move: 280ms;         /* a card changing place */
   --dur-done: 560ms;         /* the Done sequence, check to next card */
+  --dur-save: 420ms;         /* a saved link's flight to the pocket */
   --stagger: 40ms;           /* between siblings entering together */
   --ease-in: cubic-bezier(.4, 0, 1, 1); /* exits; --ease enters, --spring confirms */
 
@@ -172,6 +175,7 @@ button { font-family: inherit; touch-action: manipulation; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
   html { scroll-behavior: auto; }
+  .queue-glow, .confetti, .fly-ghost { display: none; } /* motion.ts skips these too */
 }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .28s; }
 
@@ -180,7 +184,6 @@ button { font-family: inherit; touch-action: manipulation; }
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   min-height: 40px; padding: 0 16px; border-radius: var(--radius-md);
   font: 600 13.5px/1 var(--font-sans); cursor: pointer;
-  transition: background .15s ease, border-color .15s ease, transform .1s ease, opacity .15s ease;
 }
 .btn-primary { background: var(--ink); color: var(--paper); border: 1px solid var(--ink); }
 .btn-primary:hover { background: color-mix(in srgb, var(--ink) 88%, var(--paper)); }
@@ -188,7 +191,6 @@ button { font-family: inherit; touch-action: manipulation; }
 .btn-ghost:hover { background: var(--hover); border-color: color-mix(in srgb, var(--ink) 25%, transparent); }
 .btn-ghost.danger { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, transparent); margin-right: auto; }
 .btn-ghost.danger:hover { background: var(--danger-tint); }
-.btn-primary:active, .btn-ghost:active { transform: scale(.98); }
 .btn-primary:disabled, .btn-ghost:disabled { opacity: .5; cursor: default; }
 .btn-ghost.with-icon .icon { width: 16px; height: 16px; }
 
@@ -413,9 +415,9 @@ h1.folder-title {
 }
 .search-field .ask-btn .icon { width: 14px; height: 14px; }
 .search-field .ask-btn.loading { opacity: .7; cursor: progress; }
-.search-field .ask-btn.loading .icon { animation: spin 1s linear infinite; }
+.search-field .ask-btn.loading .icon { animation: twinkle 1.1s ease-in-out infinite alternate; }
 .search-field:has(.ask-btn:not([hidden])) input { padding-right: 80px; }
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes twinkle { from { opacity: .45; transform: scale(.75) rotate(-25deg); } }
 
 .sort-field { position: relative; display: inline-flex; flex-shrink: 0; margin-right: auto; }
 .sort-field select {
@@ -653,7 +655,16 @@ h1.folder-title {
   box-shadow: var(--shadow-soft), 0 18px 50px -24px var(--glow);
   touch-action: pan-y; /* horizontal swipes are for Done */
   transition: transform var(--dur-move) var(--spring);
+  isolation: isolate; /* keeps .queue-glow above the card's own background */
 }
+/* Mouse only: a soft ember follows the pointer under the card's content
+   (queue.ts moves it with a transform). */
+.queue-glow {
+  position: absolute; z-index: -1; left: -180px; top: -180px; width: 360px; height: 360px; border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 18%, transparent), transparent); pointer-events: none;
+  opacity: 0; transition: opacity var(--dur-base) ease;
+}
+@media (hover: hover) and (pointer: fine) { .queue-focus:hover .queue-glow { opacity: 1; } }
 .queue-focus.is-swiping { transition: none; }
 .queue-media { position: relative; overflow: hidden; }
 .queue-media .link-visual {
@@ -697,9 +708,9 @@ h1.folder-title {
 }
 .queue-start .icon { width: 17px; height: 17px; stroke-width: 2.2; }
 .queue-start:hover { filter: brightness(1.06); }
-.queue-start:active, .queue-done:active { transform: scale(.96); }
+.queue-start:active { transform: scale(.96); }
 .queue-start:focus-visible { outline-color: var(--ink); }
-.queue-done { min-height: 48px; padding: 0 18px; font-size: 15px; transition: transform var(--dur-move) var(--spring); }
+.queue-done { min-height: 48px; padding: 0 18px; font-size: 15px; }
 .queue-done .icon { width: 17px; height: 17px; stroke-width: 2.2; }
 
 /* Up next: a sideways strip that snaps card by card. */
@@ -764,6 +775,22 @@ h1.folder-title {
 .queue-rest .empty-title:focus-visible { outline-offset: 4px; border-radius: 4px; }
 .queue-complete.is-new .empty-illustration { animation: complete-pop var(--dur-done) var(--spring) both; }
 @keyframes complete-pop { from { opacity: 0; transform: scale(.5) rotate(-8deg); } }
+
+/* Confetti: a small burst when today's five is finished (and in one hidden
+   spot). motion.ts pins it to the viewport and gives each piece its throw. */
+.confetti { position: fixed; z-index: 90; width: 0; height: 0; pointer-events: none; }
+.confetti i {
+  position: absolute; left: -4px; top: -5px; width: 8px; height: 10px; border-radius: 2px; background: var(--accent);
+  animation: confetti calc(var(--dur-done) * 1.5) both;
+}
+.confetti i:nth-child(3n) { background: var(--success); }
+.confetti i:nth-child(3n + 1) { width: 7px; height: 7px; border-radius: 50%; background: var(--accent-text); }
+/* Thrown out fast, then it tips over and falls. */
+@keyframes confetti {
+  from { opacity: 1; transform: scale(.4); animation-timing-function: cubic-bezier(.1, .8, .3, 1); }
+  55% { opacity: 1; transform: translate(var(--x), var(--y)) rotate(calc(var(--r) * .6)); animation-timing-function: var(--ease-in); }
+  to { opacity: 0; transform: translate(calc(var(--x) * 1.15), calc(var(--y) + 44px)) rotate(var(--r)); }
+}
 
 .queue-keys { display: none; }
 @media (hover: hover) and (pointer: fine) {
@@ -842,6 +869,7 @@ h1.folder-title {
   border-radius: var(--radius-md); padding: 6px; box-shadow: var(--shadow-modal);
   animation: pop .14s var(--ease);
 }
+.dropdown-menu.is-closing { pointer-events: none; animation: pop-out var(--dur-press) var(--ease-in) both; }
 .menu-item {
   display: flex; align-items: center; width: 100%; min-height: 38px; text-align: left; background: none; border: none;
   padding: 0 12px; border-radius: var(--radius-sm); font: 500 13.5px var(--font-sans); color: var(--ink); cursor: pointer;
@@ -869,6 +897,13 @@ h1.folder-title {
   animation: pop .2s var(--ease);
 }
 @keyframes pop { from { opacity: 0; transform: scale(.97) translateY(6px); } to { opacity: 1; transform: none; } }
+/* Leaving: modal.ts swaps .show for .is-closing, which keeps the dialog painted
+   but out of reach while it goes, and drops the class when the fade ends. The
+   exits need their own keyframe names: reusing an entrance's would not restart it. */
+.modal-backdrop.is-closing { display: flex; pointer-events: none; animation: fade-out var(--dur-quick) var(--ease-in) both; }
+.is-closing > .modal { animation: pop-out var(--dur-quick) var(--ease-in) both; }
+@keyframes fade-out { to { opacity: 0; } }
+@keyframes pop-out { to { opacity: 0; transform: scale(.97) translateY(6px); } }
 .modal h2 { font: 600 19px/1.3 var(--font-sans); letter-spacing: -.015em; margin: 0 0 18px; }
 .modal label { display: block; font-size: 12.5px; font-weight: 500; color: var(--ink-soft); margin: 0 0 6px; }
 .modal input, .modal select, .modal textarea {
@@ -882,6 +917,12 @@ h1.folder-title {
   outline: none; border-color: var(--accent-edge);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent), 0 0 24px -4px var(--glow);
 }
+/* A wrong answer gets a small head shake. The red edge and the message carry
+   the meaning; the shake only draws the eye. */
+.modal input[aria-invalid="true"] { border-color: var(--danger); }
+.modal input[aria-invalid="true"]:focus { box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 28%, transparent); }
+.field-error, .is-shaking { animation: shake var(--dur-move) var(--ease); }
+@keyframes shake { 20% { transform: translateX(-6px); } 45% { transform: translateX(5px); } 70% { transform: translateX(-3px); } 90% { transform: translateX(1px); } }
 .modal input[type=file] { padding: 10px; cursor: pointer; }
 .modal input:disabled { opacity: .7; }
 .modal .link-url-sub { margin: -12px 0 16px; font-size: 12.5px; color: var(--ink-faint); overflow-wrap: anywhere; }
@@ -921,6 +962,8 @@ h1.folder-title {
   animation: page-in .3s var(--ease);
 }
 @keyframes page-in { from { opacity: 0; transform: translateX(32px); } to { opacity: 1; transform: none; } }
+.is-closing > .modal.page { animation-name: page-out; }
+@keyframes page-out { to { opacity: 0; transform: translateX(32px); } }
 .page-head {
   position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 8px;
   margin: 0 calc(-1 * var(--gutter)) 12px; padding: max(10px, env(safe-area-inset-top)) var(--gutter) 10px;
@@ -1049,7 +1092,7 @@ p.settings-item:empty { display: none; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
 .toast.has-actions { padding: 8px 8px 8px 18px; }
 .toast .check { color: var(--success); }
-.toast .check .icon { width: 16px; height: 16px; }
+.toast .check .icon { width: 16px; height: 16px; animation: check-pop var(--dur-move) var(--spring) var(--dur-quick) both; }
 .toast-undo {
   min-height: 36px; padding: 0 10px; margin-left: auto; border-radius: var(--radius-sm);
   background: rgba(255, 138, 0, .14); border: none; color: #FFB547; font: 600 13px var(--font-sans); cursor: pointer;
@@ -1078,7 +1121,7 @@ p.settings-item:empty { display: none; }
 .nudge-head { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink-faint); }
 .nudge-logo {
   display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 7px;
-  background: var(--icon-tile);
+  background: var(--icon-paper);
 }
 .nudge-logo .brand-mark { width: 19px; height: 19px; }
 .nudge-app { font-weight: 600; color: var(--ink-soft); }
@@ -1203,6 +1246,27 @@ p.settings-item:empty { display: none; }
 .tab-add:focus-visible { outline-color: var(--ink); }
 
 
+/* ---------- Press, catch, toss ----------
+   Press: every tappable control dips at once and springs back on release.
+   `scale`, not transform, so controls that sit on a transform keep their
+   place. Listed here, after the components, so this is the transition they get. */
+.btn-primary, .btn-ghost, .icon-btn, .chip, .picker-btn, .btn-google, .toast-undo, .link-kebab, .folder-card-kebab,
+.recap-pick, .plan-link-chip, .segmented button, .bulk-bar button, .ask-btn {
+  transition: scale var(--dur-move) var(--spring), background-color var(--dur-quick) ease, border-color var(--dur-quick) ease,
+    color var(--dur-quick) ease, opacity var(--dur-quick) ease;
+}
+:is(.btn-primary, .btn-ghost, .icon-btn, .chip, .picker-btn, .btn-google, .toast-undo, .link-kebab, .folder-card-kebab,
+  .recap-pick, .plan-link-chip, .segmented button, .bulk-bar button, .ask-btn):active:not(:disabled) { scale: .96; }
+:is(.picker-btn, .btn-google, .recap-pick):active:not(:disabled) { scale: .985; } /* full-width ones barely move */
+/* The dip itself is quick everywhere, including the big buttons that already spring. */
+button:active { transition-duration: var(--dur-press); }
+
+/* The pocket (or a tab) catching a save: a squash, like the opening animation's settle. */
+.is-catching { transform-origin: 50% 85%; animation: pocket-catch var(--dur-move) var(--ease); }
+@keyframes pocket-catch { 35% { transform: scale(1.14, .88); } 70% { transform: scale(.96, 1.05); } }
+/* A saved link's preview on its way to the pocket (motion.ts flyTo). */
+.fly-ghost { position: fixed; z-index: 90; margin: 0; --thumb: 150px; pointer-events: none; box-shadow: var(--shadow-soft); }
+
 /* Sidebar-only bits (desktop). */
 .tabbar-brand, .tab-add-label, .tab-settings { display: none; }
 
@@ -1214,11 +1278,13 @@ p.settings-item:empty { display: none; }
     max-height: 88vh; max-height: 88dvh; padding: 22px 18px calc(18px + env(safe-area-inset-bottom));
     animation: sheet-up .26s var(--ease);
   }
+  .is-closing > .sheet { animation-name: sheet-down; }
   .sheet-handle { display: block; }
   .modal-backdrop:not(.sheet-backdrop) { padding: 12px; }
   .color-swatch { width: 40px; height: 40px; }
 }
 @keyframes sheet-up { from { transform: translateY(40px); opacity: .6; } to { transform: none; opacity: 1; } }
+@keyframes sheet-down { to { transform: translateY(40px); opacity: 0; } }
 
 /* ---------- Touch: 44px targets, no hover-only controls ---------- */
 @media (pointer: coarse) {

@@ -16,6 +16,7 @@ import { initLibrary } from './ui/library';
 import { initList } from './ui/list';
 import { initQueue } from './ui/queue';
 import { setupModalA11y } from './ui/modal';
+import { confetti, replay } from './ui/motion';
 import { applySharedPayload, initSaveBox, openSaveSheet, resetSaveTarget } from './ui/saveBox';
 import { initIosHelp } from './ui/iosHelp';
 import { initRecap } from './ui/recap';
@@ -71,6 +72,7 @@ async function boot(): Promise<void> {
   MODALS.forEach((id) => setupModalA11y(byId(id)));
   onNavigate(resetSaveTarget);
   initDesktopShortcuts();
+  initLogoEgg();
 
   go('queue');
   renderAll();
@@ -111,6 +113,24 @@ function initDesktopShortcuts(): void {
     e.preventDefault();
     openSaveSheet(url);
   });
+}
+
+// A hidden hello: the logo gives a little squash when tapped, and five quick
+// taps shake some confetti out of the pocket.
+function initLogoEgg(): void {
+  let taps = 0;
+  let timer = 0;
+  for (const mark of document.querySelectorAll('.appbar .brand-mark, .tabbar-brand .brand-mark')) {
+    mark.addEventListener('click', () => {
+      replay(mark, 'is-catching');
+      clearTimeout(timer);
+      timer = window.setTimeout(() => { taps = 0; }, 700);
+      if (++taps < 5) return;
+      taps = 0;
+      confetti(mark);
+      showToast('You found the secret pocket. Nothing in here but lint.', true);
+    });
+  }
 }
 
 // The opening animation fades itself out (CSS); drop the node once it has.

@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Backpocket is a local-first bookmark PWA (Vite + TypeScript, no UI framework) on GitHub Pages, with optional Supabase sync and Gemini AI. README.md covers features and data; this file is how to work in the code.
+Backpocket is a local-first bookmark PWA (Vite + TypeScript, no UI framework) served from Cloudflare Pages (backpocketapp.pages.dev) and GitHub Pages, with optional Supabase sync and Gemini AI. README.md covers features and data; this file is how to work in the code.
 
 ## Commands
 
@@ -34,10 +34,10 @@ Deploy: merging `develop` into `release` tags the next version and publishes the
 
 ## Gotchas
 
-- Base path is `/Backpocket/`. Manifest and share target use relative paths; keep them relative.
+- Base path is `/Backpocket/` on GitHub Pages and `/` on Cloudflare Pages (`vite.config.ts` switches on `CF_PAGES`). Manifest and share target use relative paths so they work under both; keep them relative.
 - Reminders, the recap and the Daily Queue store state in IndexedDB `meta` (`nudgeAt`, `nudgeNext`, `nudgeHistory`, `recap`, `recapNotifiedAt`, `queue`, `queueStreak`). Keep keys in `nudge.ts` / `recap.ts` / `queue.ts`.
 - Embedding features (More like this, duplicate warnings, smart reminder picks) only work signed in with AI on; they call SQL functions (`related_links`, `revisit_picks`) and must degrade silently when those fail.
 - AI budget is tight (free tier, ~600 calls/day across all users). New AI features should reuse embeddings or cost about one call per user per day; set costs in `_shared/config.ts`.
-- Migrations: `search_path` is empty in functions, so qualify pgvector bits (`operator(extensions.<=>)`, `extensions.avg`). Functions are `security invoker` and filter on `auth.uid()`.
+- Migrations: `search_path` is empty in functions, so qualify pgvector bits (`operator(extensions.<=>)`, `extensions.avg`). Functions are `security invoker` and filter on `auth.uid()`, except triggers that write rows clients may not (`bp_touch_sync_state` is `security definer`).
 - The service-worker cache name hashes the build file list, so deploys refresh the offline cache automatically; no manual version bump.
 - Don't commit `.env`, `SETUP.md` or `plan.md` (git-ignored). The Gemini key never goes in the bundle; CI fails if one appears in `dist/`.

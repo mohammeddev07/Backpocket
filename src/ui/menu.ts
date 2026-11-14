@@ -1,5 +1,7 @@
 // Generic popover menu (link "⋯" menu + folder kebab menu).
 
+import { settled } from './motion';
+
 export type MenuItem =
   | { separator: true }
   | { label: string; onClick: () => void; danger?: boolean; separator?: false };
@@ -8,7 +10,14 @@ let openMenuEl: HTMLElement | null = null;
 let openMenuCloser: ((e: Event) => void) | null = null;
 
 export function closeMenu(): void {
-  if (openMenuEl) { openMenuEl.remove(); openMenuEl = null; }
+  const menu = openMenuEl;
+  if (menu) {
+    openMenuEl = null;
+    // Out of reach (pointer, keyboard, screen readers) at once; gone when its exit ends.
+    menu.classList.add('is-closing');
+    menu.inert = true;
+    void settled(menu, false).then(() => menu.remove());
+  }
   if (openMenuCloser) {
     document.removeEventListener('click', openMenuCloser, true);
     document.removeEventListener('keydown', openMenuCloser, true);
