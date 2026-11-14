@@ -44,6 +44,9 @@
   try {
     if (/[?&](url|text|title)=/.test(location.search) || sessionStorage.getItem('bp_splash')) document.documentElement.classList.add('no-splash');
     sessionStorage.setItem('bp_splash', '1');
+    // Installed on Android: the system launch screen has just shown the icon,
+    // so the animation carries on from it (.from-launch below).
+    if (/Android/.test(navigator.userAgent) && matchMedia('(display-mode: standalone)').matches) document.documentElement.classList.add('from-launch');
   } catch (e) {}
 </script>
 <style>
@@ -79,6 +82,25 @@
   @keyframes bp-glow { 0% { opacity: 0; transform: scale(.5); } 60% { opacity: 1; } 100% { opacity: .55; transform: scale(1.1); } }
   @keyframes bp-word { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
   @keyframes bp-out { to { opacity: 0; visibility: hidden; } }
+  /* Installed on Android, the system draws its own launch screen first: the app
+     icon, still, on the manifest's dark background. A web app can't turn that
+     off, so here the animation picks up from that picture instead of wiping it
+     and starting again: same background, logo already in place, the icon's
+     tile ripples away, the card hops in the pocket, then the usual settle. */
+  .splash-tile {
+    display: none; position: absolute; top: -12px; left: 50%; width: 144px; height: 144px; margin-left: -72px;
+    border-radius: 33px; background: #F2EFE9;
+  }
+  .from-launch .splash { background: #090A0C; color: #F4F5F7; animation-delay: 1s; }
+  .from-launch .splash-tile { display: block; animation: bp-ripple .5s ease-out forwards; }
+  .from-launch .splash-glow { animation-delay: 0s; }
+  .from-launch .sp-pocket { opacity: 1; animation: none; }
+  .from-launch .sp-card { opacity: 1; animation: bp-hop .6s cubic-bezier(.3, 1.3, .5, 1) .1s; }
+  .from-launch .sp-chain { stroke-dashoffset: 0; animation: none; }
+  .from-launch .splash-mark { animation-delay: .62s; }
+  .from-launch .splash-word { animation-delay: .15s; }
+  @keyframes bp-ripple { to { opacity: 0; transform: scale(1.45); } }
+  @keyframes bp-hop { 35% { transform: translateY(-10px); } }
   @media (prefers-reduced-motion: reduce) { .splash { display: none; } }
 </style>
 <script type="module" src="/src/main.ts"></script>
@@ -135,6 +157,7 @@
 <div class="splash" id="splash" aria-hidden="true">
   <div class="splash-inner">
     <div class="splash-glow"></div>
+    <div class="splash-tile"></div>
     <svg class="splash-mark" viewBox="0 0 64 64">
       <g class="sp-card"><g transform="rotate(4 32 22)">
       <rect x="16.5" y="5.5" width="31" height="32" rx="4.5" fill="url(#bp-card)" stroke="#262A20" stroke-width="1.9"/>

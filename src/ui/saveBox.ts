@@ -12,6 +12,7 @@ import { byId } from './dom';
 import { pickFolder, setPickerButton } from './folderPicker';
 import { fallbackTile, openLink } from './list';
 import { closeModal, openModal } from './modal';
+import { flyTo, replay } from './motion';
 import { createTagInput, type TagInput } from './tagInput';
 import { showToast } from './toast';
 import { setRenderer, view } from './view';
@@ -50,6 +51,7 @@ function showError(msg: string): void {
   urlErrorEl.textContent = msg;
   urlErrorEl.hidden = false;
   urlInput.setAttribute('aria-invalid', 'true');
+  replay(urlInput, 'is-shaking');
 }
 function clearError(): void {
   urlErrorEl.hidden = true;
@@ -111,6 +113,13 @@ function renderTarget(): void {
   setPickerButton(byId('saveTargetBtn'), view.saveTargetId);
 }
 
+/** Where a save is seen to land: the pocket logo while it's on screen, otherwise the tab it went to. */
+function landingSpot(folderId: string): Element {
+  const onScreen = (el: Element) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.bottom > 0; };
+  return [...document.querySelectorAll('.tabbar-brand .brand-mark, .appbar .brand-mark')].find(onScreen)
+    ?? byId(folderId === inboxId() ? 'tabInbox' : 'tabLibrary').querySelector('.icon')!;
+}
+
 function doSave(url: string): void {
   const folderId = view.saveTargetId || inboxId();
   const link = createLink({
@@ -121,6 +130,9 @@ function doSave(url: string): void {
     sharedText: pendingSharedText,
   });
   const explicitFolder = folderId !== inboxId();
+  // The preview is tossed into the pocket as the sheet leaves (before the form clears it).
+  const preview = byId('savePreview').firstElementChild;
+  if (preview) flyTo(preview, landingSpot(folderId));
   resetSaveForm();
   closeModal(sheet);
   showToast('Saved to ' + pathLabel(store.liveFolders(), link.folderId), true);
