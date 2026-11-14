@@ -10,6 +10,21 @@ Free, private by default, and it installs like an app in a few seconds: **<https
   <img src="docs/screenshots/mobile.jpg" alt="Backpocket on a phone: the Daily Queue with a catch streak, today's focus video with Start watching and Done, and the bottom tab bar" width="200">
 </p>
 
+## See it in action
+
+Two short videos, both with sound. Click a cover to open the video.
+
+<p align="center">
+  <a href="docs/vid/film.mp4"><img src="docs/vid/film-cover.jpg" alt="Play the 35-second Backpocket film. Cover: an Order up! reminder saying a saved video, Job interview answers that work, has been ready for 9 days, with Open it and Later buttons" height="300"></a>
+  &nbsp;
+  <a href="docs/vid/reel.mp4"><img src="docs/vid/reel-cover.jpg" alt="Play the 18-second vertical reel. Cover: the words POV: your saved videos start chasing you, above a Library grid of saved videos" height="300"></a>
+</p>
+
+- **[The film](docs/vid/film.mp4)** (35 seconds, landscape). It's 9:14 pm, the interview is tomorrow and the perfect video is lost somewhere in your saves. Then the reminder turns up.
+- **[The reel](docs/vid/reel.mp4)** (18 seconds, vertical). POV: your saved videos start chasing you, one a day, Monday to Friday.
+
+The saves, titles and thumbnails in both are made up for the videos, and the timing is edited. The reminder wording and the screens are from the real app.
+
 ## Why people use it
 
 **Save from anywhere, in one tap.** Share straight from Instagram, TikTok, YouTube, Facebook or X on Android. Use a ready-to-go Shortcut on iPhone, or a bookmarklet on your computer. Or just paste a link anywhere in the app. No account needed.
@@ -190,6 +205,7 @@ src/
   share/    share-target URL extraction (+ tests against the v1 code)
   ui/       tab bar, settings page, library, queue, list, sheets, modals, settings, reminders, recap
 public/     manifest.webmanifest, icons/ (all rendered from icons/mark.svg)
+docs/       screenshots/ and vid/ (the launch film, the reel and their covers) for this README; not part of the app build
 supabase/
   migrations/           schema, RLS, pgvector, rate limits, match_links, related_links, revisit_picks
   functions/ai/         classify / search / plan / embed / nudge / recap
@@ -203,4 +219,4 @@ supabase/
 - Apps are inconsistent about where they put the link. Chrome maps Android's shared text to `text`, so most social apps send the link there, sometimes inside a caption ("Check out … https://vm.tiktok.com/…"). `src/share/extractSharedUrl.ts` checks `url`, then `text`, then `title`, and takes the first valid `http`/`https` URL. It drops trailing punctuation but keeps balanced parentheses. The iPhone Shortcut and the bookmarklet use the same `?url=` path.
 - Once the form is filled in, the share params are removed from the address bar with `history.replaceState`, so a reload or Back doesn't apply them again.
 - The service worker (`src/sw.ts`, built to `sw.js`, the same URL as v1) fetches the page and manifest from the network first and uses the cache only offline, so the first visit after a deploy never installs last release's manifest. Page loads are cached by path, ignoring the query string, so a share launch still opens offline. Fonts and YouTube/TikTok thumbnails are cached at runtime. Supabase, Gemini and oEmbed calls are never served from the cache. The cache name is derived from the build's file list, so every deploy refreshes the offline copy automatically. The same worker handles the background reminder (`periodicsync`) and notification taps.
-- Icons are in `public/icons/`, all rendered from `mark.svg` (also `#brand-mark` in `index.html`). `favicon.svg` is the browser-tab icon: a light tile on light systems, a dark tile on dark ones. Home-screen icons can't switch with the theme, so the PNGs use the dark tile: `icon-192.png` and `icon-512.png` (`purpose: any`), plus `icon-512-maskable.png`, which keeps the artwork inside the 80% safe zone on an opaque background so Android's adaptive-icon masks don't clip it.
+- Icons are in `public/icons/`, all rendered from `mark.svg` (also `#brand-mark` in `index.html`). Every icon sits on the same light tile (`#F2EFE9`, `--icon-paper` in `app.css`), whatever the theme: `favicon.svg` for the browser tab, `icon-192.png` and `icon-512.png` (`purpose: any`), plus `icon-512-maskable.png`, which keeps the artwork inside the 80% safe zone on an opaque background so Android's adaptive-icon masks don't clip it.

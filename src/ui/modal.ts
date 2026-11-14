@@ -2,6 +2,8 @@
 // Watches each backdrop's own 'show' class rather than wrapping every
 // open/close call site, so it covers every modal (and bottom sheet) uniformly.
 
+import { settled } from './motion';
+
 const closeHooks = new WeakMap<HTMLElement, () => void>();
 
 export function setupModalA11y(modalBackdrop: HTMLElement): void {
@@ -52,6 +54,7 @@ export function setupModalA11y(modalBackdrop: HTMLElement): void {
 }
 
 export function openModal(backdrop: HTMLElement): void {
+  backdrop.classList.remove('is-closing');
   backdrop.classList.add('show');
 }
 
@@ -62,6 +65,9 @@ export function onModalClose(backdrop: HTMLElement, fn: () => void): void {
 
 export function closeModal(backdrop: HTMLElement): void {
   if (!backdrop.classList.contains('show')) return;
-  backdrop.classList.remove('show');
+  // Closed at once for focus, keys and tabs. .is-closing only keeps it painted
+  // (and out of reach) while it animates away; see app.css.
+  backdrop.classList.replace('show', 'is-closing');
+  void settled(backdrop, false).then(() => backdrop.classList.remove('is-closing'));
   closeHooks.get(backdrop)?.();
 }

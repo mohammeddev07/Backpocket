@@ -20,6 +20,9 @@ supabase/.temp/
 supabase/.branches/
 supabase/.env
 
+brag-output/
+.hallmark/
+
 # Logs
 *.log
 npm-debug.log*

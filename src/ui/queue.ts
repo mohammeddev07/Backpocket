@@ -12,6 +12,7 @@ import { onAccountChange } from './account';
 import { byId, svgIcon } from './dom';
 import { relativeTime } from './format';
 import { addListOverride, linkVisual, openLink } from './list';
+import { confetti, reducedMotion, settled, token } from './motion';
 import { hideToast, showToast } from './toast';
 import { renderMain, view } from './view';
 
@@ -78,12 +79,11 @@ function streakText(): string {
  */
 function transition(update: () => void): Promise<void> {
   const cards = () => [...document.querySelectorAll<HTMLElement>('.queue [data-qid]')];
-  if (document.hidden || matchMedia('(prefers-reduced-motion: reduce)').matches) { update(); return Promise.resolve(); }
+  if (document.hidden || reducedMotion()) { update(); return Promise.resolve(); }
   const was = new Map(cards().map((el) => [el.dataset.qid!, el.getBoundingClientRect()]));
   update();
   return Promise.resolve().then(() => {
-    const root = getComputedStyle(document.documentElement);
-    const timing = { duration: parseFloat(root.getPropertyValue('--dur-move')), easing: root.getPropertyValue('--ease').trim() };
+    const timing = { duration: parseFloat(token('--dur-move')), easing: token('--ease') };
     return Promise.all(cards().map((el) => {
       const a = was.get(el.dataset.qid!);
       const b = el.getBoundingClientRect();
@@ -95,11 +95,6 @@ function transition(update: () => void): Promise<void> {
       return el.animate(frames, timing).finished;
     })).then(() => {}, () => {});
   });
-}
-
-/** Resolves when the element's own CSS animations finish (at once if there are none). */
-function settled(el: Element): Promise<void> {
-  return Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished)).then(() => {}, () => {});
 }
 
 async function markDone(link: Link, card: HTMLElement): Promise<void> {
@@ -221,6 +216,19 @@ function swipeToDone(card: HTMLElement, link: Link): void {
   card.addEventListener('pointercancel', () => { dx = 0; end(); });
 }
 
+/** Mouse: a soft ember follows the pointer across the focus card (a transform, nothing repaints). */
+function cursorGlow(card: HTMLElement): void {
+  const glow = document.createElement('span');
+  glow.className = 'queue-glow';
+  glow.setAttribute('aria-hidden', 'true');
+  card.prepend(glow);
+  card.addEventListener('pointermove', (e) => {
+    if (e.pointerType !== 'mouse') return;
+    const r = card.getBoundingClientRect();
+    glow.style.transform = 'translate(' + (e.clientX - r.left) + 'px, ' + (e.clientY - r.top) + 'px)';
+  });
+}
+
 function focusCard(link: Link): HTMLElement {
   const card = itemShell('article', link, 'queue-focus');
   const started = openedToday(link);
@@ -278,6 +286,7 @@ function focusCard(link: Link): HTMLElement {
   body.appendChild(actions);
   card.append(media, body);
   swipeToDone(card, link);
+  cursorGlow(card);
   return card;
 }
 
@@ -452,7 +461,9 @@ function renderQueue(listEl: HTMLElement): void {
     const days = currentStreak(streak, today());
     const just = shownDone?.day === today() && shownDone.n < items.length;
     const streakLine = days > 1 ? 'Your streak is now ' + days + ' days. ' : days ? 'That starts your streak. ' : '';
-    section.appendChild(restingState('That\'s today\'s five', streakLine + 'New picks tomorrow.', 'queue-complete' + (just ? ' is-new' : '')));
+    const rest = restingState('That\'s today\'s five', streakLine + 'New picks tomorrow.', 'queue-complete' + (just ? ' is-new' : ''));
+    section.appendChild(rest);
+    if (just) confetti(rest.querySelector('.empty-illustration')!);
   } else {
     section.appendChild(focusCard(left[0]));
     if (left.length > 1) {
@@ -473,7 +484,7 @@ function renderQueue(listEl: HTMLElement): void {
 function typingOrBlocked(e: KeyboardEvent): boolean {
   const t = e.target as HTMLElement;
   return e.ctrlKey || e.metaKey || e.altKey || t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)
-    || !!document.querySelector('.modal-backdrop.show, .dropdown-menu');
+    || !!document.querySelector('.modal-backdrop.show, .dropdown-menu:not(.is-closing)');
 }
 
 function onKey(e: KeyboardEvent): void {

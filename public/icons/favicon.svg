@@ -1,11 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <style>.tile { fill: #F2EFE9; } @media (prefers-color-scheme: dark) { .tile { fill: #17181C; } }</style>
-
   <defs>
     <linearGradient id="bp-front" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#EEBF55"/><stop offset="1" stop-color="#DBA036"/></linearGradient>
     <linearGradient id="bp-card" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF9EC"/><stop offset="1" stop-color="#F3E2C3"/></linearGradient>
   </defs>
-  <rect class="tile" width="64" height="64" rx="14.5"/>
+  <rect width="64" height="64" rx="14.5" fill="#F2EFE9"/>
   <g transform="translate(5.4 5.6) scale(.83)">
   <g stroke="#262A20" stroke-width="1.9" stroke-linejoin="round">
     <g transform="rotate(4 32 22)">

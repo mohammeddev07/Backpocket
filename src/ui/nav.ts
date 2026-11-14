@@ -6,6 +6,7 @@ import { byId } from './dom';
 import { confirmDeleteFolder, openFolderModal, openMoveFolder } from './folderDialogs';
 import { type MenuItem } from './menu';
 import { closeModal } from './modal';
+import { replay } from './motion';
 import { go, setRenderer, view } from './view';
 
 // App navigation: the tab bar (bottom on phones, sidebar on desktop). Also the
@@ -47,9 +48,7 @@ function renderTabbar(): void {
   const label = n > 99 ? '99+' : String(n);
   if (badge.textContent && badge.textContent !== label) {
     // A brief bump says the count changed (restart the animation if it's mid-way).
-    badge.classList.remove('is-bump');
-    void badge.offsetWidth;
-    badge.classList.add('is-bump');
+    replay(badge, 'is-bump');
   }
   badge.textContent = label;
   // The name starts with what's on screen ("6 Inbox") so voice control users can say it.
